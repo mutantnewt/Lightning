@@ -1,0 +1,372 @@
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { Book } from "@/types";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ChevronDown, ChevronUp, User, BookText, ExternalLink, CheckCircle, MessageSquare, Star, ShoppingCart, BookOpen, Headphones, Sparkles } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { CommentsSection } from "@/components/CommentsSection";
+import { ReviewsSection } from "@/components/ReviewsSection";
+import { StarRating } from "@/components/StarRating";
+import { ReadingListDropdown } from "@/components/ReadingListDropdown";
+import { useComments } from "@/hooks/useComments";
+import { useAuth } from "@/hooks/useAuth";
+import { useFavorites } from "@/hooks/useFavorites";
+import { useRatings, useReviews } from "@/hooks/useRatings";
+import { useToast } from "@/hooks/use-toast";
+import { useCountry } from "@/hooks/useCountry";
+
+interface BookCardProps {
+  book: Book;
+  showFavoriteHeart?: boolean;
+  onSearch?: (query: string) => void;
+}
+
+export function BookCard({ book, showFavoriteHeart = false, onSearch }: BookCardProps) {
+  const [showAuthorBio, setShowAuthorBio] = useState(false);
+  const [showSummary, setShowSummary] = useState(false);
+  const [showComments, setShowComments] = useState(false);
+  const [showReviews, setShowReviews] = useState(false);
+  const { getCommentCount } = useComments();
+  const commentCount = getCommentCount(book.id);
+
+  const { user, isAuthenticated } = useAuth();
+  const { isFavorite, toggleFavorite } = useFavorites(user?.id);
+  const { toast } = useToast();
+  const favorite = isFavorite(book.id);
+
+  const { averageRating, ratingCount, getUserRating, setRating } = useRatings(book.id);
+  const { reviews } = useReviews(book.id);
+  const userRating = user ? getUserRating(user.id, book.id) : 0;
+  const { amazonDomain } = useCountry();
+
+  // Affiliate links - replace YOUR_AFFILIATE_ID with your actual tags
+  const searchQuery = encodeURIComponent(book.title + ' ' + book.author);
+  const amazonUrl = `https://www.${amazonDomain}/s?k=${searchQuery}&tag=YOUR_AMAZON_AFFILIATE_ID`;
+  const bookshopUrl = `https://bookshop.org/search?keywords=${searchQuery}&affiliate=YOUR_BOOKSHOP_AFFILIATE_ID`;
+  const audibleUrl = `https://www.audible.com/search?keywords=${searchQuery}&tag=YOUR_AUDIBLE_AFFILIATE_ID`;
+
+  const handleFavoriteToggle = () => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to save favorites",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const newState = toggleFavorite(book.id);
+    toast({
+      title: newState ? "Added to favorites" : "Removed from favorites",
+      description: newState
+        ? `"${book.title}" has been added to your favorites`
+        : `"${book.title}" has been removed from your favorites`,
+    });
+  };
+
+  const handleRating = (rating: number) => {
+    if (!isAuthenticated || !user) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to rate books",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setRating(user.id, book.id, rating);
+    toast({
+      title: "Rating saved",
+      description: `You rated "${book.title}" ${rating} stars`,
+    });
+  };
+
+  return (
+    <article className="book-card animate-fade-in">
+      <div className="flex flex-col gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+            <div className="flex-1">
+            <div className="flex items-start gap-2">
+              <h3 className="font-serif text-xl font-semibold text-foreground leading-tight flex-1">
+                {book.title}
+              </h3>
+              {isAuthenticated && (
+                <button
+                  onClick={handleFavoriteToggle}
+                  className="text-2xl hover:scale-110 transition-transform cursor-pointer flex-shrink-0"
+                  title={favorite ? "Remove from favorites" : "Add to favorites"}
+                >
+                  {favorite || showFavoriteHeart ? "❤️" : "🤍"}
+                </button>
+              )}
+            </div>
+            <p className="mt-1 text-base text-muted-foreground">
+              by{" "}
+              <button
+                onClick={() => onSearch?.(book.author)}
+                className="font-medium text-accent hover:text-accent/80 transition-colors cursor-pointer hover:underline"
+              >
+                {book.author}
+              </button>
+              {book.year && (
+                <span className="ml-1">({book.year < 0 ? `${Math.abs(book.year)} BCE` : book.year})</span>
+              )}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {book.era && (
+            <button
+              onClick={() => onSearch?.(book.era!)}
+              className="tag-chip hover:bg-accent/10 hover:border-accent transition-colors cursor-pointer"
+            >
+              {book.era}
+            </button>
+          )}
+          {book.country && (
+            <button
+              onClick={() => onSearch?.(book.country!)}
+              className="tag-chip hover:bg-accent/10 hover:border-accent transition-colors cursor-pointer"
+            >
+              {book.country}
+            </button>
+          )}
+          {book.category && (
+            <button
+              onClick={() => onSearch?.(book.category!)}
+              className="tag-chip hover:bg-accent/10 hover:border-accent transition-colors cursor-pointer"
+            >
+              {book.category}
+            </button>
+          )}
+          <button
+            onClick={() => onSearch?.(book.workType)}
+            className="tag-chip hover:bg-accent/10 hover:border-accent transition-colors cursor-pointer"
+          >
+            {book.workType}
+          </button>
+          {book.tags.map((tag) => (
+            <button
+              key={tag}
+              onClick={() => onSearch?.(tag)}
+              className="tag-chip hover:bg-accent/10 hover:border-accent transition-colors cursor-pointer"
+            >
+              {tag}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-4 flex-wrap">
+          <div className="flex items-center gap-2">
+            <StarRating
+              rating={userRating || averageRating}
+              onRate={handleRating}
+              readonly={!isAuthenticated}
+              showCount={true}
+              count={ratingCount}
+            />
+          </div>
+          {isAuthenticated && (
+            <ReadingListDropdown bookId={book.id} bookTitle={book.title} />
+          )}
+        </div>
+
+        <div className="overflow-x-auto">
+          <div className="flex gap-2 min-w-max">
+            {book.source && (
+              <a
+                href={book.source}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-shrink-0"
+              >
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-sm"
+                >
+                  <BookOpen className="mr-1.5 h-3.5 w-3.5" />
+                  Read Free
+                </Button>
+              </a>
+            )}
+
+            <a
+              href={amazonUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-shrink-0"
+            >
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-sm"
+              >
+                <ShoppingCart className="mr-1.5 h-3.5 w-3.5" />
+                Amazon
+              </Button>
+            </a>
+
+            <a
+              href={bookshopUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-shrink-0"
+            >
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-sm"
+              >
+                <ShoppingCart className="mr-1.5 h-3.5 w-3.5" />
+                Bookshop
+              </Button>
+            </a>
+
+            <a
+              href={audibleUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-shrink-0"
+            >
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-sm"
+              >
+                <Headphones className="mr-1.5 h-3.5 w-3.5" />
+                Audible
+              </Button>
+            </a>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <div className="flex gap-2 min-w-max">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAuthorBio(!showAuthorBio)}
+              className="text-sm flex-shrink-0"
+            >
+              <User className="mr-1.5 h-3.5 w-3.5" />
+              Author
+              {showAuthorBio ? (
+                <ChevronUp className="ml-1.5 h-3.5 w-3.5" />
+              ) : (
+                <ChevronDown className="ml-1.5 h-3.5 w-3.5" />
+              )}
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowSummary(!showSummary)}
+              className="text-sm flex-shrink-0"
+            >
+              <BookText className="mr-1.5 h-3.5 w-3.5" />
+              Summary
+              {showSummary ? (
+                <ChevronUp className="ml-1.5 h-3.5 w-3.5" />
+              ) : (
+                <ChevronDown className="ml-1.5 h-3.5 w-3.5" />
+              )}
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowComments(!showComments)}
+              className="text-sm flex-shrink-0"
+            >
+              <MessageSquare className="mr-1.5 h-3.5 w-3.5" />
+              Comments {commentCount > 0 && `(${commentCount})`}
+              {showComments ? (
+                <ChevronUp className="ml-1.5 h-3.5 w-3.5" />
+              ) : (
+                <ChevronDown className="ml-1.5 h-3.5 w-3.5" />
+              )}
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowReviews(!showReviews)}
+              className="text-sm flex-shrink-0"
+            >
+              <Star className="mr-1.5 h-3.5 w-3.5" />
+              Reviews {reviews.length > 0 && `(${reviews.length})`}
+              {showReviews ? (
+                <ChevronUp className="ml-1.5 h-3.5 w-3.5" />
+              ) : (
+                <ChevronDown className="ml-1.5 h-3.5 w-3.5" />
+              )}
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onSearch?.(book.category || book.tags[0] || book.era || book.workType)}
+              className="text-sm flex-shrink-0"
+            >
+              <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+              Similar
+            </Button>
+          </div>
+        </div>
+
+        <div
+          className={cn(
+            "overflow-hidden transition-all duration-300",
+            showAuthorBio ? "max-h-48 opacity-100" : "max-h-0 opacity-0"
+          )}
+        >
+          <div className="rounded-md bg-secondary/50 p-4 text-sm leading-relaxed text-foreground/90">
+            <p className="font-medium text-xs uppercase tracking-wide text-muted-foreground mb-2">
+              About the Author
+            </p>
+            {book.authorBio}
+          </div>
+        </div>
+
+        <div
+          className={cn(
+            "overflow-hidden transition-all duration-300",
+            showSummary ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+          )}
+        >
+          <div className="rounded-md bg-secondary/50 p-4 text-sm leading-relaxed text-foreground/90">
+            <p className="font-medium text-xs uppercase tracking-wide text-muted-foreground mb-2">
+              Summary
+            </p>
+            {book.summary}
+          </div>
+        </div>
+
+        <div
+          className={cn(
+            "overflow-hidden transition-all duration-300",
+            showComments ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"
+          )}
+        >
+          <div className="rounded-md bg-secondary/50 p-4">
+            <CommentsSection bookId={book.id} />
+          </div>
+        </div>
+
+        <div
+          className={cn(
+            "overflow-hidden transition-all duration-300",
+            showReviews ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"
+          )}
+        >
+          <div className="rounded-md bg-secondary/50 p-4">
+            <ReviewsSection bookId={book.id} />
+          </div>
+        </div>
+      </div>
+    </article>
+  );
+}
