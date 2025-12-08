@@ -91,8 +91,8 @@ const Index = () => {
             </h1>
           </div>
         )}
-        <div className="mb-8 overflow-x-auto">
-          <div className="space-y-4 min-w-max">
+        <div className="mb-8">
+          <div className="space-y-4">
             <SearchBar onSearch={handleSearch} onReset={handleReset} onRandom={handleRandom} initialQuery={searchQuery} totalBooks={books.length} />
             <SearchFilters
               filters={filters}

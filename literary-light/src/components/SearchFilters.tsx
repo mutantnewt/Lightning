@@ -6,7 +6,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { X } from "lucide-react";
+import { X, Clock, MapPin, Tag, FileText } from "lucide-react";
 
 export interface SearchFiltersState {
   era: string | null;
@@ -44,13 +44,18 @@ export function SearchFilters({
   };
 
   return (
-    <div className="flex flex-wrap gap-3 items-center">
+    <div className="flex gap-2 sm:gap-3 items-center">
       <Select
         value={filters.era || "all"}
         onValueChange={(value) => updateFilter("era", value)}
       >
-        <SelectTrigger className="w-[180px]">
-          <SelectValue placeholder="All Eras" />
+        <SelectTrigger className="w-auto">
+          <div className="flex items-center gap-2">
+            <Clock className="h-4 w-4 flex-shrink-0" />
+            <span className="hidden sm:inline whitespace-nowrap">
+              <SelectValue placeholder="All Eras" />
+            </span>
+          </div>
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">All Eras</SelectItem>
@@ -66,8 +71,13 @@ export function SearchFilters({
         value={filters.country || "all"}
         onValueChange={(value) => updateFilter("country", value)}
       >
-        <SelectTrigger className="w-[180px]">
-          <SelectValue placeholder="All Countries" />
+        <SelectTrigger className="w-auto">
+          <div className="flex items-center gap-2">
+            <MapPin className="h-4 w-4 flex-shrink-0" />
+            <span className="hidden sm:inline whitespace-nowrap">
+              <SelectValue placeholder="All Countries" />
+            </span>
+          </div>
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">All Countries</SelectItem>
@@ -83,8 +93,13 @@ export function SearchFilters({
         value={filters.category || "all"}
         onValueChange={(value) => updateFilter("category", value)}
       >
-        <SelectTrigger className="w-[180px]">
-          <SelectValue placeholder="All Categories" />
+        <SelectTrigger className="w-auto">
+          <div className="flex items-center gap-2">
+            <Tag className="h-4 w-4 flex-shrink-0" />
+            <span className="hidden sm:inline whitespace-nowrap">
+              <SelectValue placeholder="All Categories" />
+            </span>
+          </div>
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">All Categories</SelectItem>
@@ -100,8 +115,13 @@ export function SearchFilters({
         value={filters.workType || "all"}
         onValueChange={(value) => updateFilter("workType", value)}
       >
-        <SelectTrigger className="w-[180px]">
-          <SelectValue placeholder="All Work Types" />
+        <SelectTrigger className="w-auto">
+          <div className="flex items-center gap-2">
+            <FileText className="h-4 w-4 flex-shrink-0" />
+            <span className="hidden sm:inline whitespace-nowrap">
+              <SelectValue placeholder="All Work Types" />
+            </span>
+          </div>
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">All Work Types</SelectItem>
@@ -121,7 +141,7 @@ export function SearchFilters({
           className="gap-1"
         >
           <X className="h-4 w-4" />
-          Clear Filters
+          <span className="hidden sm:inline whitespace-nowrap">Clear Filters</span>
         </Button>
       )}
     </div>

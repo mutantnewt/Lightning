@@ -38,19 +38,19 @@ export function SearchBar({ onSearch, onReset, onRandom, initialQuery = "", tota
             style={{ minWidth: 0 }}
           />
         </div>
-        <Button type="submit" className="btn-primary h-12 px-6 flex-shrink-0">
-          <Search className="mr-2 h-4 w-4" />
-          Search
+        <Button type="submit" className="btn-primary h-12 px-4 sm:px-6 flex-shrink-0">
+          <Search className="h-4 w-4 sm:mr-2" />
+          <span className="hidden sm:inline">Search</span>
         </Button>
         {onRandom && (
-          <Button type="button" onClick={onRandom} className="btn-accent h-12 px-6 flex-shrink-0">
-            <Shuffle className="mr-2 h-4 w-4" />
-            Random
+          <Button type="button" onClick={onRandom} className="btn-accent h-12 px-4 sm:px-6 flex-shrink-0">
+            <Shuffle className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Random</span>
           </Button>
         )}
-        <Button type="button" onClick={handleReset} variant="outline" className="h-12 px-6 flex-shrink-0">
-          <RotateCcw className="mr-2 h-4 w-4" />
-          Reset
+        <Button type="button" onClick={handleReset} variant="outline" className="h-12 px-4 sm:px-6 flex-shrink-0">
+          <RotateCcw className="h-4 w-4 sm:mr-2" />
+          <span className="hidden sm:inline">Reset</span>
         </Button>
       </div>
     </form>
