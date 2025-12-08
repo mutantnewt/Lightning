@@ -148,7 +148,7 @@ export function Layout({ children }: LayoutProps) {
       <footer className="border-t border-border bg-card/50 py-6 mt-auto">
         <div className="container mx-auto px-4 text-center">
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} Lightning Classics. Celebrating public domain literature.
+            © {new Date().getFullYear()} Lightning Classics. Celebrating public domain literature. No cookies.
           </p>
         </div>
       </footer>

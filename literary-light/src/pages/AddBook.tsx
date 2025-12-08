@@ -33,6 +33,7 @@ const AddBook = () => {
   // Form inputs
   const [title, setTitle] = useState(searchParams.get("title") || "");
   const [author, setAuthor] = useState(searchParams.get("author") || "");
+  const [keyword, setKeyword] = useState("");
 
   // Step management
   const [step, setStep] = useState<Step>("search");
@@ -49,6 +50,7 @@ const AddBook = () => {
   const handleReset = () => {
     setTitle("");
     setAuthor("");
+    setKeyword("");
     setStep("search");
     setSearchResults([]);
     setSelectedBook(null);
@@ -56,10 +58,10 @@ const AddBook = () => {
   };
 
   const handleSearch = async () => {
-    if (!title.trim() && !author.trim()) {
+    if (!title.trim() && !author.trim() && !keyword.trim()) {
       toast({
         title: "Missing information",
-        description: "Please enter at least a title or author.",
+        description: "Please enter at least a title, author, or keyword.",
         variant: "destructive",
       });
       return;
@@ -71,7 +73,8 @@ const AddBook = () => {
       const results = await searchBooks(
         title.trim() || undefined,
         author.trim() || undefined,
-        books
+        books,
+        keyword.trim() || undefined
       );
 
       if (results.length === 0) {
@@ -161,7 +164,13 @@ const AddBook = () => {
 
         {/* STEP 1: SEARCH */}
         {step === "search" && (
-          <div className="rounded-lg border border-border bg-card p-6 shadow-book">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSearch();
+            }}
+            className="rounded-lg border border-border bg-card p-6 shadow-book"
+          >
             <div className="space-y-4">
               <div>
                 <Label htmlFor="title" className="text-sm font-medium">
@@ -191,14 +200,28 @@ const AddBook = () => {
                 />
               </div>
 
+              <div>
+                <Label htmlFor="keyword" className="text-sm font-medium">
+                  Keyword / Subject
+                </Label>
+                <Input
+                  id="keyword"
+                  value={keyword}
+                  onChange={(e) => setKeyword(e.target.value)}
+                  placeholder="e.g., adventure, romance, philosophy"
+                  className="input-classic mt-1.5"
+                  disabled={isSearching}
+                />
+              </div>
+
               <p className="text-xs text-muted-foreground">
                 At least one field is required
               </p>
 
               <div className="flex gap-3 pt-2">
                 <Button
-                  onClick={handleSearch}
-                  disabled={isSearching || (!title.trim() && !author.trim())}
+                  type="submit"
+                  disabled={isSearching || (!title.trim() && !author.trim() && !keyword.trim())}
                   className="btn-primary flex-1"
                 >
                   {isSearching ? (
@@ -214,6 +237,7 @@ const AddBook = () => {
                   )}
                 </Button>
                 <Button
+                  type="button"
                   variant="outline"
                   onClick={handleReset}
                   disabled={isSearching}
@@ -232,7 +256,7 @@ const AddBook = () => {
                 </p>
               </div>
             )}
-          </div>
+          </form>
         )}
 
         {/* STEP 2: RESULTS */}

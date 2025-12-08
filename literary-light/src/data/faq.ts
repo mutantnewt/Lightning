@@ -64,4 +64,11 @@ export const faqEntries: FaqEntry[] = [
     order: 9,
     isActive: true,
   },
+  {
+    id: "10",
+    question: "Why don't you use cookies?",
+    answer: "We believe in respecting your privacy. Unlike most websites, Lightning Classics doesn't use any cookies—no tracking cookies, no analytics cookies, no third-party cookies. Your preferences (like dark mode and country settings) are stored locally in your browser using localStorage, which stays on your device and is never sent to any server. This means no annoying cookie consent banners, no tracking across websites, and no data collection. Just a clean, private browsing experience.",
+    order: 10,
+    isActive: true,
+  },
 ];

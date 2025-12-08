@@ -153,11 +153,11 @@ const Index = () => {
                 We couldn't find any books matching your search.
               </h2>
               <p className="mt-2 text-muted-foreground">
-                Try different keywords, or add this book to our library.
+                Try different keywords, or explore and add new books to our library.
               </p>
               <Button onClick={handleAddBook} className="btn-accent mt-6">
                 <PlusCircle className="mr-2 h-4 w-4" />
-                Add this book
+                Add Book
               </Button>
             </div>
           )

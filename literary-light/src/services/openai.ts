@@ -16,10 +16,11 @@ export interface BookSearchResult {
 export async function searchBooks(
   title?: string,
   author?: string,
-  existingBooks?: Book[]
+  existingBooks?: Book[],
+  keyword?: string
 ): Promise<BookSearchResult[]> {
-  if (!title && !author) {
-    throw new Error("At least title or author must be provided");
+  if (!title && !author && !keyword) {
+    throw new Error("At least title, author, or keyword must be provided");
   }
 
   const existingBooksStr = existingBooks
@@ -31,6 +32,7 @@ export async function searchBooks(
 Search criteria:
 ${title ? `Title: ${title}` : ""}
 ${author ? `Author: ${author}` : ""}
+${keyword ? `Subject/Keyword: ${keyword}` : ""}
 
 Find 5-10 public domain classic literature books that match the search criteria above. Only include books that are definitively in the public domain in the United States (typically published before 1929, or works by authors who died over 95 years ago).
 
