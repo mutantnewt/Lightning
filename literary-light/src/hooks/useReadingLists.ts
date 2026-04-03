@@ -1,130 +1,132 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import type { ReadingListRecord, ReadingListType } from "@contracts/domain";
+import { createUserStateClient } from "@/api/user-state";
 
-const READING_LISTS_STORAGE_KEY = "literary-light-reading-lists";
-const LISTS_CHANGE_EVENT = "reading-lists-changed";
+const userStateClient = createUserStateClient();
 
-export type ReadingListType = "wantToRead" | "currentlyReading" | "finished";
-
-export interface ReadingListItem {
-  id: string;
-  userId: string;
-  bookId: string;
-  listType: ReadingListType;
-  addedAt: string;
-  finishedAt?: string;
-  progress?: number;
-}
-
-function getStoredLists(): ReadingListItem[] {
-  try {
-    const stored = localStorage.getItem(READING_LISTS_STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch (error) {
-    console.error("Error loading reading lists:", error);
-    return [];
-  }
-}
-
-function saveLists(lists: ReadingListItem[]) {
-  try {
-    localStorage.setItem(READING_LISTS_STORAGE_KEY, JSON.stringify(lists));
-    window.dispatchEvent(new CustomEvent(LISTS_CHANGE_EVENT));
-  } catch (error) {
-    console.error("Error saving reading lists:", error);
-  }
-}
+export type { ReadingListType } from "@contracts/domain";
+export type ReadingListItem = ReadingListRecord;
 
 export function useReadingLists(userId?: string) {
-  const [allLists, setAllLists] = useState<ReadingListItem[]>([]);
+  const [lists, setLists] = useState<ReadingListItem[]>([]);
 
   useEffect(() => {
-    setAllLists(getStoredLists());
+    let isMounted = true;
 
-    const handleListsChange = () => {
-      setAllLists(getStoredLists());
+    if (!userId) {
+      setLists([]);
+      return;
+    }
+
+    const loadReadingLists = async () => {
+      try {
+        const nextLists = await userStateClient.listReadingLists(userId);
+        if (isMounted) {
+          setLists(nextLists);
+        }
+      } catch (error) {
+        console.error("Error loading reading lists:", error);
+        if (isMounted) {
+          setLists([]);
+        }
+      }
     };
 
-    window.addEventListener(LISTS_CHANGE_EVENT, handleListsChange);
+    void loadReadingLists();
+
+    const unsubscribe = userStateClient.subscribe(() => {
+      void loadReadingLists();
+    });
+
     return () => {
-      window.removeEventListener(LISTS_CHANGE_EVENT, handleListsChange);
+      isMounted = false;
+      unsubscribe();
     };
-  }, []);
-
-  const userLists = userId
-    ? allLists.filter((item) => item.userId === userId)
-    : [];
+  }, [userId]);
 
   const getBookList = (bookId: string): ReadingListType | null => {
-    if (!userId) return null;
-    const item = userLists.find((item) => item.bookId === bookId);
+    if (!userId) {
+      return null;
+    }
+
+    const item = lists.find((listItem) => listItem.bookId === bookId);
     return item ? item.listType : null;
   };
 
-  const addToList = (bookId: string, listType: ReadingListType): boolean => {
-    if (!userId) return false;
+  const addToList = async (
+    bookId: string,
+    listType: ReadingListType
+  ): Promise<boolean> => {
+    if (!userId) {
+      return false;
+    }
 
-    const filtered = allLists.filter(
-      (item) => !(item.userId === userId && item.bookId === bookId)
-    );
-
-    const newItem: ReadingListItem = {
-      id: `list-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      userId,
+    await userStateClient.upsertReadingList(userId, {
       bookId,
       listType,
-      addedAt: new Date().toISOString(),
-    };
+    });
 
-    const updated = [...filtered, newItem];
-    setAllLists(updated);
-    saveLists(updated);
+    const nextLists = await userStateClient.listReadingLists(userId);
+    setLists(nextLists);
     return true;
   };
 
-  const removeFromList = (bookId: string): boolean => {
-    if (!userId) return false;
+  const removeFromList = async (bookId: string): Promise<boolean> => {
+    if (!userId) {
+      return false;
+    }
 
-    const updated = allLists.filter(
-      (item) => !(item.userId === userId && item.bookId === bookId)
-    );
-    setAllLists(updated);
-    saveLists(updated);
+    await userStateClient.removeReadingList(userId, bookId);
+
+    const nextLists = await userStateClient.listReadingLists(userId);
+    setLists(nextLists);
     return true;
   };
 
-  const updateProgress = (bookId: string, progress: number): boolean => {
-    if (!userId) return false;
+  const updateProgress = async (
+    bookId: string,
+    progress: number
+  ): Promise<boolean> => {
+    if (!userId) {
+      return false;
+    }
 
-    const updated = allLists.map((item) =>
-      item.userId === userId && item.bookId === bookId
-        ? { ...item, progress: Math.max(0, Math.min(100, progress)) }
-        : item
-    );
-    setAllLists(updated);
-    saveLists(updated);
+    const existingItem = lists.find((item) => item.bookId === bookId);
+    if (!existingItem) {
+      return false;
+    }
+
+    await userStateClient.upsertReadingList(userId, {
+      bookId,
+      listType: existingItem.listType,
+      progress: Math.max(0, Math.min(100, progress)),
+      finishedAt: existingItem.finishedAt ?? null,
+    });
+
+    const nextLists = await userStateClient.listReadingLists(userId);
+    setLists(nextLists);
     return true;
   };
 
-  const markAsFinished = (bookId: string): boolean => {
-    if (!userId) return false;
+  const markAsFinished = async (bookId: string): Promise<boolean> => {
+    if (!userId) {
+      return false;
+    }
 
-    const updated = allLists.map((item) =>
-      item.userId === userId && item.bookId === bookId
-        ? {
-            ...item,
-            listType: "finished" as ReadingListType,
-            finishedAt: new Date().toISOString(),
-            progress: 100,
-          }
-        : item
-    );
-    setAllLists(updated);
-    saveLists(updated);
+    await userStateClient.upsertReadingList(userId, {
+      bookId,
+      listType: "finished",
+      progress: 100,
+      finishedAt: new Date().toISOString(),
+    });
+
+    const nextLists = await userStateClient.listReadingLists(userId);
+    setLists(nextLists);
     return true;
   };
 
   return {
-    lists: userLists,
+    lists,
     getBookList,
     addToList,
     removeFromList,

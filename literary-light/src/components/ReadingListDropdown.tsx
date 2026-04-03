@@ -35,7 +35,7 @@ export function ReadingListDropdown({
   const { toast } = useToast();
   const currentList = getBookList(bookId);
 
-  const handleListChange = (listType: ReadingListType) => {
+  const handleListChange = async (listType: ReadingListType) => {
     if (!isAuthenticated) {
       toast({
         title: "Sign in required",
@@ -46,17 +46,40 @@ export function ReadingListDropdown({
     }
 
     if (currentList === listType) {
-      removeFromList(bookId);
-      toast({
-        title: "Removed from list",
-        description: `"${bookTitle}" has been removed from your reading list`,
-      });
-    } else {
-      addToList(bookId, listType);
+      try {
+        await removeFromList(bookId);
+        toast({
+          title: "Removed from list",
+          description: `"${bookTitle}" has been removed from your reading list`,
+        });
+      } catch (error) {
+        toast({
+          title: "Unable to update reading list",
+          description:
+            error instanceof Error
+              ? error.message
+              : "Something went wrong while saving your reading list.",
+          variant: "destructive",
+        });
+      }
+      return;
+    }
+
+    try {
+      await addToList(bookId, listType);
       const option = listOptions.find((opt) => opt.type === listType);
       toast({
         title: "Added to list",
         description: `"${bookTitle}" has been added to ${option?.label}`,
+      });
+    } catch (error) {
+      toast({
+        title: "Unable to update reading list",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Something went wrong while saving your reading list.",
+        variant: "destructive",
       });
     }
   };

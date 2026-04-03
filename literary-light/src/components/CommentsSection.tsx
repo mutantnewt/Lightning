@@ -36,13 +36,13 @@ export function CommentsSection({ bookId }: CommentsSectionProps) {
     setIsSubmitting(true);
 
     try {
-      addComment(bookId, user.id, user.name, newComment);
+      await addComment(user.id, user.name, newComment);
       setNewComment("");
       toast({
         title: "Comment added",
         description: "Your comment has been posted successfully",
       });
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to add comment",
@@ -53,10 +53,10 @@ export function CommentsSection({ bookId }: CommentsSectionProps) {
     }
   };
 
-  const handleDelete = (commentId: string) => {
+  const handleDelete = async (commentId: string) => {
     if (!user) return;
 
-    const success = deleteComment(commentId, user.id);
+    const success = await deleteComment(commentId, user.id);
 
     if (success) {
       toast({
@@ -89,7 +89,7 @@ export function CommentsSection({ bookId }: CommentsSectionProps) {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" data-testid={`comments-section-${bookId}`}>
       <div className="flex items-center gap-2 text-sm font-medium text-foreground">
         <MessageSquare className="h-4 w-4" />
         <span>{comments.length} comment{comments.length !== 1 ? "s" : ""}</span>
@@ -104,6 +104,7 @@ export function CommentsSection({ bookId }: CommentsSectionProps) {
             placeholder="Share your thoughts about this book..."
             className="min-h-[80px] resize-none"
             disabled={isSubmitting}
+            data-testid={`comment-input-${bookId}`}
           />
           <div className="flex justify-end">
             <Button
@@ -111,6 +112,7 @@ export function CommentsSection({ bookId }: CommentsSectionProps) {
               size="sm"
               disabled={!newComment.trim() || isSubmitting}
               className="btn-accent"
+              data-testid={`post-comment-${bookId}`}
             >
               <Send className="mr-2 h-3.5 w-3.5" />
               {isSubmitting ? "Posting..." : "Post comment"}
@@ -130,6 +132,8 @@ export function CommentsSection({ bookId }: CommentsSectionProps) {
             <div
               key={comment.id}
               className="rounded-md bg-secondary/30 p-4 space-y-2"
+              data-testid={`comment-item-${bookId}`}
+              data-comment-id={comment.id}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-2">
@@ -145,8 +149,9 @@ export function CommentsSection({ bookId }: CommentsSectionProps) {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => handleDelete(comment.id)}
+                    onClick={() => void handleDelete(comment.id)}
                     className="h-auto p-1 text-muted-foreground hover:text-destructive"
+                    data-testid={`delete-comment-${bookId}`}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>

@@ -14,7 +14,7 @@ type SortOrder = "asc" | "desc";
 const Favorites = () => {
   const { user, isAuthenticated } = useAuth();
   const { books } = useBooks();
-  const { favorites } = useFavorites(user?.id);
+  const { favorites, getFavoriteBookIds } = useFavorites(user?.id);
 
   const [sortField, setSortField] = useState<SortField>("title");
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc");

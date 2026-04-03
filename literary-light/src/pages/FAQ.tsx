@@ -1,9 +1,11 @@
 import { Layout } from "@/components/Layout";
 import { FaqAccordion } from "@/components/FaqAccordion";
-import { faqEntries } from "@/data/faq";
+import { useFaqEntries } from "@/hooks/useFaqEntries";
 import { HelpCircle } from "lucide-react";
 
 const FAQ = () => {
+  const { faqEntries, isLoading } = useFaqEntries();
+
   return (
     <Layout>
       <div className="mx-auto max-w-3xl">
@@ -19,7 +21,13 @@ const FAQ = () => {
           </p>
         </header>
 
-        <FaqAccordion entries={faqEntries} />
+        {isLoading ? (
+          <div className="rounded-lg border border-border bg-card p-6 text-center text-sm text-muted-foreground">
+            Loading frequently asked questions...
+          </div>
+        ) : (
+          <FaqAccordion entries={faqEntries} />
+        )}
 
         <div className="mt-10 rounded-lg border border-border bg-card p-6 text-center">
           <h2 className="font-serif text-lg font-semibold text-foreground">

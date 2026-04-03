@@ -1,17 +1,30 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { Layout } from "@/components/Layout";
 import { BookCard } from "@/components/BookCard";
-import { useBooks } from "@/hooks/useBooks";
+import { useAuthorBooks } from "@/hooks/useAuthorBooks";
 import { User, BookOpen, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const Author = () => {
   const { name } = useParams<{ name: string }>();
   const navigate = useNavigate();
-  const { books } = useBooks();
 
   const authorName = decodeURIComponent(name || "");
-  const authorBooks = books.filter((book) => book.author === authorName);
+  const { books: authorBooks, isLoading } = useAuthorBooks(authorName);
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="mx-auto max-w-4xl">
+          <div className="rounded-lg border border-border bg-card p-10 text-center">
+            <h2 className="font-serif text-2xl font-semibold text-foreground">
+              Loading author page...
+            </h2>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   if (authorBooks.length === 0) {
     return (

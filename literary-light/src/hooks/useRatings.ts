@@ -1,191 +1,165 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import type { RatingRecord, ReviewRecord } from "@contracts/domain";
+import { createCommunityClient } from "@/api/community";
 
-const RATINGS_STORAGE_KEY = "literary-light-ratings";
-const REVIEWS_STORAGE_KEY = "literary-light-reviews";
-const RATINGS_CHANGE_EVENT = "ratings-changed";
-const REVIEWS_CHANGE_EVENT = "reviews-changed";
+const communityClient = createCommunityClient();
 
-export interface Rating {
-  id: string;
-  userId: string;
-  bookId: string;
-  rating: number;
-  createdAt: string;
-}
+export type Rating = RatingRecord;
+export type Review = ReviewRecord;
 
-export interface Review {
-  id: string;
-  userId: string;
-  userName: string;
-  bookId: string;
-  rating: number;
-  review: string;
-  createdAt: string;
-  helpful: number;
-}
-
-function getStoredRatings(): Rating[] {
-  try {
-    const stored = localStorage.getItem(RATINGS_STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch (error) {
-    console.error("Error loading ratings:", error);
-    return [];
-  }
-}
-
-function getStoredReviews(): Review[] {
-  try {
-    const stored = localStorage.getItem(REVIEWS_STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch (error) {
-    console.error("Error loading reviews:", error);
-    return [];
-  }
-}
-
-function saveRatings(ratings: Rating[]) {
-  try {
-    localStorage.setItem(RATINGS_STORAGE_KEY, JSON.stringify(ratings));
-    window.dispatchEvent(new CustomEvent(RATINGS_CHANGE_EVENT));
-  } catch (error) {
-    console.error("Error saving ratings:", error);
-  }
-}
-
-function saveReviews(reviews: Review[]) {
-  try {
-    localStorage.setItem(REVIEWS_STORAGE_KEY, JSON.stringify(reviews));
-    window.dispatchEvent(new CustomEvent(REVIEWS_CHANGE_EVENT));
-  } catch (error) {
-    console.error("Error saving reviews:", error);
-  }
-}
-
-export function useRatings(bookId?: string) {
-  const [allRatings, setAllRatings] = useState<Rating[]>([]);
+export function useRatings(bookId?: string, userId?: string) {
+  const [averageRating, setAverageRating] = useState(0);
+  const [ratingCount, setRatingCount] = useState(0);
+  const [userRating, setUserRating] = useState(0);
 
   useEffect(() => {
-    setAllRatings(getStoredRatings());
+    let isMounted = true;
 
-    const handleChange = () => {
-      setAllRatings(getStoredRatings());
-    };
-
-    window.addEventListener(RATINGS_CHANGE_EVENT, handleChange);
-    return () => window.removeEventListener(RATINGS_CHANGE_EVENT, handleChange);
-  }, []);
-
-  const bookRatings = bookId
-    ? allRatings.filter((r) => r.bookId === bookId)
-    : allRatings;
-
-  const averageRating = bookRatings.length
-    ? bookRatings.reduce((sum, r) => sum + r.rating, 0) / bookRatings.length
-    : 0;
-
-  const getUserRating = (userId: string, targetBookId: string): number => {
-    const rating = allRatings.find(
-      (r) => r.userId === userId && r.bookId === targetBookId
-    );
-    return rating ? rating.rating : 0;
-  };
-
-  const setRating = (userId: string, targetBookId: string, rating: number): boolean => {
-    if (!userId || rating < 1 || rating > 5) return false;
-
-    const existing = allRatings.find(
-      (r) => r.userId === userId && r.bookId === targetBookId
-    );
-
-    let updated: Rating[];
-    if (existing) {
-      updated = allRatings.map((r) =>
-        r.id === existing.id ? { ...r, rating } : r
-      );
-    } else {
-      const newRating: Rating = {
-        id: `rating-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        userId,
-        bookId: targetBookId,
-        rating,
-        createdAt: new Date().toISOString(),
-      };
-      updated = [...allRatings, newRating];
+    if (!bookId) {
+      setAverageRating(0);
+      setRatingCount(0);
+      setUserRating(0);
+      return;
     }
 
-    setAllRatings(updated);
-    saveRatings(updated);
-    return true;
+    const loadRatings = async () => {
+      try {
+        const [summary, nextUserRating] = await Promise.all([
+          communityClient.getRatingSummary(bookId),
+          userId
+            ? communityClient.getUserRating(bookId, userId).catch(() => 0)
+            : Promise.resolve(0),
+        ]);
+
+        if (isMounted) {
+          setAverageRating(summary.averageRating);
+          setRatingCount(summary.ratingCount);
+          setUserRating(nextUserRating);
+        }
+      } catch (error) {
+        console.error("Error loading ratings:", error);
+        if (isMounted) {
+          setAverageRating(0);
+          setRatingCount(0);
+          setUserRating(0);
+        }
+      }
+    };
+
+    void loadRatings();
+
+    const unsubscribe = communityClient.subscribe(() => {
+      void loadRatings();
+    });
+
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
+  }, [bookId, userId]);
+
+  const setRating = async (rating: number): Promise<void> => {
+    if (!bookId || !userId) {
+      throw new Error("Authentication required.");
+    }
+
+    await communityClient.setRating(bookId, userId, rating);
+    const [summary, nextUserRating] = await Promise.all([
+      communityClient.getRatingSummary(bookId),
+      communityClient.getUserRating(bookId, userId),
+    ]);
+    setAverageRating(summary.averageRating);
+    setRatingCount(summary.ratingCount);
+    setUserRating(nextUserRating);
   };
 
   return {
-    ratings: bookRatings,
     averageRating,
-    ratingCount: bookRatings.length,
-    getUserRating,
+    ratingCount,
+    userRating,
     setRating,
   };
 }
 
 export function useReviews(bookId?: string) {
-  const [allReviews, setAllReviews] = useState<Review[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
 
   useEffect(() => {
-    setAllReviews(getStoredReviews());
+    let isMounted = true;
 
-    const handleChange = () => {
-      setAllReviews(getStoredReviews());
+    if (!bookId) {
+      setReviews([]);
+      return;
+    }
+
+    const loadReviews = async () => {
+      try {
+        const nextReviews = await communityClient.listReviews(bookId);
+        if (isMounted) {
+          setReviews(nextReviews);
+        }
+      } catch (error) {
+        console.error("Error loading reviews:", error);
+        if (isMounted) {
+          setReviews([]);
+        }
+      }
     };
 
-    window.addEventListener(REVIEWS_CHANGE_EVENT, handleChange);
-    return () => window.removeEventListener(REVIEWS_CHANGE_EVENT, handleChange);
-  }, []);
+    void loadReviews();
 
-  const bookReviews = bookId
-    ? allReviews.filter((r) => r.bookId === bookId).sort((a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      )
-    : allReviews;
+    const unsubscribe = communityClient.subscribe(() => {
+      void loadReviews();
+    });
 
-  const addReview = (
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
+  }, [bookId]);
+
+  const addReview = async (
     userId: string,
     userName: string,
-    targetBookId: string,
     rating: number,
-    review: string
-  ): boolean => {
-    if (!userId || !review.trim()) return false;
+    review: string,
+  ): Promise<Review> => {
+    if (!bookId) {
+      throw new Error("Book ID is required to add a review.");
+    }
 
-    const newReview: Review = {
-      id: `review-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    const createdReview = await communityClient.addReview(
+      bookId,
       userId,
       userName,
-      bookId: targetBookId,
       rating,
-      review: review.trim(),
-      createdAt: new Date().toISOString(),
-      helpful: 0,
-    };
-
-    const updated = [...allReviews, newReview];
-    setAllReviews(updated);
-    saveReviews(updated);
-    return true;
+      review,
+    );
+    const nextReviews = await communityClient.listReviews(bookId);
+    setReviews(nextReviews);
+    return createdReview;
   };
 
-  const deleteReview = (reviewId: string, userId: string): boolean => {
-    const review = allReviews.find((r) => r.id === reviewId);
-    if (!review || review.userId !== userId) return false;
+  const deleteReview = async (
+    reviewId: string,
+    userId: string,
+  ): Promise<boolean> => {
+    if (!bookId) {
+      return false;
+    }
 
-    const updated = allReviews.filter((r) => r.id !== reviewId);
-    setAllReviews(updated);
-    saveReviews(updated);
-    return true;
+    const deleted = await communityClient.deleteReview(bookId, reviewId, userId);
+
+    if (deleted) {
+      const nextReviews = await communityClient.listReviews(bookId);
+      setReviews(nextReviews);
+    }
+
+    return deleted;
   };
 
   return {
-    reviews: bookReviews,
+    reviews,
     addReview,
     deleteReview,
   };

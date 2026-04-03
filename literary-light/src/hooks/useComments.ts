@@ -1,87 +1,89 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import type { CommentRecord } from "@contracts/domain";
+import { createCommunityClient } from "@/api/community";
 
-const COMMENTS_STORAGE_KEY = "literary-light-comments";
+const communityClient = createCommunityClient();
 
-export interface Comment {
-  id: string;
-  bookId: string;
-  userId: string;
-  userName: string;
-  text: string;
-  createdAt: string;
-}
-
-function getStoredComments(): Comment[] {
-  try {
-    const stored = localStorage.getItem(COMMENTS_STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch (error) {
-    console.error("Error loading comments:", error);
-    return [];
-  }
-}
-
-function saveComments(comments: Comment[]) {
-  try {
-    localStorage.setItem(COMMENTS_STORAGE_KEY, JSON.stringify(comments));
-  } catch (error) {
-    console.error("Error saving comments:", error);
-  }
-}
+export type Comment = CommentRecord;
 
 export function useComments(bookId?: string) {
-  const [allComments, setAllComments] = useState<Comment[]>([]);
+  const [comments, setComments] = useState<Comment[]>([]);
 
   useEffect(() => {
-    setAllComments(getStoredComments());
-  }, []);
+    let isMounted = true;
 
-  const bookComments = bookId
-    ? allComments.filter((c) => c.bookId === bookId).sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      )
-    : [];
+    if (!bookId) {
+      setComments([]);
+      return;
+    }
 
-  const addComment = (bookId: string, userId: string, userName: string, text: string): Comment => {
-    const newComment: Comment = {
-      id: `comment-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    const loadComments = async () => {
+      try {
+        const nextComments = await communityClient.listComments(bookId);
+        if (isMounted) {
+          setComments(nextComments);
+        }
+      } catch (error) {
+        console.error("Error loading comments:", error);
+        if (isMounted) {
+          setComments([]);
+        }
+      }
+    };
+
+    void loadComments();
+
+    const unsubscribe = communityClient.subscribe(() => {
+      void loadComments();
+    });
+
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
+  }, [bookId]);
+
+  const addComment = async (
+    userId: string,
+    userName: string,
+    text: string,
+  ): Promise<Comment> => {
+    if (!bookId) {
+      throw new Error("Book ID is required to add a comment.");
+    }
+
+    const createdComment = await communityClient.addComment(
       bookId,
       userId,
       userName,
-      text: text.trim(),
-      createdAt: new Date().toISOString(),
-    };
-
-    const updated = [...allComments, newComment];
-    setAllComments(updated);
-    saveComments(updated);
-
-    return newComment;
+      text,
+    );
+    const nextComments = await communityClient.listComments(bookId);
+    setComments(nextComments);
+    return createdComment;
   };
 
-  const deleteComment = (commentId: string, userId: string): boolean => {
-    const comment = allComments.find((c) => c.id === commentId);
-
-    // Only allow deleting your own comments
-    if (!comment || comment.userId !== userId) {
+  const deleteComment = async (
+    commentId: string,
+    userId: string,
+  ): Promise<boolean> => {
+    if (!bookId) {
       return false;
     }
 
-    const updated = allComments.filter((c) => c.id !== commentId);
-    setAllComments(updated);
-    saveComments(updated);
+    const deleted = await communityClient.deleteComment(bookId, commentId, userId);
 
-    return true;
-  };
+    if (deleted) {
+      const nextComments = await communityClient.listComments(bookId);
+      setComments(nextComments);
+    }
 
-  const getCommentCount = (bookId: string): number => {
-    return allComments.filter((c) => c.bookId === bookId).length;
+    return deleted;
   };
 
   return {
-    comments: bookComments,
+    comments,
     addComment,
     deleteComment,
-    getCommentCount,
   };
 }

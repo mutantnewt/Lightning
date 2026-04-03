@@ -8,7 +8,14 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy:staging:manual-amplify": "node ../scripts/deploy-manual-amplify-frontend.mjs --environment staging",
+    "deploy:production:manual-amplify": "node ../scripts/deploy-manual-amplify-frontend.mjs --environment production",
+    "smoke:deployed-api": "node ../scripts/run-deployed-frontend-smoke.mjs",
+    "smoke:staging": "node ../scripts/run-staging-frontend-smoke.mjs",
+    "smoke:production": "node ../scripts/run-production-frontend-smoke.mjs",
+    "smoke:staging:hosted": "node ../scripts/run-hosted-frontend-smoke.mjs --environment staging",
+    "smoke:production:hosted": "node ../scripts/run-hosted-frontend-smoke.mjs --environment production"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -40,6 +47,7 @@
     "@radix-ui/react-toggle-group": "^1.1.10",
     "@radix-ui/react-tooltip": "^1.2.7",
     "@tanstack/react-query": "^5.83.0",
+    "aws-amplify": "^6.16.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",

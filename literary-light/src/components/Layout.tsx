@@ -1,6 +1,6 @@
 import { ReactNode, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { BookOpen, Search, PlusCircle, HelpCircle, LogIn, LogOut, User, Heart, Sparkles, Sun, Moon, Globe } from "lucide-react";
+import { BookOpen, Search, PlusCircle, HelpCircle, LogIn, LogOut, User, Heart, Sparkles, Sun, Moon, Globe, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/hooks/useTheme";
@@ -23,12 +23,13 @@ const navItems = [
   { path: "/add-book", label: "Add Book", icon: PlusCircle, authRequired: false },
   { path: "/favorites", label: "Favorites", icon: Heart, authRequired: true },
   { path: "/recommendations", label: "For You", icon: Sparkles, authRequired: true },
+  { path: "/moderation", label: "Moderation", icon: ShieldCheck, authRequired: true, moderatorOnly: true },
   { path: "/faq", label: "FAQ", icon: HelpCircle, authRequired: false },
 ];
 
 export function Layout({ children }: LayoutProps) {
   const location = useLocation();
-  const { user, isAuthenticated, signOut } = useAuth();
+  const { user, isAuthenticated, isModerator, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { country, setCountry } = useCountry();
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
@@ -55,7 +56,17 @@ export function Layout({ children }: LayoutProps) {
 
             <nav className="flex items-center gap-1">
               {navItems
-                .filter((item) => !item.authRequired || isAuthenticated)
+                .filter((item) => {
+                  if (item.authRequired && !isAuthenticated) {
+                    return false;
+                  }
+
+                  if (item.moderatorOnly && !isModerator) {
+                    return false;
+                  }
+
+                  return true;
+                })
                 .map((item) => {
                   const Icon = item.icon;
                   const isActive = location.pathname === item.path;

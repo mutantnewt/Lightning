@@ -8,6 +8,7 @@ interface StarRatingProps {
   size?: "sm" | "md" | "lg";
   showCount?: boolean;
   count?: number;
+  testIdPrefix?: string;
 }
 
 export function StarRating({
@@ -17,6 +18,7 @@ export function StarRating({
   size = "md",
   showCount = false,
   count = 0,
+  testIdPrefix,
 }: StarRatingProps) {
   const sizeClasses = {
     sm: "h-3 w-3",
@@ -27,7 +29,12 @@ export function StarRating({
   const stars = [1, 2, 3, 4, 5];
 
   return (
-    <div className="flex items-center gap-1">
+    <div
+      className="flex items-center gap-1"
+      data-testid={testIdPrefix ? `${testIdPrefix}-root` : undefined}
+      data-rating-value={String(rating)}
+      data-rating-count={String(count)}
+    >
       {stars.map((star) => (
         <button
           key={star}
@@ -40,6 +47,8 @@ export function StarRating({
           )}
           aria-label={`Rate ${star} stars`}
           type="button"
+          data-testid={testIdPrefix ? `${testIdPrefix}-star-${star}` : undefined}
+          data-filled={star <= Math.round(rating) ? "true" : "false"}
         >
           <Star
             className={cn(

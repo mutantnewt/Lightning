@@ -1,93 +1,75 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import type { FavoriteRecord } from "@contracts/domain";
+import { createUserStateClient } from "@/api/user-state";
 
-const FAVORITES_STORAGE_KEY = "literary-light-favorites";
-const FAVORITES_CHANGE_EVENT = "favorites-changed";
+const userStateClient = createUserStateClient();
 
-export interface Favorite {
-  id: string;
-  userId: string;
-  bookId: string;
-  createdAt: string;
-}
-
-function getStoredFavorites(): Favorite[] {
-  try {
-    const stored = localStorage.getItem(FAVORITES_STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch (error) {
-    console.error("Error loading favorites:", error);
-    return [];
-  }
-}
-
-function saveFavorites(favorites: Favorite[]) {
-  try {
-    localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(favorites));
-    // Dispatch custom event to notify all components
-    window.dispatchEvent(new CustomEvent(FAVORITES_CHANGE_EVENT));
-  } catch (error) {
-    console.error("Error saving favorites:", error);
-  }
-}
+export type Favorite = FavoriteRecord;
 
 export function useFavorites(userId?: string) {
-  const [allFavorites, setAllFavorites] = useState<Favorite[]>([]);
+  const [favorites, setFavorites] = useState<Favorite[]>([]);
 
   useEffect(() => {
-    // Load initial favorites
-    setAllFavorites(getStoredFavorites());
+    let isMounted = true;
 
-    // Listen for favorites changes
-    const handleFavoritesChange = () => {
-      setAllFavorites(getStoredFavorites());
+    if (!userId) {
+      setFavorites([]);
+      return;
+    }
+
+    const loadFavorites = async () => {
+      try {
+        const nextFavorites = await userStateClient.listFavorites(userId);
+        if (isMounted) {
+          setFavorites(nextFavorites);
+        }
+      } catch (error) {
+        console.error("Error loading favorites:", error);
+        if (isMounted) {
+          setFavorites([]);
+        }
+      }
     };
 
-    window.addEventListener(FAVORITES_CHANGE_EVENT, handleFavoritesChange);
+    void loadFavorites();
+
+    const unsubscribe = userStateClient.subscribe(() => {
+      void loadFavorites();
+    });
 
     return () => {
-      window.removeEventListener(FAVORITES_CHANGE_EVENT, handleFavoritesChange);
+      isMounted = false;
+      unsubscribe();
     };
-  }, []);
+  }, [userId]);
 
-  const userFavorites = userId
-    ? allFavorites.filter((f) => f.userId === userId)
-    : [];
-
-  const favoriteBookIds = new Set(userFavorites.map((f) => f.bookId));
+  const favoriteBookIds = new Set(favorites.map((favorite) => favorite.bookId));
 
   const isFavorite = (bookId: string): boolean => {
-    if (!userId) return false;
+    if (!userId) {
+      return false;
+    }
+
     return favoriteBookIds.has(bookId);
   };
 
-  const toggleFavorite = (bookId: string): boolean => {
-    if (!userId) return false;
-
-    const existingFavorite = allFavorites.find(
-      (f) => f.userId === userId && f.bookId === bookId
-    );
-
-    let updated: Favorite[];
-
-    if (existingFavorite) {
-      // Remove from favorites
-      updated = allFavorites.filter((f) => f.id !== existingFavorite.id);
-      setAllFavorites(updated);
-      saveFavorites(updated);
+  const toggleFavorite = async (bookId: string): Promise<boolean> => {
+    if (!userId) {
       return false;
-    } else {
-      // Add to favorites
-      const newFavorite: Favorite = {
-        id: `fav-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        userId,
-        bookId,
-        createdAt: new Date().toISOString(),
-      };
-      updated = [...allFavorites, newFavorite];
-      setAllFavorites(updated);
-      saveFavorites(updated);
-      return true;
     }
+
+    const shouldAddFavorite = !favoriteBookIds.has(bookId);
+
+    if (shouldAddFavorite) {
+      await userStateClient.addFavorite(userId, bookId);
+    } else {
+      await userStateClient.removeFavorite(userId, bookId);
+    }
+
+    const nextFavorites = await userStateClient.listFavorites(userId);
+    setFavorites(nextFavorites);
+
+    return shouldAddFavorite;
   };
 
   const getFavoriteBookIds = (): string[] => {
@@ -95,7 +77,7 @@ export function useFavorites(userId?: string) {
   };
 
   return {
-    favorites: userFavorites,
+    favorites,
     isFavorite,
     toggleFavorite,
     getFavoriteBookIds,

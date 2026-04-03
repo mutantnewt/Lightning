@@ -1,9 +1,7 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import { Book } from "@/types";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ChevronDown, ChevronUp, User, BookText, ExternalLink, CheckCircle, MessageSquare, Star, ShoppingCart, BookOpen, Headphones, Sparkles } from "lucide-react";
+import { ChevronDown, ChevronUp, User, BookText, MessageSquare, Star, ShoppingCart, BookOpen, Headphones, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CommentsSection } from "@/components/CommentsSection";
 import { ReviewsSection } from "@/components/ReviewsSection";
@@ -27,17 +25,19 @@ export function BookCard({ book, showFavoriteHeart = false, onSearch }: BookCard
   const [showSummary, setShowSummary] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [showReviews, setShowReviews] = useState(false);
-  const { getCommentCount } = useComments();
-  const commentCount = getCommentCount(book.id);
+  const { comments } = useComments(book.id);
+  const commentCount = comments.length;
 
   const { user, isAuthenticated } = useAuth();
   const { isFavorite, toggleFavorite } = useFavorites(user?.id);
   const { toast } = useToast();
   const favorite = isFavorite(book.id);
 
-  const { averageRating, ratingCount, getUserRating, setRating } = useRatings(book.id);
+  const { averageRating, ratingCount, userRating, setRating } = useRatings(
+    book.id,
+    user?.id,
+  );
   const { reviews } = useReviews(book.id);
-  const userRating = user ? getUserRating(user.id, book.id) : 0;
   const { amazonDomain } = useCountry();
 
   // Affiliate links - replace YOUR_AFFILIATE_ID with your actual tags
@@ -46,7 +46,7 @@ export function BookCard({ book, showFavoriteHeart = false, onSearch }: BookCard
   const bookshopUrl = `https://bookshop.org/search?keywords=${searchQuery}&affiliate=YOUR_BOOKSHOP_AFFILIATE_ID`;
   const audibleUrl = `https://www.audible.com/search?keywords=${searchQuery}&tag=YOUR_AUDIBLE_AFFILIATE_ID`;
 
-  const handleFavoriteToggle = () => {
+  const handleFavoriteToggle = async () => {
     if (!isAuthenticated) {
       toast({
         title: "Sign in required",
@@ -56,16 +56,27 @@ export function BookCard({ book, showFavoriteHeart = false, onSearch }: BookCard
       return;
     }
 
-    const newState = toggleFavorite(book.id);
-    toast({
-      title: newState ? "Added to favorites" : "Removed from favorites",
-      description: newState
-        ? `"${book.title}" has been added to your favorites`
-        : `"${book.title}" has been removed from your favorites`,
-    });
+    try {
+      const newState = await toggleFavorite(book.id);
+      toast({
+        title: newState ? "Added to favorites" : "Removed from favorites",
+        description: newState
+          ? `"${book.title}" has been added to your favorites`
+          : `"${book.title}" has been removed from your favorites`,
+      });
+    } catch (error) {
+      toast({
+        title: "Unable to update favorites",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Something went wrong while saving your favorite.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleRating = (rating: number) => {
+  const handleRating = async (rating: number) => {
     if (!isAuthenticated || !user) {
       toast({
         title: "Sign in required",
@@ -75,15 +86,27 @@ export function BookCard({ book, showFavoriteHeart = false, onSearch }: BookCard
       return;
     }
 
-    setRating(user.id, book.id, rating);
-    toast({
-      title: "Rating saved",
-      description: `You rated "${book.title}" ${rating} stars`,
-    });
+    try {
+      await setRating(rating);
+      toast({
+        title: "Rating saved",
+        description: `You rated "${book.title}" ${rating} stars`,
+      });
+    } catch {
+      toast({
+        title: "Unable to save rating",
+        description: "Something went wrong while saving your rating.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
-    <article className="book-card animate-fade-in">
+    <article
+      className="book-card animate-fade-in"
+      data-book-id={book.id}
+      data-book-title={book.title}
+    >
       <div className="flex flex-col gap-3">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
             <div className="flex-1">
@@ -162,10 +185,11 @@ export function BookCard({ book, showFavoriteHeart = false, onSearch }: BookCard
           <div className="flex items-center gap-2">
             <StarRating
               rating={userRating || averageRating}
-              onRate={handleRating}
+              onRate={(rating) => void handleRating(rating)}
               readonly={!isAuthenticated}
               showCount={true}
               count={ratingCount}
+              testIdPrefix={`book-rating-${book.id}`}
             />
           </div>
           {isAuthenticated && (
@@ -280,6 +304,7 @@ export function BookCard({ book, showFavoriteHeart = false, onSearch }: BookCard
               size="sm"
               onClick={() => setShowComments(!showComments)}
               className="text-sm flex-shrink-0"
+              data-testid={`book-comments-toggle-${book.id}`}
             >
               <MessageSquare className="mr-1.5 h-3.5 w-3.5" />
               Comments {commentCount > 0 && `(${commentCount})`}
@@ -295,6 +320,7 @@ export function BookCard({ book, showFavoriteHeart = false, onSearch }: BookCard
               size="sm"
               onClick={() => setShowReviews(!showReviews)}
               className="text-sm flex-shrink-0"
+              data-testid={`book-reviews-toggle-${book.id}`}
             >
               <Star className="mr-1.5 h-3.5 w-3.5" />
               Reviews {reviews.length > 0 && `(${reviews.length})`}

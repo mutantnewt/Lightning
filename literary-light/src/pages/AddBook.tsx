@@ -5,8 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import { useBooks } from "@/hooks/useBooks";
 import { Book } from "@/types";
+import { createBookSuggestionsClient } from "@/api/book-suggestions";
+import type { BookSearchResult } from "@contracts/book-suggestions";
 import {
   Search,
   RotateCcw,
@@ -20,15 +23,16 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { searchBooks, getBookDetails, BookSearchResult } from "@/services/openai";
 
 type Step = "search" | "results" | "details";
+const bookSuggestionsClient = createBookSuggestionsClient();
 
 const AddBook = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { books, addBook } = useBooks();
+  const { books } = useBooks();
+  const { isAuthenticated } = useAuth();
 
   // Form inputs
   const [title, setTitle] = useState(searchParams.get("title") || "");
@@ -42,6 +46,8 @@ const AddBook = () => {
   const [searchResults, setSearchResults] = useState<BookSearchResult[]>([]);
   const [selectedBook, setSelectedBook] = useState<BookSearchResult | null>(null);
   const [bookDetails, setBookDetails] = useState<Partial<Book> | null>(null);
+  const [detailsAuditEntryId, setDetailsAuditEntryId] = useState<string | null>(null);
+  const [detailsSource, setDetailsSource] = useState<"openai" | "offline" | null>(null);
 
   // Loading states
   const [isSearching, setIsSearching] = useState(false);
@@ -55,9 +61,20 @@ const AddBook = () => {
     setSearchResults([]);
     setSelectedBook(null);
     setBookDetails(null);
+    setDetailsAuditEntryId(null);
+    setDetailsSource(null);
   };
 
   const handleSearch = async () => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Sign in required",
+        description: "Sign in to suggest books for Lightning Classics.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!title.trim() && !author.trim() && !keyword.trim()) {
       toast({
         title: "Missing information",
@@ -71,13 +88,19 @@ const AddBook = () => {
 
     try {
       const results = await searchBooks(
-        title.trim() || undefined,
-        author.trim() || undefined,
-        books,
-        keyword.trim() || undefined
+        {
+          title: title.trim() || undefined,
+          author: author.trim() || undefined,
+          keyword: keyword.trim() || undefined,
+          existingBooks: books.map((book) => ({
+            title: book.title,
+            author: book.author,
+            year: book.year ?? null,
+          })),
+        }
       );
 
-      if (results.length === 0) {
+      if (results.results.length === 0) {
         toast({
           title: "No results found",
           description: "No public domain books found matching your search that aren't already in the library.",
@@ -87,7 +110,7 @@ const AddBook = () => {
         return;
       }
 
-      setSearchResults(results);
+      setSearchResults(results.results);
       setStep("results");
     } catch (error) {
       toast({
@@ -107,7 +130,9 @@ const AddBook = () => {
 
     try {
       const details = await getBookDetails(book.title, book.author);
-      setBookDetails(details);
+      setBookDetails(details.book);
+      setDetailsAuditEntryId(details.auditEntryId);
+      setDetailsSource(details.source);
     } catch (error) {
       toast({
         title: "Failed to load details",
@@ -124,23 +149,41 @@ const AddBook = () => {
   const handleAddBook = () => {
     if (!bookDetails) return;
 
-    const newBook = addBook(bookDetails);
+    void (async () => {
+      try {
+        await bookSuggestionsClient.submitBookSuggestion(
+          bookDetails,
+          detailsAuditEntryId,
+          detailsSource ?? "offline",
+        );
 
-    toast({
-      title: "Book added successfully!",
-      description: `"${bookDetails.title}" has been added to Lightning Classics.`,
-    });
+        toast({
+          title: "Suggestion submitted",
+          description: `"${bookDetails.title ?? "This book"}" has been submitted for review.`,
+        });
 
-    // Navigate to home page to see the new book
-    setTimeout(() => {
-      navigate("/");
-    }, 1000);
+        setTimeout(() => {
+          navigate("/");
+        }, 1000);
+      } catch (error) {
+        toast({
+          title: "Unable to add book",
+          description:
+            error instanceof Error
+              ? error.message
+              : "An error occurred while saving this book.",
+          variant: "destructive",
+        });
+      }
+    })();
   };
 
   const handleRefine = () => {
     setStep("results");
     setSelectedBook(null);
     setBookDetails(null);
+    setDetailsAuditEntryId(null);
+    setDetailsSource(null);
   };
 
   const handleBackToSearch = () => {
@@ -157,10 +200,22 @@ const AddBook = () => {
           </h1>
           <p className="mt-3 text-muted-foreground">
             {step === "search" && "Enter a title and/or author. We'll search for matching public domain books."}
-            {step === "results" && "Select a book to view details and add it to the library."}
-            {step === "details" && "Review the book details before adding."}
+            {step === "results" && "Select a book to view details and submit it for review."}
+            {step === "details" && "Review the book details before submitting it for review."}
           </p>
         </header>
+
+        {!isAuthenticated && (
+          <div className="mb-6 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-foreground">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+              <p>
+                Sign in to search for books and submit suggestions. Add Book now records a
+                moderated submission instead of publishing directly to the shared catalog.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* STEP 1: SEARCH */}
         {step === "search" && (
@@ -170,6 +225,7 @@ const AddBook = () => {
               handleSearch();
             }}
             className="rounded-lg border border-border bg-card p-6 shadow-book"
+            data-testid="add-book-search-form"
           >
             <div className="space-y-4">
               <div>
@@ -183,6 +239,7 @@ const AddBook = () => {
                   placeholder="e.g., Great Expectations"
                   className="input-classic mt-1.5"
                   disabled={isSearching}
+                  data-testid="add-book-title-input"
                 />
               </div>
 
@@ -197,6 +254,7 @@ const AddBook = () => {
                   placeholder="e.g., Charles Dickens"
                   className="input-classic mt-1.5"
                   disabled={isSearching}
+                  data-testid="add-book-author-input"
                 />
               </div>
 
@@ -211,6 +269,7 @@ const AddBook = () => {
                   placeholder="e.g., adventure, romance, philosophy"
                   className="input-classic mt-1.5"
                   disabled={isSearching}
+                  data-testid="add-book-keyword-input"
                 />
               </div>
 
@@ -221,8 +280,13 @@ const AddBook = () => {
               <div className="flex gap-3 pt-2">
                 <Button
                   type="submit"
-                  disabled={isSearching || (!title.trim() && !author.trim() && !keyword.trim())}
+                  disabled={
+                    !isAuthenticated ||
+                    isSearching ||
+                    (!title.trim() && !author.trim() && !keyword.trim())
+                  }
                   className="btn-primary flex-1"
+                  data-testid="add-book-search-submit"
                 >
                   {isSearching ? (
                     <>
@@ -261,7 +325,7 @@ const AddBook = () => {
 
         {/* STEP 2: RESULTS */}
         {step === "results" && (
-          <div className="space-y-4 animate-fade-in">
+          <div className="space-y-4 animate-fade-in" data-testid="add-book-results-step">
             <div className="flex items-center justify-between">
               <Button
                 variant="ghost"
@@ -281,6 +345,9 @@ const AddBook = () => {
                 <div
                   key={index}
                   className="rounded-lg border border-border bg-card p-4 shadow-sm hover:shadow-md transition-shadow"
+                  data-testid="add-book-search-result"
+                  data-book-title={book.title}
+                  data-book-author={book.author}
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
@@ -303,6 +370,7 @@ const AddBook = () => {
                       onClick={() => handleSelectBook(book)}
                       className="btn-accent flex-shrink-0"
                       size="sm"
+                      data-testid="add-book-select-result"
                     >
                       <PlusCircle className="mr-2 h-4 w-4" />
                       Add
@@ -316,7 +384,7 @@ const AddBook = () => {
 
         {/* STEP 3: DETAILS */}
         {step === "details" && (
-          <div className="space-y-6 animate-fade-in">
+          <div className="space-y-6 animate-fade-in" data-testid="add-book-details-step">
             {isLoadingDetails ? (
               <div className="rounded-lg border border-border bg-card p-8 text-center shadow-book">
                 <Loader2 className="mx-auto h-8 w-8 animate-spin text-accent" />
@@ -327,6 +395,7 @@ const AddBook = () => {
             ) : bookDetails ? (
               <>
                 <div className="rounded-lg border border-border bg-card p-6 shadow-book">
+                  <div data-testid="add-book-details-card">
                   <div className="flex items-start justify-between mb-4">
                     <div>
                       <h2 className="font-serif text-2xl font-bold text-foreground">
@@ -427,13 +496,18 @@ const AddBook = () => {
                       </p>
                     </div>
                   )}
+                  </div>
                 </div>
 
                 {bookDetails.publicDomain ? (
                   <div className="flex gap-3">
-                    <Button onClick={handleAddBook} className="btn-accent flex-1">
+                    <Button
+                      onClick={handleAddBook}
+                      className="btn-accent flex-1"
+                      data-testid="add-book-confirm"
+                    >
                       <PlusCircle className="mr-2 h-4 w-4" />
-                      Add this book
+                      Submit for review
                     </Button>
                     <Button variant="outline" onClick={handleRefine}>
                       <RefreshCw className="mr-2 h-4 w-4" />
@@ -480,3 +554,11 @@ const AddBook = () => {
 };
 
 export default AddBook;
+
+async function searchBooks(input: Parameters<typeof bookSuggestionsClient.searchBooks>[0]) {
+  return bookSuggestionsClient.searchBooks(input);
+}
+
+async function getBookDetails(title: string, author: string) {
+  return bookSuggestionsClient.getBookDetails(title, author);
+}

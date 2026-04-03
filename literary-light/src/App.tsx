@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import AddBook from "./pages/AddBook";
 import Favorites from "./pages/Favorites";
 import Recommendations from "./pages/Recommendations";
+import Moderation from "./pages/Moderation";
 import Author from "./pages/Author";
 import FAQ from "./pages/FAQ";
 import NotFound from "./pages/NotFound";
@@ -26,6 +27,7 @@ const App = () => (
             <Route path="/add-book" element={<AddBook />} />
             <Route path="/favorites" element={<Favorites />} />
             <Route path="/recommendations" element={<Recommendations />} />
+            <Route path="/moderation" element={<Moderation />} />
             <Route path="/author/:name" element={<Author />} />
             <Route path="/faq" element={<FAQ />} />
             <Route path="*" element={<NotFound />} />

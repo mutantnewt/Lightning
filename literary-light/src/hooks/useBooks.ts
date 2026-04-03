@@ -1,92 +1,63 @@
-import { useState, useEffect } from "react";
-import { Book } from "@/types";
+import { useEffect, useState } from "react";
+import type { Book } from "@/types";
+import { createCatalogClient } from "@/api/catalog";
 import { seedBooks } from "@/data/books";
 
-const STORAGE_KEY = "literary-light-user-books";
+const catalogClient = createCatalogClient();
+
+function sortBooks(books: Book[]): Book[] {
+  return [...books].sort((left, right) => left.title.localeCompare(right.title));
+}
 
 export function useBooks() {
-  const [userBooks, setUserBooks] = useState<Book[]>([]);
-  const [allBooks, setAllBooks] = useState<Book[]>(seedBooks);
+  const [books, setBooks] = useState<Book[]>(seedBooks);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load user books from localStorage on mount
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored) as Book[];
-        setUserBooks(parsed);
-        setAllBooks([...seedBooks, ...parsed]);
+    let isMounted = true;
+
+    const loadBooks = async () => {
+      try {
+        const nextBooks = await catalogClient.listBooks();
+
+        if (isMounted) {
+          setBooks(sortBooks(nextBooks));
+        }
+      } catch (error) {
+        console.error("Error loading catalog books:", error);
+
+        if (isMounted) {
+          setBooks(sortBooks(seedBooks));
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
-    } catch (error) {
-      console.error("Error loading user books:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  const addBook = (bookDetails: Partial<Book>): Book => {
-    // Generate a unique ID
-    const id = `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-
-    const newBook: Book = {
-      id,
-      title: bookDetails.title || "Untitled",
-      author: bookDetails.author || "Unknown",
-      year: bookDetails.year || null,
-      era: bookDetails.era || null,
-      country: bookDetails.country || null,
-      category: bookDetails.category || null,
-      workType: bookDetails.workType || "Other",
-      summary: bookDetails.summary || "",
-      authorBio: bookDetails.authorBio || "",
-      tags: bookDetails.tags || [],
-      source: bookDetails.source || null,
-      publicDomain: bookDetails.publicDomain ?? true,
-      publicDomainNotes: bookDetails.publicDomainNotes || null,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
     };
 
-    const updatedUserBooks = [...userBooks, newBook];
-    setUserBooks(updatedUserBooks);
-    setAllBooks([...seedBooks, ...updatedUserBooks]);
+    void loadBooks();
 
-    // Save to localStorage
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedUserBooks));
-    } catch (error) {
-      console.error("Error saving user books:", error);
-    }
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
-    return newBook;
+  const addBook = async (
+    bookDetails: Partial<Book>,
+    sourceAuditEntryId?: string | null,
+  ): Promise<Book> => {
+    const createdBook = await catalogClient.createBook(bookDetails, sourceAuditEntryId);
+    setBooks((currentBooks) => sortBooks([...currentBooks, createdBook]));
+    return createdBook;
   };
 
-  const removeBook = (bookId: string) => {
-    // Only allow removing user-added books, not seed books
-    if (!bookId.startsWith("user-")) {
-      console.warn("Cannot remove seed books");
-      return false;
-    }
-
-    const updatedUserBooks = userBooks.filter((book) => book.id !== bookId);
-    setUserBooks(updatedUserBooks);
-    setAllBooks([...seedBooks, ...updatedUserBooks]);
-
-    // Save to localStorage
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedUserBooks));
-    } catch (error) {
-      console.error("Error saving user books:", error);
-    }
-
-    return true;
-  };
+  const removeBook = () => false;
 
   return {
-    books: allBooks,
+    books,
     seedBooks,
-    userBooks,
+    userBooks: [] as Book[],
     addBook,
     removeBook,
     isLoading,

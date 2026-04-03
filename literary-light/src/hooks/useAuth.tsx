@@ -1,149 +1,104 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from "react";
-
-const AUTH_STORAGE_KEY = "literary-light-auth";
-
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  createdAt: string;
-}
+import type {
+  AuthProviderMode,
+  AuthResult,
+  AuthUser,
+  ConfirmSignUpInput,
+  ResendSignUpCodeInput,
+} from "@contracts/auth";
+import { createAuthClient, type AuthClient } from "@/api/auth";
+import { isCatalogModerator } from "@/config/runtime";
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
-  signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  signUp: (email: string, password: string, name: string) => Promise<{ success: boolean; error?: string }>;
-  signOut: () => void;
+  isModerator: boolean;
+  providerMode: AuthProviderMode;
+  signIn: (identifier: string, password: string) => Promise<AuthResult>;
+  signUp: (email: string, password: string, name: string) => Promise<AuthResult>;
+  confirmSignUp: (
+    identifier: ConfirmSignUpInput["identifier"],
+    confirmationCode: ConfirmSignUpInput["confirmationCode"]
+  ) => Promise<AuthResult>;
+  resendSignUpCode: (
+    identifier: ResendSignUpCodeInput["identifier"]
+  ) => Promise<AuthResult>;
+  signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Simple in-memory user storage for demo purposes
-const USERS_STORAGE_KEY = "literary-light-users";
-
-interface StoredUser {
-  id: string;
-  email: string;
-  name: string;
-  password: string; // In a real app, this would be hashed
-  createdAt: string;
-}
-
-function getStoredUsers(): StoredUser[] {
-  try {
-    const stored = localStorage.getItem(USERS_STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveUser(user: StoredUser) {
-  const users = getStoredUsers();
-  users.push(user);
-  localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
-}
-
-function findUser(email: string, password: string): StoredUser | null {
-  const users = getStoredUsers();
-  return users.find((u) => u.email === email && u.password === password) || null;
-}
-
-function emailExists(email: string): boolean {
-  const users = getStoredUsers();
-  return users.some((u) => u.email === email);
-}
+export type User = AuthUser;
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const [authClient] = useState<AuthClient>(() => createAuthClient());
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    // Load user from localStorage on mount
-    try {
-      const stored = localStorage.getItem(AUTH_STORAGE_KEY);
-      if (stored) {
-        const userData = JSON.parse(stored) as User;
-        setUser(userData);
-      }
-    } catch (error) {
-      console.error("Error loading auth state:", error);
-    }
-  }, []);
+    let isMounted = true;
 
-  const signIn = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
-    // Validate inputs
-    if (!email || !password) {
-      return { success: false, error: "Email and password are required" };
-    }
+    authClient
+      .getCurrentUser()
+      .then((currentUser) => {
+        if (isMounted) {
+          setUser(currentUser);
+        }
+      })
+      .catch((error) => {
+        console.error("Error loading auth state:", error);
+      });
 
-    // Find user
-    const storedUser = findUser(email, password);
-    if (!storedUser) {
-      return { success: false, error: "Invalid email or password" };
-    }
-
-    // Create user session
-    const userData: User = {
-      id: storedUser.id,
-      email: storedUser.email,
-      name: storedUser.name,
-      createdAt: storedUser.createdAt,
+    return () => {
+      isMounted = false;
     };
+  }, [authClient]);
 
-    setUser(userData);
-    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(userData));
+  const signIn = async (identifier: string, password: string): Promise<AuthResult> => {
+    const result = await authClient.signIn({ identifier, password });
 
-    return { success: true };
+    if (result.success && result.nextStep !== "CONFIRM_SIGN_UP") {
+      setUser(result.user ?? (await authClient.getCurrentUser()));
+    }
+
+    return result;
   };
 
   const signUp = async (
     email: string,
     password: string,
     name: string
-  ): Promise<{ success: boolean; error?: string }> => {
-    // Validate inputs
-    if (!email || !password || !name) {
-      return { success: false, error: "All fields are required" };
+  ): Promise<AuthResult> => {
+    const result = await authClient.signUp({ email, password, name });
+
+    if (result.success && result.nextStep !== "CONFIRM_SIGN_UP") {
+      setUser(result.user ?? (await authClient.getCurrentUser()));
     }
 
-    if (password.length < 6) {
-      return { success: false, error: "Password must be at least 6 characters" };
-    }
-
-    // Check if email already exists
-    if (emailExists(email)) {
-      return { success: false, error: "Email already registered" };
-    }
-
-    // Create new user
-    const newUser: StoredUser = {
-      id: `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      email,
-      password, // In a real app, this would be hashed
-      name,
-      createdAt: new Date().toISOString(),
-    };
-
-    saveUser(newUser);
-
-    // Sign in the new user
-    const userData: User = {
-      id: newUser.id,
-      email: newUser.email,
-      name: newUser.name,
-      createdAt: newUser.createdAt,
-    };
-
-    setUser(userData);
-    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(userData));
-
-    return { success: true };
+    return result;
   };
 
-  const signOut = () => {
+  const confirmSignUp = async (
+    identifier: ConfirmSignUpInput["identifier"],
+    confirmationCode: ConfirmSignUpInput["confirmationCode"]
+  ): Promise<AuthResult> => {
+    const result = await authClient.confirmSignUp({ identifier, confirmationCode });
+
+    if (result.success && result.user) {
+      setUser(result.user);
+    }
+
+    return result;
+  };
+
+  const resendSignUpCode = async (
+    identifier: ResendSignUpCodeInput["identifier"]
+  ): Promise<AuthResult> => {
+    return authClient.resendSignUpCode({ identifier });
+  };
+
+  const signOut = async () => {
+    await authClient.signOut();
     setUser(null);
-    localStorage.removeItem(AUTH_STORAGE_KEY);
   };
 
   return (
@@ -151,8 +106,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         isAuthenticated: !!user,
+        isModerator: isCatalogModerator(user?.groups),
+        providerMode: authClient.mode,
         signIn,
         signUp,
+        confirmSignUp,
+        resendSignUpCode,
         signOut,
       }}
     >
