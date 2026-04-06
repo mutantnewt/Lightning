@@ -1914,12 +1914,27 @@ Completed:
 
 Verification:
 
-- the production GitHub Actions workflow is now configured to verify both the canonical apex domain and the `www` redirect path in a single run
-- live GitHub-hosted verification of the new combined production smoke path is the next proof point to record
+- GitHub Actions workflow run `24047862607` passes on 2026-04-06 after the workflow change
+- the same GitHub-hosted production smoke job now verifies both the canonical apex domain and the `www` redirect path in a single run
 
 Current limitation:
 
 - this GitHub-hosted proof still depends on the existing production smoke-user secret-sync path remaining aligned with Cognito after any future smoke-user password reset
+
+### Slice BC: Node 24-ready GitHub Actions baseline
+
+Completed:
+
+- upgraded `.github/workflows/validate.yml`, `.github/workflows/hosted-staging-smoke.yml`, `.github/workflows/hosted-production-smoke.yml`, and `.github/workflows/ops-status.yml` from the older Node 20-based action majors to Node 24-ready major versions for checkout, setup-node, and AWS credential configuration
+- updated the operations and cutover docs to record the new GitHub-hosted production smoke proof point after the workflow baseline change
+
+Verification:
+
+- live GitHub-hosted workflow verification of the upgraded action baseline is the next proof point to record
+
+Current limitation:
+
+- until the next GitHub-hosted workflow reruns on the upgraded action majors, the Node 20 deprecation warning from run `24047862607` remains the last observed warning state
 
 ## Immediate Next Steps
 
