@@ -1926,15 +1926,16 @@ Current limitation:
 Completed:
 
 - upgraded `.github/workflows/validate.yml`, `.github/workflows/hosted-staging-smoke.yml`, `.github/workflows/hosted-production-smoke.yml`, and `.github/workflows/ops-status.yml` from the older Node 20-based action majors to Node 24-ready major versions for checkout, setup-node, and AWS credential configuration
+- added `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true` to the same GitHub workflows so the remaining JavaScript actions execute on the Node 24 runtime during the transition period
 - updated the operations and cutover docs to record the new GitHub-hosted production smoke proof point after the workflow baseline change
 
 Verification:
 
-- live GitHub-hosted workflow verification of the upgraded action baseline is the next proof point to record
+- live GitHub-hosted workflow verification of the Node 24-forced baseline is the next proof point to record
 
 Current limitation:
 
-- until the next GitHub-hosted workflow reruns on the upgraded action majors, the Node 20 deprecation warning from run `24047862607` remains the last observed warning state
+- until the next GitHub-hosted workflow reruns with the Node 24 override in place, the Node 20 deprecation warning from run `24048036435` remains the last observed warning state
 
 ## Immediate Next Steps
 
