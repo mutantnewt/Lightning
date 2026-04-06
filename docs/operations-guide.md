@@ -105,6 +105,7 @@ Repository validation baseline:
 - the hosted staging smoke workflow runs on manual dispatch and on a daily schedule, using the hosted staging frontend rather than a local Vite server
 - the repo now also includes a dedicated GitHub OIDC automation stack, `LightningGithubAutomationStack`
 - the repo now also includes `npm run github:smoke:staging:sync-secrets` to bootstrap the staging smoke user and write the three required GitHub repository secrets
+- the GitHub-hosted staging smoke path has now been live-verified end to end, including OIDC role assumption, Cognito sign-in, and hosted browser smoke against `https://staging.lightningclassics.com`
 - the repo now also includes `npm run ops:subscribe:emails` as a safe operator wrapper for attaching SNS email subscriptions and then checking live subscription readiness
 
 Custom-domain cutover:
@@ -162,6 +163,8 @@ Hosted staging smoke in GitHub Actions:
 - it resolves a Linux Chrome or Chromium binary on the runner and passes that path into `CHROME_BIN`
 - it intentionally skips the smoke job with a warning when the required secrets are not configured yet
 - the required OIDC role is now output by `LightningGithubAutomationStack` as `GitHubHostedSmokeRoleArnStaging`
+- the current live proof point is workflow run `24042496599`, which passed on 2026-04-06
+- the workflow intentionally skips review-delete cleanup and relies on the deterministic probe-preparation path to remove stale smoke reviews before the next run
 
 Hosted staging smoke secret sync:
 
@@ -183,6 +186,7 @@ This flow now:
 - writes `LIGHTNING_STAGING_SMOKE_IDENTIFIER`
 - writes `LIGHTNING_STAGING_SMOKE_PASSWORD`
 - leaves the hosted staging workflow ready to run in GitHub Actions
+- has been live-verified against the current AWS and GitHub state
 
 Alarm email subscription workflow:
 

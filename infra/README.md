@@ -70,6 +70,11 @@ Environment commands:
   - `/usr/local/bin/npm run cutover:finalize:with-hosted-smoke`
   - `/usr/local/bin/npm run prepare:staging:hosted-smoke`
   - `/usr/local/bin/npm run prepare:production:hosted-smoke`
+- automation:
+  - `/usr/local/bin/npm run synth:automation`
+  - `/usr/local/bin/npm run diff:automation`
+  - `/usr/local/bin/npm run deploy:automation`
+  - `/usr/local/bin/npm run github:smoke:staging:sync-secrets`
 - hosted frontend:
   - staging:
     - `/usr/local/bin/npm run synth:frontend:staging`
@@ -180,6 +185,9 @@ Hosted frontend baseline:
 - the manual hosted-artifact publish helper now also emits a release manifest at `/lightning-release.json`
 - the repo now includes `scripts/print-hosted-frontend-release-status.mjs` plus `npm run frontend:release:status*` commands for live release verification
 - the repo now also retains local hosted frontend release archives under `.local/frontend-releases/`
+- the repo now also includes `LightningGithubAutomationStack`, which provisions least-privilege GitHub OIDC hosted-smoke roles for staging and production
+- the staging GitHub secret-sync path is now live-verified through `npm run github:smoke:staging:sync-secrets`
+- the hosted staging smoke workflow is now live-verified in GitHub Actions against `https://staging.lightningclassics.com`
 - the hosted frontend stacks now also provision durable S3 archive buckets for retained releases:
   - `lightning-frontend-releases-staging-310505389001-eu-west-2`
   - `lightning-frontend-releases-prod-310505389001-eu-west-2`
@@ -258,6 +266,7 @@ Note:
 - the repo now also includes hosted-frontend browser-smoke wrappers in `/Users/steve/Documents/GitHub/Lightning/scripts/run-hosted-frontend-smoke.mjs` so staged and production hosted URLs can be verified directly
 - the repo now also includes `LightningGithubAutomationStack` for GitHub OIDC hosted-smoke access
 - the repo now also includes `npm run github:smoke:staging:sync-secrets` so the staging hosted-smoke GitHub secrets can be refreshed from live AWS outputs and Cognito
+- as of 2026-04-06, the hosted staging smoke workflow itself also passes in GitHub Actions after the live secret-sync path provisions the required repository secrets
 - the repo now also includes a pre-cutover backend CORS preparation helper so the default Amplify hosted URLs can complete authenticated browser smoke before custom-domain attachment
 - the hosted-smoke preparation helper now also supports forced redeploys through:
   - `npm run prepare:staging:hosted-smoke:force`

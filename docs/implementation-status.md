@@ -1820,6 +1820,9 @@ The repo is now in a transition state:
 - the hosted frontend release-archive buckets now also have a codified lifecycle baseline for multipart cleanup, warm-to-cool storage transition, and noncurrent-version expiry without deleting current retained releases
 - the repo now also includes `LightningGithubAutomationStack` with least-privilege GitHub OIDC hosted-smoke roles for staging and production
 - the repo now also includes `npm run github:smoke:staging:sync-secrets` so the staging smoke user and GitHub repository secrets can be synchronized from live AWS outputs in one operator path
+- the staging smoke user plus GitHub repository secret sync path has now been live-verified against Cognito, CloudFormation, and GitHub Actions secrets
+- the GitHub-hosted staging smoke workflow now passes end to end in GitHub Actions as of 2026-04-06
+- the hosted staging smoke workflow now intentionally skips in-workflow review-delete cleanup and relies on probe preparation to reset review state between runs
 
 ## Immediate Next Steps
 
@@ -1830,7 +1833,7 @@ Needed:
 - capture and archive a post-cutover operator snapshot with `npm run cutover:evidence`
 - attach real email, chat, PagerDuty, or Incident Manager subscriptions to the live SNS alarm topics
   - email can now be attached through `npm run ops:subscribe:emails`
-- run `npm run github:smoke:staging:sync-secrets` and then execute the hosted staging smoke workflow in GitHub Actions
+- decide whether to add a matching GitHub-hosted production smoke workflow or keep production smoke as an operator-run path
 - decide whether staging and production should stay on manual Amplify artifact deploys or move to repository-connected Amplify CI/CD
 - decide whether to add `www.lightningclassics.com` as a redirect or secondary hostname
 - add replication or cross-account protection to the hosted frontend release-archive buckets if disaster-recovery duplication is required beyond the new lifecycle baseline
