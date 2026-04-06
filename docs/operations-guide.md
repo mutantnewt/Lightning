@@ -250,6 +250,7 @@ Cutover evidence in GitHub Actions:
 - it uses a dedicated GitHub OIDC read-only role from `LightningGithubAutomationStack`
 - it runs the same `capture-cutover-evidence.mjs` operator command used locally
 - it uploads a `cutover-evidence.json` artifact for handoff and audit use
+- the current live proof point is workflow run `24048658255`, which passed on 2026-04-06 and uploaded the cutover evidence artifact
 
 Cutover evidence secret sync:
 
@@ -268,6 +269,7 @@ This flow now:
 - reads the live operations-read OIDC role ARN from `LightningGithubAutomationStack`
 - writes `LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_OPERATIONS`
 - leaves the GitHub cutover-evidence workflow ready to run
+- has been live-verified against the current AWS and GitHub state
 
 Alarm email subscription workflow:
 

@@ -1969,11 +1969,12 @@ Verification:
 
 - the automation stack now outputs `GitHubOperationsReadRoleArn = arn:aws:iam::310505389001:role/lightning-github-actions-operations-read`
 - the GitHub repository secret `LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_OPERATIONS` has been synchronized from the live automation stack
-- live GitHub-hosted verification of the new cutover-evidence workflow is the next proof point to record
+- GitHub Actions workflow run `24048658255` passes on 2026-04-06 for the new cutover-evidence workflow
+- the same run uploads the `cutover-evidence` artifact successfully from GitHub-hosted automation
 
 Current limitation:
 
-- until the new GitHub workflow is run, the archived cutover evidence is still only live-proven through the local operator path rather than through GitHub-hosted automation
+- the GitHub-hosted cutover-evidence workflow still emits a transitional Node 20-target annotation for `aws-actions/configure-aws-credentials@v5` and `actions/upload-artifact@v4` even while GitHub is forcing those actions onto Node 24
 
 ## Immediate Next Steps
 
