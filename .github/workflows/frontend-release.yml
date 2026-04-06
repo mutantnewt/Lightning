@@ -1,0 +1,119 @@
+name: Frontend Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        required: true
+        default: staging
+        type: choice
+        options:
+          - staging
+          - production
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+concurrency:
+  group: frontend-release-${{ github.event.inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    name: Frontend Release Preflight
+    runs-on: ubuntu-latest
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+      missing: ${{ steps.check.outputs.missing }}
+    steps:
+      - name: Check required secrets
+        id: check
+        env:
+          LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_FRONTEND_RELEASE: ${{ secrets.LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_FRONTEND_RELEASE }}
+        run: |
+          missing=()
+
+          if [ -z "$LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_FRONTEND_RELEASE" ]; then
+            missing+=("LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_FRONTEND_RELEASE")
+          fi
+
+          if [ "${#missing[@]}" -eq 0 ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            echo "missing=none" >> "$GITHUB_OUTPUT"
+            echo "Frontend release prerequisites are configured."
+            exit 0
+          fi
+
+          missing_csv=$(IFS=,; printf '%s' "${missing[*]}")
+          echo "ready=false" >> "$GITHUB_OUTPUT"
+          echo "missing=$missing_csv" >> "$GITHUB_OUTPUT"
+          echo "Frontend release prerequisites are missing: $missing_csv"
+
+  release:
+    name: Frontend Release
+    needs: preflight
+    if: needs.preflight.outputs.ready == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: literary-light/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: literary-light
+        run: npm ci
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ secrets.LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_FRONTEND_RELEASE }}
+          aws-region: eu-west-2
+
+      - name: Publish hosted frontend release
+        working-directory: literary-light
+        env:
+          AWS_REGION: eu-west-2
+          AWS_DEFAULT_REGION: eu-west-2
+          AWS_CLI_BIN: aws
+        run: |
+          node ../scripts/deploy-manual-amplify-frontend.mjs --environment "${{ github.event.inputs.environment }}" | tee frontend-release.json
+
+      - name: Verify hosted frontend release
+        working-directory: infra
+        env:
+          AWS_REGION: eu-west-2
+          AWS_DEFAULT_REGION: eu-west-2
+          AWS_CLI_BIN: aws
+        run: |
+          node ../scripts/print-hosted-frontend-release-status.mjs --environment "${{ github.event.inputs.environment }}" --require-match > frontend-release-status.json
+          cat frontend-release-status.json
+
+      - name: Upload frontend release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-release-${{ github.event.inputs.environment }}
+          path: |
+            literary-light/frontend-release.json
+            infra/frontend-release-status.json
+
+  missing-prerequisites:
+    name: Frontend Release Skipped
+    needs: preflight
+    if: needs.preflight.outputs.ready != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report skipped frontend release
+        run: |
+          echo "::warning::Frontend release workflow skipped because these required secrets are missing: ${{ needs.preflight.outputs.missing }}"

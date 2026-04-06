@@ -112,6 +112,7 @@ Repository validation baseline:
 - the GitHub-hosted operations-status path has now been live-verified for both environments through GitHub Actions
 - the repo now also includes a GitHub OIDC cutover-evidence workflow plus `npm run github:ops:sync-secrets` for its read-only role secret
 - the repo now also includes a manual GitHub OIDC alarm-subscriptions workflow plus `npm run github:alerting:sync-secrets` for its dedicated alerting-management role secret
+- the repo now also includes a manual GitHub OIDC frontend-release workflow plus `npm run github:frontend:release:sync-secrets` for its dedicated frontend-release role secret
 - the repo now also includes `npm run ops:subscribe:emails` as a safe operator wrapper for attaching SNS email subscriptions and then checking live subscription readiness
 
 Custom-domain cutover:
@@ -348,6 +349,20 @@ Hosted frontend release verification:
 cd /Users/steve/Documents/GitHub/Lightning/infra
 /usr/local/bin/npm run frontend:release:status
 ```
+
+Frontend release in GitHub Actions:
+
+- the workflow lives at `.github/workflows/frontend-release.yml`
+- it is manual-dispatch only
+- it accepts a single `environment` input:
+  - `staging`
+  - `production`
+- it uses a dedicated GitHub OIDC role secret:
+  - `LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_FRONTEND_RELEASE`
+- it runs the existing hosted frontend publish path in `scripts/deploy-manual-amplify-frontend.mjs`
+- it then runs `scripts/print-hosted-frontend-release-status.mjs --require-match` so the live release manifest is verified immediately after publish
+- `npm run github:frontend:release:sync-secrets` now publishes the live frontend-release role ARN from `LightningGithubAutomationStack`
+- the recommended first proof is a staging dispatch, because it validates the GitHub release path without touching the production frontend
 
 Hosted frontend release archive inventory:
 

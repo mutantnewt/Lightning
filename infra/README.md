@@ -191,6 +191,9 @@ Hosted frontend baseline:
 - the hosted frontend release archive step is now cross-platform, using `ditto` on macOS and `zip` on Linux runners
 - the repo now also includes `LightningGithubAutomationStack`, which provisions least-privilege GitHub OIDC hosted-smoke roles for staging and production
 - `LightningGithubAutomationStack` now also provisions a dedicated read-only GitHub OIDC operations role for cutover evidence capture and other read-only operator workflows
+- `LightningGithubAutomationStack` now also provisions dedicated GitHub OIDC roles for:
+  - alerting-management automation
+  - manual hosted frontend releases
 - the staging GitHub secret-sync path is now live-verified through `npm run github:smoke:staging:sync-secrets`
 - the hosted staging smoke workflow is now live-verified in GitHub Actions against `https://staging.lightningclassics.com`
 - the repo now also includes a matching hosted production smoke workflow plus a production secret-sync path
@@ -379,3 +382,23 @@ This path now:
 - lets the workflow use either a manual `emails` input or the repository secret `LIGHTNING_ALARM_NOTIFICATION_EMAILS`
 - supports a dry-run first pass so the AWS/GitHub wiring can be verified without creating SNS subscriptions
 - has now been live-verified in GitHub Actions on 2026-04-06 through workflow run `24051302102` in dry-run mode
+
+GitHub Actions frontend-release path:
+
+```sh
+cd /Users/steve/Documents/GitHub/Lightning/infra
+/usr/local/bin/npm run github:frontend:release:sync-secrets -- --dry-run
+```
+
+```sh
+cd /Users/steve/Documents/GitHub/Lightning/infra
+/usr/local/bin/npm run github:frontend:release:sync-secrets
+```
+
+This path now:
+
+- publishes `LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_FRONTEND_RELEASE` from `LightningGithubAutomationStack`
+- enables the manual `.github/workflows/frontend-release.yml` workflow
+- keeps the GitHub release path aligned with the local operator path by running the same manual Amplify publish script
+- immediately verifies the live release manifest after publish
+- should be proven first against staging before it is used for production

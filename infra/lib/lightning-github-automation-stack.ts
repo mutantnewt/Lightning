@@ -91,6 +91,12 @@ export class LightningGithubAutomationStack extends Stack {
       regionName,
       appPrefix,
     );
+    const frontendReleaseRole = this.createFrontendReleaseRole(
+      githubOidcProvider,
+      repositoryFullName,
+      regionName,
+      appPrefix,
+    );
 
     new CfnOutput(this, "GitHubOidcProviderArn", {
       value: githubOidcProvider.openIdConnectProviderArn,
@@ -114,6 +120,10 @@ export class LightningGithubAutomationStack extends Stack {
 
     new CfnOutput(this, "GitHubAlertingManageRoleArn", {
       value: alertingManageRole.roleArn,
+    });
+
+    new CfnOutput(this, "GitHubFrontendReleaseRoleArn", {
+      value: frontendReleaseRole.roleArn,
     });
   }
 
@@ -354,6 +364,75 @@ export class LightningGithubAutomationStack extends Stack {
           "sns:Subscribe",
         ],
         resources: ["*"],
+      }),
+    );
+
+    return role;
+  }
+
+  private createFrontendReleaseRole(
+    githubOidcProvider: iam.OpenIdConnectProvider,
+    repositoryFullName: string,
+    regionName: string,
+    appPrefix: string,
+  ): iam.Role {
+    const role = new iam.Role(this, "FrontendReleaseRole", {
+      roleName: `${appPrefix}-github-actions-frontend-release`,
+      description:
+        "GitHub Actions frontend-release role for Lightning Classics manual hosted frontend publishes.",
+      assumedBy: new iam.WebIdentityPrincipal(
+        githubOidcProvider.openIdConnectProviderArn,
+        {
+          StringEquals: {
+            "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
+            "token.actions.githubusercontent.com:sub": `repo:${repositoryFullName}:ref:refs/heads/main`,
+          },
+        },
+      ),
+    });
+
+    role.addToPolicy(
+      new iam.PolicyStatement({
+        sid: "ReadFrontendStacks",
+        actions: ["cloudformation:DescribeStacks"],
+        resources: [
+          Stack.of(this).formatArn({
+            service: "cloudformation",
+            region: regionName,
+            resource: "stack",
+            resourceName: "LightningStagingFrontendStack/*",
+          }),
+          Stack.of(this).formatArn({
+            service: "cloudformation",
+            region: regionName,
+            resource: "stack",
+            resourceName: "LightningProductionFrontendStack/*",
+          }),
+        ],
+      }),
+    );
+
+    role.addToPolicy(
+      new iam.PolicyStatement({
+        sid: "ManageFrontendAmplifyDeployments",
+        actions: [
+          "amplify:CreateDeployment",
+          "amplify:StartDeployment",
+          "amplify:GetJob",
+          "amplify:GetDomainAssociation",
+        ],
+        resources: ["*"],
+      }),
+    );
+
+    role.addToPolicy(
+      new iam.PolicyStatement({
+        sid: "WriteFrontendReleaseArchives",
+        actions: ["s3:PutObject"],
+        resources: [
+          `arn:${Aws.PARTITION}:s3:::${appPrefix}-frontend-releases-staging-${Aws.ACCOUNT_ID}-${regionName}/*`,
+          `arn:${Aws.PARTITION}:s3:::${appPrefix}-frontend-releases-prod-${Aws.ACCOUNT_ID}-${regionName}/*`,
+        ],
       }),
     );
 

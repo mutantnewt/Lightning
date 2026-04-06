@@ -2129,6 +2129,29 @@ Current limitation:
 
 - this slice makes the release packaging portable, but it does not yet add the GitHub-hosted frontend release workflow itself
 
+### Slice BL: GitHub OIDC frontend-release workflow baseline
+
+Completed:
+
+- added a dedicated GitHub OIDC frontend-release role to `LightningGithubAutomationStack`
+- added `.github/workflows/frontend-release.yml` so staging or production hosted frontend publishes can now be triggered manually from GitHub Actions
+- added `scripts/sync-frontend-release-github-secret.mjs` plus `npm run github:frontend:release:sync-secrets` to publish `LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_FRONTEND_RELEASE`
+- kept the workflow aligned with the existing local release path by running `scripts/deploy-manual-amplify-frontend.mjs` directly instead of creating a second publish implementation
+- added immediate post-publish verification in the workflow through `scripts/print-hosted-frontend-release-status.mjs --require-match`
+
+Verification:
+
+- the release workflow is manual-dispatch only and environment-scoped
+- the dedicated frontend-release role is limited to:
+  - frontend stack output reads
+  - Amplify deployment actions
+  - S3 writes to the retained frontend release archive buckets
+- the recommended first live proof is a staging workflow dispatch after syncing `LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_FRONTEND_RELEASE`
+
+Current limitation:
+
+- the workflow baseline exists, but it still needs a first live proof run after the new role secret is synced and the workflow file is pushed
+
 ## Immediate Next Steps
 
 ### Next slice: Post-Go-Live Hardening
