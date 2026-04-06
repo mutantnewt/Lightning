@@ -96,17 +96,19 @@ function deriveRuntimeConfig(options) {
     merged.APP_ENV ??
     merged.LIGHTNING_BOOTSTRAP_ENV ??
     "local";
+  const resourceSuffix = envName === "production" ? "prod" : envName;
   const region = options.region ?? merged.AWS_REGION ?? "eu-west-2";
   const smokeScopedTableName =
     options["table-name"] ?? merged.LIGHTNING_SMOKE_USER_STATE_TABLE_NAME;
   const tableName =
     smokeScopedTableName ??
     (merged.LIGHTNING_SMOKE_ENV
-      ? `lightning-user-state-${envName}`
-      : merged.USER_STATE_TABLE_NAME ?? `lightning-user-state-${envName}`);
+      ? `lightning-user-state-${resourceSuffix}`
+      : merged.USER_STATE_TABLE_NAME ?? `lightning-user-state-${resourceSuffix}`);
 
   return {
     envName,
+    resourceSuffix,
     region,
     tableName,
   };
