@@ -106,6 +106,7 @@ Repository validation baseline:
 - the repo now also includes a dedicated GitHub OIDC automation stack, `LightningGithubAutomationStack`
 - the repo now also includes `npm run github:smoke:staging:sync-secrets` to bootstrap the staging smoke user and write the three required GitHub repository secrets
 - the GitHub-hosted staging smoke path has now been live-verified end to end, including OIDC role assumption, Cognito sign-in, and hosted browser smoke against `https://staging.lightningclassics.com`
+- the repo now also includes a matching hosted production smoke workflow plus `npm run github:smoke:production:sync-secrets`
 - the repo now also includes `npm run ops:subscribe:emails` as a safe operator wrapper for attaching SNS email subscriptions and then checking live subscription readiness
 
 Custom-domain cutover:
@@ -187,6 +188,35 @@ This flow now:
 - writes `LIGHTNING_STAGING_SMOKE_PASSWORD`
 - leaves the hosted staging workflow ready to run in GitHub Actions
 - has been live-verified against the current AWS and GitHub state
+
+Hosted production smoke in GitHub Actions:
+
+- the workflow lives at `.github/workflows/hosted-production-smoke.yml`
+- it uses the production OIDC role output from `LightningGithubAutomationStack`
+- it is manual-dispatch only, so production smoke remains an operator-triggered verification path
+- it uses the hosted production frontend and the environment-specific `LIGHTNING_PRODUCTION_SMOKE_*` credentials
+- it intentionally skips review-delete cleanup and relies on deterministic smoke preparation to reset production smoke state between runs
+
+Hosted production smoke secret sync:
+
+```sh
+cd /Users/steve/Documents/GitHub/Lightning/infra
+/usr/local/bin/npm run github:smoke:production:sync-secrets -- --dry-run
+```
+
+```sh
+cd /Users/steve/Documents/GitHub/Lightning/infra
+/usr/local/bin/npm run github:smoke:production:sync-secrets
+```
+
+This flow now:
+
+- reads the live production OIDC role ARN from `LightningGithubAutomationStack`
+- bootstraps or resets the production smoke user in Cognito with a strong password
+- writes `LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_PRODUCTION`
+- writes `LIGHTNING_PRODUCTION_SMOKE_IDENTIFIER`
+- writes `LIGHTNING_PRODUCTION_SMOKE_PASSWORD`
+- leaves the hosted production workflow ready to run in GitHub Actions
 
 Alarm email subscription workflow:
 

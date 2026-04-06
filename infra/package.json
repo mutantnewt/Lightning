@@ -24,6 +24,7 @@
     "ops:subscribe:emails:staging": "node ../scripts/apply-alarm-notification-emails.mjs --environment staging",
     "ops:subscribe:emails:production": "node ../scripts/apply-alarm-notification-emails.mjs --environment production",
     "github:smoke:staging:sync-secrets": "node ../scripts/sync-hosted-staging-smoke-github-secrets.mjs",
+    "github:smoke:production:sync-secrets": "node ../scripts/sync-hosted-production-smoke-github-secrets.mjs",
     "frontend:release:archives": "node ../scripts/list-hosted-frontend-release-archives.mjs --environment all",
     "frontend:release:archives:staging": "node ../scripts/list-hosted-frontend-release-archives.mjs --environment staging",
     "frontend:release:archives:production": "node ../scripts/list-hosted-frontend-release-archives.mjs --environment production",

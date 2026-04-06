@@ -1,0 +1,115 @@
+name: Hosted Production Smoke
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: hosted-production-smoke-${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  preflight:
+    name: Hosted Production Smoke Preflight
+    runs-on: ubuntu-latest
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+      missing: ${{ steps.check.outputs.missing }}
+    steps:
+      - name: Check required secrets
+        id: check
+        env:
+          LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_PRODUCTION: ${{ secrets.LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_PRODUCTION }}
+          LIGHTNING_PRODUCTION_SMOKE_IDENTIFIER: ${{ secrets.LIGHTNING_PRODUCTION_SMOKE_IDENTIFIER }}
+          LIGHTNING_PRODUCTION_SMOKE_PASSWORD: ${{ secrets.LIGHTNING_PRODUCTION_SMOKE_PASSWORD }}
+        run: |
+          missing=()
+
+          if [ -z "$LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_PRODUCTION" ]; then
+            missing+=("LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_PRODUCTION")
+          fi
+
+          if [ -z "$LIGHTNING_PRODUCTION_SMOKE_IDENTIFIER" ]; then
+            missing+=("LIGHTNING_PRODUCTION_SMOKE_IDENTIFIER")
+          fi
+
+          if [ -z "$LIGHTNING_PRODUCTION_SMOKE_PASSWORD" ]; then
+            missing+=("LIGHTNING_PRODUCTION_SMOKE_PASSWORD")
+          fi
+
+          if [ "${#missing[@]}" -eq 0 ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            echo "missing=none" >> "$GITHUB_OUTPUT"
+            echo "Hosted production smoke prerequisites are configured."
+            exit 0
+          fi
+
+          missing_csv=$(IFS=,; printf '%s' "${missing[*]}")
+          echo "ready=false" >> "$GITHUB_OUTPUT"
+          echo "missing=$missing_csv" >> "$GITHUB_OUTPUT"
+          echo "Hosted production smoke prerequisites are missing: $missing_csv"
+
+  smoke:
+    name: Hosted Production Smoke
+    needs: preflight
+    if: needs.preflight.outputs.ready == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Resolve Chrome binary
+        run: |
+          for candidate in google-chrome google-chrome-stable chromium-browser chromium; do
+            if command -v "$candidate" >/dev/null 2>&1; then
+              echo "CHROME_BIN=$(command -v "$candidate")" >> "$GITHUB_ENV"
+              exit 0
+            fi
+          done
+
+          echo "No supported Chrome or Chromium binary is installed on this runner." >&2
+          exit 1
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_PRODUCTION }}
+          aws-region: eu-west-2
+
+      - name: Run hosted production smoke
+        working-directory: literary-light
+        env:
+          AWS_REGION: eu-west-2
+          AWS_DEFAULT_REGION: eu-west-2
+          AWS_CLI_BIN: aws
+          CHROME_BIN: ${{ env.CHROME_BIN }}
+          LIGHTNING_SMOKE_EXPECTED_USER: Production Smoke
+          LIGHTNING_SMOKE_SKIP_REVIEW_DELETE: "true"
+          LIGHTNING_PRODUCTION_SMOKE_IDENTIFIER: ${{ secrets.LIGHTNING_PRODUCTION_SMOKE_IDENTIFIER }}
+          LIGHTNING_PRODUCTION_SMOKE_PASSWORD: ${{ secrets.LIGHTNING_PRODUCTION_SMOKE_PASSWORD }}
+        run: npm run smoke:production:hosted
+
+  missing-prerequisites:
+    name: Hosted Production Smoke Skipped
+    needs: preflight
+    if: needs.preflight.outputs.ready != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report skipped smoke
+        run: |
+          echo "::warning::Hosted production smoke skipped because these required secrets are missing: ${{ needs.preflight.outputs.missing }}"

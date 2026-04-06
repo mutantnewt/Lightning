@@ -75,6 +75,7 @@ Environment commands:
   - `/usr/local/bin/npm run diff:automation`
   - `/usr/local/bin/npm run deploy:automation`
   - `/usr/local/bin/npm run github:smoke:staging:sync-secrets`
+  - `/usr/local/bin/npm run github:smoke:production:sync-secrets`
 - hosted frontend:
   - staging:
     - `/usr/local/bin/npm run synth:frontend:staging`
@@ -188,6 +189,7 @@ Hosted frontend baseline:
 - the repo now also includes `LightningGithubAutomationStack`, which provisions least-privilege GitHub OIDC hosted-smoke roles for staging and production
 - the staging GitHub secret-sync path is now live-verified through `npm run github:smoke:staging:sync-secrets`
 - the hosted staging smoke workflow is now live-verified in GitHub Actions against `https://staging.lightningclassics.com`
+- the repo now also includes a matching hosted production smoke workflow plus a production secret-sync path
 - the hosted frontend stacks now also provision durable S3 archive buckets for retained releases:
   - `lightning-frontend-releases-staging-310505389001-eu-west-2`
   - `lightning-frontend-releases-prod-310505389001-eu-west-2`
