@@ -1813,19 +1813,18 @@ The repo is now in a transition state:
 - a refreshed post-cutover evidence snapshot is now archived at `docs/archive/cutover-evidence/cutover-evidence-2026-04-06T19-54-10Z.json`
 - the hosted smoke and release helper libraries no longer assume a single developer workstation path or Homebrew-only CLI locations
 - the repo now also includes a dedicated GitHub Actions hosted staging smoke workflow with OIDC-ready AWS credentials and Linux Chrome resolution
-- the hosted staging smoke workflow is intentionally conditional on three GitHub secrets so it can be enabled safely without breaking the default validation baseline:
+- the hosted staging smoke workflow is now intentionally conditional only on the staging OIDC role secret:
   - `LIGHTNING_GITHUB_ACTIONS_ROLE_ARN`
-  - `LIGHTNING_STAGING_SMOKE_IDENTIFIER`
-  - `LIGHTNING_STAGING_SMOKE_PASSWORD`
+- the hosted staging and production smoke workflows now self-bootstrap their dedicated smoke users at runtime instead of depending on stored smoke identifier and password repository secrets
 - the repo now also includes a safe operator wrapper for SNS alarm email attachment via `npm run ops:subscribe:emails`
 - the new alert-subscription wrapper deploys the target environment stack and immediately reports live SNS subscription readiness so pending email confirmations are visible straight away
 - the hosted frontend release-archive buckets now also have a codified lifecycle baseline for multipart cleanup, warm-to-cool storage transition, and noncurrent-version expiry without deleting current retained releases
 - the repo now also includes `LightningGithubAutomationStack` with least-privilege GitHub OIDC hosted-smoke roles for staging and production
-- the repo now also includes `npm run github:smoke:staging:sync-secrets` so the staging smoke user and GitHub repository secrets can be synchronized from live AWS outputs in one operator path
+- the repo now also includes `npm run github:smoke:staging:sync-secrets` so the required staging OIDC role secret can be synchronized from live AWS outputs in one operator path
 - the staging smoke user plus GitHub repository secret sync path has now been live-verified against Cognito, CloudFormation, and GitHub Actions secrets
 - the GitHub-hosted staging smoke workflow now passes end to end in GitHub Actions as of 2026-04-06
 - the hosted staging smoke workflow now intentionally skips in-workflow review-delete cleanup and relies on probe preparation to reset review state between runs
-- the repo now also includes a matching hosted production smoke workflow plus a production secret-sync path, ready for live verification
+- the repo now also includes a matching hosted production smoke workflow plus a production role-secret sync path, ready for live verification
 - the production smoke user plus GitHub repository secret sync path has now been live-verified against Cognito, CloudFormation, and GitHub Actions secrets
 - the GitHub-hosted production smoke workflow now passes end to end in GitHub Actions as of 2026-04-06
 - the repo now also includes a GitHub OIDC operations-status workflow for staging and production
@@ -2060,6 +2059,30 @@ Verification:
 Current limitation:
 
 - the dedicated `www` redirect-alias hosted smoke still assumes the main production hosted smoke path remains healthy; it was not rerun in this slice because the generic wrapper change already applies to that path too
+
+### Slice BI: Secretless GitHub-hosted smoke credentials
+
+Completed:
+
+- broadened `infra/lib/lightning-github-automation-stack.ts` so the staging and production hosted-smoke OIDC roles can now manage only the Cognito actions needed to bootstrap or reset their dedicated smoke users at workflow runtime
+- extended the same hosted-smoke OIDC roles with `dynamodb:UpdateItem` so the deterministic probe-preparation path still works without relying on pre-shared smoke credentials
+- simplified `.github/workflows/hosted-staging-smoke.yml` so it now only requires `LIGHTNING_GITHUB_ACTIONS_ROLE_ARN`
+- simplified `.github/workflows/hosted-production-smoke.yml` so it now only requires `LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_PRODUCTION`
+- removed the dependency on stored `LIGHTNING_STAGING_SMOKE_*` and `LIGHTNING_PRODUCTION_SMOKE_*` repository secrets for GitHub-hosted smoke
+- updated the canonical runbooks so local hosted smoke, GitHub-hosted smoke, and cutover hosted smoke all use the same self-bootstrapping credential model
+
+Verification:
+
+- `npm run build` passes in `infra`
+- `npm run deploy:automation` succeeds on 2026-04-06 and updates `LightningGithubAutomationStack`
+- the live automation stack still outputs:
+  - `GitHubHostedSmokeRoleArnStaging = arn:aws:iam::310505389001:role/lightning-github-actions-hosted-smoke-staging`
+  - `GitHubHostedSmokeRoleArnProduction = arn:aws:iam::310505389001:role/lightning-github-actions-hosted-smoke-prod`
+- GitHub-hosted staging and production smoke can now be re-run without smoke identifier or password repository secrets once the workflow files are pushed
+
+Current limitation:
+
+- the staging and production GitHub-hosted smoke workflows still rely on their OIDC role secrets being present in the repository, and real alert delivery remains the next live operational gap because the SNS topics still have no confirmed subscriptions
 
 ## Immediate Next Steps
 

@@ -98,13 +98,12 @@ Repository validation baseline:
   - infra TypeScript build
 - full-repo lint is still intentionally deferred until the pre-existing repo-wide lint backlog is reduced
 - the repo now also includes a dedicated hosted staging smoke workflow in `.github/workflows/hosted-staging-smoke.yml`
-- the hosted staging smoke workflow is designed for OIDC-backed AWS access and only runs the smoke job when these GitHub secrets exist:
+- the hosted staging smoke workflow is designed for OIDC-backed AWS access and now only requires the staging role secret:
   - `LIGHTNING_GITHUB_ACTIONS_ROLE_ARN`
-  - `LIGHTNING_STAGING_SMOKE_IDENTIFIER`
-  - `LIGHTNING_STAGING_SMOKE_PASSWORD`
+- the hosted staging smoke workflow now bootstraps its own dedicated `Staging Local Smoke` user inside the workflow instead of depending on stored smoke identifier and password repository secrets
 - the hosted staging smoke workflow runs on manual dispatch and on a daily schedule, using the hosted staging frontend rather than a local Vite server
 - the repo now also includes a dedicated GitHub OIDC automation stack, `LightningGithubAutomationStack`
-- the repo now also includes `npm run github:smoke:staging:sync-secrets` to bootstrap the staging smoke user and write the three required GitHub repository secrets
+- the repo now also includes `npm run github:smoke:staging:sync-secrets` to publish the required staging OIDC role secret from live AWS outputs
 - the GitHub-hosted staging smoke path has now been live-verified end to end, including OIDC role assumption, Cognito sign-in, and hosted browser smoke against `https://staging.lightningclassics.com`
 - the repo now also includes a matching hosted production smoke workflow plus `npm run github:smoke:production:sync-secrets`
 - the GitHub-hosted production smoke path has now also been live-verified end to end, including OIDC role assumption, Cognito sign-in, and hosted browser smoke against `https://lightningclassics.com`
@@ -189,10 +188,11 @@ Hosted staging smoke in GitHub Actions:
 - it resolves the live staging hosted URL from the deployed AWS stack outputs
 - it uses GitHub OIDC plus `aws-actions/configure-aws-credentials@v4`
 - it resolves a Linux Chrome or Chromium binary on the runner and passes that path into `CHROME_BIN`
-- it intentionally skips the smoke job with a warning when the required secrets are not configured yet
+- it intentionally skips the smoke job with a warning when the required role secret is not configured yet
 - the required OIDC role is now output by `LightningGithubAutomationStack` as `GitHubHostedSmokeRoleArnStaging`
 - the current live proof point is workflow run `24042496599`, which passed on 2026-04-06
 - the workflow intentionally skips review-delete cleanup and relies on the deterministic probe-preparation path to remove stale smoke reviews before the next run
+- the workflow now bootstraps or resets the dedicated `Staging Local Smoke` user directly through the hosted smoke OIDC role and no longer depends on stored smoke-user secrets
 
 Hosted staging smoke secret sync:
 
@@ -209,23 +209,22 @@ cd /Users/steve/Documents/GitHub/Lightning/infra
 This flow now:
 
 - reads the live OIDC role ARN from `LightningGithubAutomationStack`
-- bootstraps or resets the staging smoke user in Cognito with a strong password
 - writes `LIGHTNING_GITHUB_ACTIONS_ROLE_ARN`
-- writes `LIGHTNING_STAGING_SMOKE_IDENTIFIER`
-- writes `LIGHTNING_STAGING_SMOKE_PASSWORD`
 - leaves the hosted staging workflow ready to run in GitHub Actions
 - has been live-verified against the current AWS and GitHub state
+- no longer needs to write smoke-user identifier or password secrets because the workflow self-bootstraps them at runtime
 
 Hosted production smoke in GitHub Actions:
 
 - the workflow lives at `.github/workflows/hosted-production-smoke.yml`
 - it uses the production OIDC role output from `LightningGithubAutomationStack`
 - it is manual-dispatch only, so production smoke remains an operator-triggered verification path
-- it uses the hosted production frontend and the environment-specific `LIGHTNING_PRODUCTION_SMOKE_*` credentials
+- it uses the hosted production frontend and now bootstraps a dedicated `Production Local Smoke` user inside the workflow at runtime
 - it now runs both the canonical apex hosted smoke and the `www.lightningclassics.com` redirect-alias smoke in the same workflow job
 - it intentionally skips review-delete cleanup and relies on deterministic smoke preparation to reset production smoke state between runs
 - the current live proof point is workflow run `24048137450`, which passed on 2026-04-06 and covered both the canonical production apex path and the `www` redirect alias
 - the GitHub Actions workflow baseline is now upgraded to Node 24-ready action majors across checkout, setup-node, and configure-aws-credentials, with `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true` applied during the transition
+- the workflow now bootstraps or resets the dedicated `Production Local Smoke` user directly through the hosted smoke OIDC role and no longer depends on stored production smoke-user secrets
 
 Hosted production smoke secret sync:
 
@@ -242,12 +241,10 @@ cd /Users/steve/Documents/GitHub/Lightning/infra
 This flow now:
 
 - reads the live production OIDC role ARN from `LightningGithubAutomationStack`
-- bootstraps or resets the production smoke user in Cognito with a strong password
 - writes `LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_PRODUCTION`
-- writes `LIGHTNING_PRODUCTION_SMOKE_IDENTIFIER`
-- writes `LIGHTNING_PRODUCTION_SMOKE_PASSWORD`
 - leaves the hosted production workflow ready to run in GitHub Actions
 - has been live-verified against the current AWS and GitHub state
+- no longer needs to write smoke-user identifier or password secrets because the workflow self-bootstraps them at runtime
 
 Operations status in GitHub Actions:
 

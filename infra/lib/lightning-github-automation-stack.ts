@@ -20,6 +20,7 @@ interface HostedSmokeRoleConfig {
   environmentStackName: string;
   frontendStackName: string;
   userStateTableName: string;
+  userPoolArnPattern: string;
 }
 
 export class LightningGithubAutomationStack extends Stack {
@@ -56,6 +57,12 @@ export class LightningGithubAutomationStack extends Stack {
       environmentStackName: "LightningStagingStack",
       frontendStackName: "LightningStagingFrontendStack",
       userStateTableName: `${appPrefix}-user-state-staging`,
+      userPoolArnPattern: Stack.of(this).formatArn({
+        service: "cognito-idp",
+        region: regionName,
+        resource: "userpool",
+        resourceName: "*",
+      }),
     }, repositoryFullName, regionName, appPrefix);
 
     const productionRole = this.createHostedSmokeRole(githubOidcProvider, {
@@ -64,6 +71,12 @@ export class LightningGithubAutomationStack extends Stack {
       environmentStackName: "LightningProductionStack",
       frontendStackName: "LightningProductionFrontendStack",
       userStateTableName: `${appPrefix}-user-state-prod`,
+      userPoolArnPattern: Stack.of(this).formatArn({
+        service: "cognito-idp",
+        region: regionName,
+        resource: "userpool",
+        resourceName: "*",
+      }),
     }, repositoryFullName, regionName, appPrefix);
 
     const operationsReadRole = this.createOperationsReadRole(
@@ -167,6 +180,7 @@ export class LightningGithubAutomationStack extends Stack {
           "dynamodb:GetItem",
           "dynamodb:PutItem",
           "dynamodb:Query",
+          "dynamodb:UpdateItem",
         ],
         resources: [
           Stack.of(this).formatArn({
@@ -176,6 +190,22 @@ export class LightningGithubAutomationStack extends Stack {
             resourceName: config.userStateTableName,
           }),
         ],
+      }),
+    );
+
+    role.addToPolicy(
+      new iam.PolicyStatement({
+        sid: "BootstrapHostedSmokeUsers",
+        actions: [
+          "cognito-idp:AdminCreateUser",
+          "cognito-idp:AdminGetUser",
+          "cognito-idp:AdminListGroupsForUser",
+          "cognito-idp:AdminRemoveUserFromGroup",
+          "cognito-idp:AdminSetUserPassword",
+          "cognito-idp:AdminUpdateUserAttributes",
+          "cognito-idp:ListUsers",
+        ],
+        resources: [config.userPoolArnPattern],
       }),
     );
 

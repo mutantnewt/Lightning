@@ -195,6 +195,7 @@ Hosted frontend baseline:
 - the repo now also includes a matching hosted production smoke workflow plus a production secret-sync path
 - the production GitHub secret-sync path is now live-verified through `npm run github:smoke:production:sync-secrets`
 - the hosted production smoke workflow is now live-verified in GitHub Actions against `https://lightningclassics.com`
+- the GitHub-hosted staging and production smoke workflows now self-bootstrap their dedicated smoke users at runtime, so the repository no longer needs stored smoke identifier or password secrets for those workflows
 - the repo now also includes a GitHub OIDC operations-status workflow for staging and production
 - the GitHub-hosted operations-status workflow is now live-verified for both staging and production
 - the repo now also includes a GitHub OIDC cutover-evidence workflow plus `npm run github:ops:sync-secrets` to publish the required repository secret
@@ -277,14 +278,13 @@ Note:
 - the repo now also includes a guarded final cutover command that chains domain attachment, custom-host verification, and production CORS cleanup
 - the repo now also includes hosted-frontend browser-smoke wrappers in `/Users/steve/Documents/GitHub/Lightning/scripts/run-hosted-frontend-smoke.mjs` so staged and production hosted URLs can be verified directly
 - the repo now also includes `LightningGithubAutomationStack` for GitHub OIDC hosted-smoke access
-- the repo now also includes `npm run github:smoke:staging:sync-secrets` so the staging hosted-smoke GitHub secrets can be refreshed from live AWS outputs and Cognito
-- as of 2026-04-06, the hosted staging smoke workflow itself also passes in GitHub Actions after the live secret-sync path provisions the required repository secrets
-- as of 2026-04-06, the hosted production smoke workflow also passes in GitHub Actions after the live production secret-sync path provisions the required repository secrets
+- the repo now also includes `npm run github:smoke:staging:sync-secrets` and `npm run github:smoke:production:sync-secrets` so the required OIDC role secrets can be refreshed from live AWS outputs
+- as of 2026-04-06, the hosted staging and production smoke workflows both pass in GitHub Actions without stored smoke identifier or password repository secrets
 - the repo now also includes a pre-cutover backend CORS preparation helper so the default Amplify hosted URLs can complete authenticated browser smoke before custom-domain attachment
 - the hosted-smoke preparation helper now also supports forced redeploys through:
   - `npm run prepare:staging:hosted-smoke:force`
   - `npm run prepare:production:hosted-smoke:force`
-- the repo now also includes an optional post-cutover hosted browser-smoke stage inside the finalizer when environment-specific smoke credentials are supplied
+- the repo now also includes an optional post-cutover hosted browser-smoke stage inside the finalizer, and that stage now self-bootstraps environment-specific smoke users when credentials are not pre-supplied
 - the repo now also includes a one-command operator cutover status report that combines delegation, hosted frontend, and CORS readiness
 - the repo now also includes a wait-and-run cutover watcher that can poll DNS delegation and then hand off into the guarded finalizer automatically
 - the repo now also includes a cutover evidence capture command for timestamped delegation, Amplify, HTTPS, CORS, and optional hosted-smoke proof snapshots

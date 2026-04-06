@@ -26,21 +26,11 @@ jobs:
         id: check
         env:
           LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_PRODUCTION: ${{ secrets.LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_PRODUCTION }}
-          LIGHTNING_PRODUCTION_SMOKE_IDENTIFIER: ${{ secrets.LIGHTNING_PRODUCTION_SMOKE_IDENTIFIER }}
-          LIGHTNING_PRODUCTION_SMOKE_PASSWORD: ${{ secrets.LIGHTNING_PRODUCTION_SMOKE_PASSWORD }}
         run: |
           missing=()
 
           if [ -z "$LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_PRODUCTION" ]; then
             missing+=("LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_PRODUCTION")
-          fi
-
-          if [ -z "$LIGHTNING_PRODUCTION_SMOKE_IDENTIFIER" ]; then
-            missing+=("LIGHTNING_PRODUCTION_SMOKE_IDENTIFIER")
-          fi
-
-          if [ -z "$LIGHTNING_PRODUCTION_SMOKE_PASSWORD" ]; then
-            missing+=("LIGHTNING_PRODUCTION_SMOKE_PASSWORD")
           fi
 
           if [ "${#missing[@]}" -eq 0 ]; then
@@ -101,10 +91,8 @@ jobs:
           AWS_DEFAULT_REGION: eu-west-2
           AWS_CLI_BIN: aws
           CHROME_BIN: ${{ env.CHROME_BIN }}
-          LIGHTNING_SMOKE_EXPECTED_USER: Production Smoke
+          LIGHTNING_SMOKE_EXPECTED_USER: Production Local Smoke
           LIGHTNING_SMOKE_SKIP_REVIEW_DELETE: "true"
-          LIGHTNING_PRODUCTION_SMOKE_IDENTIFIER: ${{ secrets.LIGHTNING_PRODUCTION_SMOKE_IDENTIFIER }}
-          LIGHTNING_PRODUCTION_SMOKE_PASSWORD: ${{ secrets.LIGHTNING_PRODUCTION_SMOKE_PASSWORD }}
         run: npm run smoke:production:hosted
 
       - name: Run hosted production www redirect smoke
@@ -114,10 +102,8 @@ jobs:
           AWS_DEFAULT_REGION: eu-west-2
           AWS_CLI_BIN: aws
           CHROME_BIN: ${{ env.CHROME_BIN }}
-          LIGHTNING_SMOKE_EXPECTED_USER: Production Smoke
+          LIGHTNING_SMOKE_EXPECTED_USER: Production Local Smoke
           LIGHTNING_SMOKE_SKIP_REVIEW_DELETE: "true"
-          LIGHTNING_PRODUCTION_SMOKE_IDENTIFIER: ${{ secrets.LIGHTNING_PRODUCTION_SMOKE_IDENTIFIER }}
-          LIGHTNING_PRODUCTION_SMOKE_PASSWORD: ${{ secrets.LIGHTNING_PRODUCTION_SMOKE_PASSWORD }}
         run: npm run smoke:production:hosted:www
 
   missing-prerequisites:

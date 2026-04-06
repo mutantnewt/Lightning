@@ -371,10 +371,6 @@ Optional browser-level post-cutover verification:
 
 ```sh
 cd /Users/steve/Documents/GitHub/Lightning/infra
-LIGHTNING_STAGING_SMOKE_IDENTIFIER=lightning-staging-smoke@example.com \
-LIGHTNING_STAGING_SMOKE_PASSWORD='your-staging-smoke-password' \
-LIGHTNING_PRODUCTION_SMOKE_IDENTIFIER=lightning-production-smoke@example.com \
-LIGHTNING_PRODUCTION_SMOKE_PASSWORD='your-production-smoke-password' \
 /usr/local/bin/npm run cutover:finalize:with-hosted-smoke
 ```
 
@@ -479,7 +475,7 @@ Important pre-cutover note:
 - the repo now also includes `/Users/steve/Documents/GitHub/Lightning/scripts/finalize-hosted-domain-cutover.mjs` so the full post-delegation attach, verify, and production lock-down flow can run as one guarded operation
 - the repo now also includes `/Users/steve/Documents/GitHub/Lightning/scripts/prepare-hosted-frontend-cors.mjs` so the default Amplify hosted frontend can complete authenticated browser smoke before custom-domain cutover
 - `/usr/local/bin/npm run prepare:staging:hosted-smoke:force` and `/usr/local/bin/npm run prepare:production:hosted-smoke:force` now exist for backend-only refreshes where the hosted frontend URL is already present in CORS but the stack still needs to be redeployed
-- the finalizer can now also run browser-level hosted smoke on the actual custom domains when the environment-specific smoke credentials are supplied
+- the finalizer can now also run browser-level hosted smoke on the actual custom domains without pre-supplied smoke credentials, because the hosted smoke wrappers self-bootstrap dedicated environment-specific smoke users when needed
 - the repo now also includes `/Users/steve/Documents/GitHub/Lightning/scripts/wait-for-domain-cutover.mjs` so the registrar propagation window can be polled and handed off into the guarded finalizer automatically
 - the repo now also includes `/Users/steve/Documents/GitHub/Lightning/scripts/complete-domain-cutover.mjs` so the full watcher, finalizer, and post-cutover evidence capture can run as one operator command
 

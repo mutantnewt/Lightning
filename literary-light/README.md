@@ -186,11 +186,9 @@ For the hosted smoke commands:
 - `--target auto` is the default behavior, so it uses the default Amplify domain until the custom domain is attached and verified
 - once Amplify marks the custom domain ready, the same command will prefer `staging.lightningclassics.com` or `lightningclassics.com` automatically
 - before custom-domain cutover, run the matching `prepare:<env>:hosted-smoke` helper in `/Users/steve/Documents/GitHub/Lightning/infra` if the backend CORS allow-list does not yet include the default Amplify hostname
-- after custom-domain cutover, the repo-level finalizer can run the same hosted browser smoke on the custom domains when `LIGHTNING_STAGING_SMOKE_*` and `LIGHTNING_PRODUCTION_SMOKE_*` are supplied
-- GitHub Actions can now run the hosted staging smoke through `.github/workflows/hosted-staging-smoke.yml` once these repository secrets exist:
+- after custom-domain cutover, the repo-level finalizer can run the same hosted browser smoke on the custom domains without pre-supplied smoke credentials because the wrapper self-bootstraps dedicated environment-specific smoke users when needed
+- GitHub Actions can now run the hosted staging smoke through `.github/workflows/hosted-staging-smoke.yml` once this repository secret exists:
   - `LIGHTNING_GITHUB_ACTIONS_ROLE_ARN`
-  - `LIGHTNING_STAGING_SMOKE_IDENTIFIER`
-  - `LIGHTNING_STAGING_SMOKE_PASSWORD`
 
 Optional moderator example:
 
