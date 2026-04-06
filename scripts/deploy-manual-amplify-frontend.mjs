@@ -86,6 +86,7 @@ function parseArgs(argv) {
   const args = {
     environment: "staging",
     stackName: null,
+    jsonOutputPath: null,
     region: process.env.AWS_DEFAULT_REGION || process.env.AWS_REGION || "eu-west-2",
     waitTimeoutMs: 20 * 60 * 1000,
     pollIntervalMs: 10 * 1000,
@@ -102,6 +103,10 @@ function parseArgs(argv) {
         break;
       case "--stack-name":
         args.stackName = next;
+        index += 1;
+        break;
+      case "--json-output":
+        args.jsonOutputPath = next;
         index += 1;
         break;
       case "--region":
@@ -198,29 +203,36 @@ async function main() {
         objectPrefix: releaseArchiveStorage.objectPrefix,
         region: args.region,
       });
+      const result = {
+        environment: args.environment,
+        stackName: args.stackName,
+        buildEnv,
+        releaseMetadata,
+        releaseManifestPath,
+        releaseManifestUrl: defaultDomain
+          ? `https://${branchName}.${defaultDomain}/${releaseManifestFileName}`
+          : null,
+        archivedRelease: archivedReleaseWithRemote,
+        appId,
+        branchName,
+        defaultDomain,
+        webUrl: defaultDomain ? `https://${branchName}.${defaultDomain}` : null,
+        jobId: deployment.jobId,
+        status: deploymentResult.status,
+      };
+
+      if (args.jsonOutputPath) {
+        const resolvedOutputPath = path.resolve(process.cwd(), args.jsonOutputPath);
+        await fs.mkdir(path.dirname(resolvedOutputPath), { recursive: true });
+        await fs.writeFile(
+          resolvedOutputPath,
+          JSON.stringify(result, null, 2),
+          "utf8",
+        );
+      }
 
       console.log(
-        JSON.stringify(
-          {
-            environment: args.environment,
-            stackName: args.stackName,
-            buildEnv,
-            releaseMetadata,
-            releaseManifestPath,
-            releaseManifestUrl: defaultDomain
-              ? `https://${branchName}.${defaultDomain}/${releaseManifestFileName}`
-              : null,
-            archivedRelease: archivedReleaseWithRemote,
-            appId,
-            branchName,
-            defaultDomain,
-            webUrl: defaultDomain ? `https://${branchName}.${defaultDomain}` : null,
-            jobId: deployment.jobId,
-            status: deploymentResult.status,
-          },
-          null,
-          2,
-        ),
+        JSON.stringify(result, null, 2),
       );
     } finally {
       archive.cleanup();

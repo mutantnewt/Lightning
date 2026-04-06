@@ -117,7 +117,10 @@ jobs:
           AWS_DEFAULT_REGION: eu-west-2
           AWS_CLI_BIN: aws
         run: |
-          node ../scripts/deploy-manual-amplify-frontend.mjs --environment "${{ github.event.inputs.environment }}" | tee frontend-release.json
+          node ../scripts/deploy-manual-amplify-frontend.mjs \
+            --environment "${{ github.event.inputs.environment }}" \
+            --json-output frontend-release.json
+          cat frontend-release.json
 
       - name: Verify hosted frontend release
         working-directory: infra
@@ -192,7 +195,8 @@ jobs:
             --release literary-light/frontend-release.json \
             --status infra/frontend-release-status.json \
             --smoke-coverage "$smoke_coverage" \
-            --smoke-status "$smoke_status" | tee frontend-release-summary.md
+            --smoke-status "$smoke_status" > frontend-release-summary.md
+          cat frontend-release-summary.md
 
       - name: Upload frontend release artifacts
         uses: actions/upload-artifact@v4
