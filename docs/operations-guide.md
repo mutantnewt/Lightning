@@ -89,6 +89,7 @@ Repository validation baseline:
 - the current baseline covers:
   - frontend build
   - backend build
+  - backend community-guard validation for duplicate-review blocking and multi-page comment pagination
   - infra TypeScript build
 - full-repo lint is still intentionally deferred until the pre-existing repo-wide lint backlog is reduced
 

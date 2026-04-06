@@ -297,6 +297,20 @@ Verification:
   - `src/components/ReviewsSection.tsx`
   - `src/components/BookCard.tsx`
 
+### Slice X5: Community guardrail validation baseline
+
+Completed:
+
+- added a repeatable backend validation script that exercises local community guardrails without needing live AWS dependencies
+- codified duplicate-review blocking verification in the normal repo workflow
+- codified multi-page comment pagination verification in the normal repo workflow
+- extended the GitHub Actions validation baseline so backend validation now covers more than plain compilation
+
+Verification:
+
+- `npm run validate:community` passes in `backend/`
+- `.github/workflows/validate.yml` now runs backend community guard validation after backend build
+
 ### Slice H: Public catalog boundary
 
 Completed:

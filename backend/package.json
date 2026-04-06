@@ -5,6 +5,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "validate:community": "npm run build && node scripts/validateCommunityGuards.mjs",
     "serve:local": "node dist/backend/dev-server.js",
     "dev": "npm run build && npm run serve:local",
     "seed:catalog": "npm run build && node dist/backend/scripts/seedCatalog.js",
