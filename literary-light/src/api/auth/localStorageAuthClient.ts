@@ -1,7 +1,9 @@
 import type {
   AuthResult,
   AuthUser,
+  ConfirmPasswordResetInput,
   ConfirmSignUpInput,
+  RequestPasswordResetInput,
   ResendSignUpCodeInput,
   SignInInput,
   SignUpInput,
@@ -16,9 +18,16 @@ import {
 import { validatePassword } from "./passwordPolicy";
 
 const USERS_STORAGE_KEY = "literary-light-users";
+const PASSWORD_RESETS_STORAGE_KEY = "literary-light-password-resets";
 
 interface StoredUser extends AuthUser {
   password: string;
+}
+
+interface StoredPasswordReset {
+  userId: string;
+  code: string;
+  requestedAt: string;
 }
 
 function normalizeEmail(value: string): string {
@@ -38,13 +47,17 @@ function getStoredUsers(): StoredUser[] {
   }
 }
 
-function saveUser(user: StoredUser) {
-  const users = getStoredUsers();
-  users.push(user);
+function saveStoredUsers(users: StoredUser[]): void {
   localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
 }
 
-function findUser(identifier: string, password: string): StoredUser | null {
+function saveUser(user: StoredUser) {
+  const users = getStoredUsers();
+  users.push(user);
+  saveStoredUsers(users);
+}
+
+function findUserByIdentifier(identifier: string): StoredUser | null {
   const users = getStoredUsers();
   const normalizedIdentifier = normalizeIdentifier(identifier);
 
@@ -53,10 +66,19 @@ function findUser(identifier: string, password: string): StoredUser | null {
       const matchesIdentifier =
         normalizeEmail(user.email) === normalizedIdentifier ||
         (user.username ? normalizeIdentifier(user.username) === normalizedIdentifier : false);
-
-      return matchesIdentifier && user.password === password;
+      return matchesIdentifier;
     }) ?? null
   );
+}
+
+function findUser(identifier: string, password: string): StoredUser | null {
+  const user = findUserByIdentifier(identifier);
+
+  if (!user || user.password !== password) {
+    return null;
+  }
+
+  return user;
 }
 
 function emailExists(email: string): boolean {
@@ -80,6 +102,28 @@ function toAuthUser(user: StoredUser): AuthUser {
     createdAt: user.createdAt ?? null,
     groups: Array.isArray(user.groups) ? user.groups : [],
   };
+}
+
+function getStoredPasswordResets(): Record<string, StoredPasswordReset> {
+  try {
+    const stored = localStorage.getItem(PASSWORD_RESETS_STORAGE_KEY);
+    return stored ? (JSON.parse(stored) as Record<string, StoredPasswordReset>) : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveStoredPasswordResets(
+  passwordResets: Record<string, StoredPasswordReset>,
+): void {
+  localStorage.setItem(
+    PASSWORD_RESETS_STORAGE_KEY,
+    JSON.stringify(passwordResets),
+  );
+}
+
+function generateResetCode(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
 export class LocalStorageAuthClient implements AuthClient {
@@ -157,6 +201,94 @@ export class LocalStorageAuthClient implements AuthClient {
       success: true,
       nextStep: "CONFIRM_SIGN_UP",
       identifier: input.identifier,
+    };
+  }
+
+  async requestPasswordReset(
+    input: RequestPasswordResetInput,
+  ): Promise<AuthResult> {
+    if (!input.identifier) {
+      return {
+        success: false,
+        error: "Email or username is required.",
+      };
+    }
+
+    const user = findUserByIdentifier(input.identifier);
+
+    if (!user) {
+      return {
+        success: false,
+        error: "We couldn't find an account with that email or username.",
+      };
+    }
+
+    const passwordResets = getStoredPasswordResets();
+    passwordResets[user.id] = {
+      userId: user.id,
+      code: generateResetCode(),
+      requestedAt: new Date().toISOString(),
+    };
+    saveStoredPasswordResets(passwordResets);
+
+    return {
+      success: true,
+      nextStep: "CONFIRM_RESET_PASSWORD",
+      identifier: input.identifier.trim(),
+      codeDeliveryDestination: user.email,
+    };
+  }
+
+  async confirmPasswordReset(
+    input: ConfirmPasswordResetInput,
+  ): Promise<AuthResult> {
+    if (!input.identifier || !input.confirmationCode || !input.newPassword) {
+      return {
+        success: false,
+        error: "Reset code and new password are required.",
+      };
+    }
+
+    const passwordValidationError = validatePassword(input.newPassword);
+    if (passwordValidationError) {
+      return { success: false, error: passwordValidationError };
+    }
+
+    const user = findUserByIdentifier(input.identifier);
+
+    if (!user) {
+      return {
+        success: false,
+        error: "We couldn't find an account with that email or username.",
+      };
+    }
+
+    const passwordResets = getStoredPasswordResets();
+    const resetRequest = passwordResets[user.id];
+
+    if (!resetRequest || resetRequest.code !== input.confirmationCode.trim()) {
+      return {
+        success: false,
+        error: "That reset code is incorrect.",
+      };
+    }
+
+    const users = getStoredUsers().map((storedUser) =>
+      storedUser.id === user.id
+        ? {
+            ...storedUser,
+            password: input.newPassword,
+          }
+        : storedUser,
+    );
+    saveStoredUsers(users);
+
+    delete passwordResets[user.id];
+    saveStoredPasswordResets(passwordResets);
+
+    return {
+      success: true,
+      nextStep: "DONE",
     };
   }
 

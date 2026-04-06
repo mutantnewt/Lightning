@@ -2,7 +2,7 @@
 
 ## Status Date
 
-2026-04-02
+2026-04-06
 
 ## Working Rule
 
@@ -50,6 +50,31 @@ Verification:
 
 - `npm run build` passes in `literary-light/`
 - `npm run lint` still fails on pre-existing repo issues outside this migration slice
+
+### Slice C2: Password recovery flow
+
+Completed:
+
+- extended the shared auth contract to support password-reset request and confirmation flows
+- implemented Cognito-backed password-reset request and confirm-reset-password client flows
+- wired the auth modal to support:
+  - explicit forgot-password entry from sign-in
+  - 6-digit reset-code entry
+  - new-password confirmation
+  - automatic transition when Cognito sign-in reports that a password reset is required
+- mirrored the password-reset flow in the local auth fallback so local verification stays behaviorally aligned with Cognito
+- preserved the current modal-based auth UX instead of introducing a separate password-reset page
+
+Verification:
+
+- `npm run build` passes in `literary-light/`
+- `npm run build` passes in `backend/`
+- targeted eslint passes for:
+  - `src/components/AuthDialog.tsx`
+  - `src/hooks/useAuth.tsx`
+  - `src/api/auth/client.ts`
+  - `src/api/auth/cognitoAuthClient.ts`
+  - `src/api/auth/localStorageAuthClient.ts`
 
 ### Slice D: Favorites and reading-lists client boundary
 

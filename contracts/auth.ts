@@ -27,7 +27,21 @@ export interface ResendSignUpCodeInput {
   identifier: string;
 }
 
-export type AuthNextStep = "DONE" | "CONFIRM_SIGN_UP";
+export interface RequestPasswordResetInput {
+  identifier: string;
+}
+
+export interface ConfirmPasswordResetInput {
+  identifier: string;
+  confirmationCode: string;
+  newPassword: string;
+}
+
+export type AuthNextStep =
+  | "DONE"
+  | "CONFIRM_SIGN_UP"
+  | "RESET_PASSWORD"
+  | "CONFIRM_RESET_PASSWORD";
 
 export interface AuthResult {
   success: boolean;

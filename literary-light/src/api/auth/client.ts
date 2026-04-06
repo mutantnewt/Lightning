@@ -2,7 +2,9 @@ import type {
   AuthProviderMode,
   AuthResult,
   AuthUser,
+  ConfirmPasswordResetInput,
   ConfirmSignUpInput,
+  RequestPasswordResetInput,
   ResendSignUpCodeInput,
   SignInInput,
   SignUpInput,
@@ -15,5 +17,7 @@ export interface AuthClient {
   signUp(input: SignUpInput): Promise<AuthResult>;
   confirmSignUp(input: ConfirmSignUpInput): Promise<AuthResult>;
   resendSignUpCode(input: ResendSignUpCodeInput): Promise<AuthResult>;
+  requestPasswordReset(input: RequestPasswordResetInput): Promise<AuthResult>;
+  confirmPasswordReset(input: ConfirmPasswordResetInput): Promise<AuthResult>;
   signOut(): Promise<void>;
 }

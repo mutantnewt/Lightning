@@ -3,7 +3,9 @@ import type {
   AuthProviderMode,
   AuthResult,
   AuthUser,
+  ConfirmPasswordResetInput,
   ConfirmSignUpInput,
+  RequestPasswordResetInput,
   ResendSignUpCodeInput,
 } from "@contracts/auth";
 import { createAuthClient, type AuthClient } from "@/api/auth";
@@ -22,6 +24,14 @@ interface AuthContextType {
   ) => Promise<AuthResult>;
   resendSignUpCode: (
     identifier: ResendSignUpCodeInput["identifier"]
+  ) => Promise<AuthResult>;
+  requestPasswordReset: (
+    identifier: RequestPasswordResetInput["identifier"]
+  ) => Promise<AuthResult>;
+  confirmPasswordReset: (
+    identifier: ConfirmPasswordResetInput["identifier"],
+    confirmationCode: ConfirmPasswordResetInput["confirmationCode"],
+    newPassword: ConfirmPasswordResetInput["newPassword"]
   ) => Promise<AuthResult>;
   signOut: () => Promise<void>;
 }
@@ -96,6 +106,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return authClient.resendSignUpCode({ identifier });
   };
 
+  const requestPasswordReset = async (
+    identifier: RequestPasswordResetInput["identifier"]
+  ): Promise<AuthResult> => {
+    return authClient.requestPasswordReset({ identifier });
+  };
+
+  const confirmPasswordReset = async (
+    identifier: ConfirmPasswordResetInput["identifier"],
+    confirmationCode: ConfirmPasswordResetInput["confirmationCode"],
+    newPassword: ConfirmPasswordResetInput["newPassword"]
+  ): Promise<AuthResult> => {
+    return authClient.confirmPasswordReset({
+      identifier,
+      confirmationCode,
+      newPassword,
+    });
+  };
+
   const signOut = async () => {
     await authClient.signOut();
     setUser(null);
@@ -112,6 +140,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signUp,
         confirmSignUp,
         resendSignUpCode,
+        requestPasswordReset,
+        confirmPasswordReset,
         signOut,
       }}
     >

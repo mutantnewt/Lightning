@@ -212,6 +212,7 @@ Local auth behavior:
 
 - if Cognito env vars are absent, the frontend uses the local auth client
 - if Cognito env vars are present, the frontend uses Amplify/Cognito with `sessionStorage` token handling and sends bearer tokens to authenticated backend routes
+- the modal auth flow now supports forgot-password and reset-password confirmation in both Cognito mode and local fallback mode
 - when the API base URLs are present, the app uses the local backend over HTTP for catalog, user-state, community, and Add Book suggestion flows
 - the backend accepts local auth headers only when `ALLOW_LOCAL_AUTH_HEADERS=true`
 - the Add Book privileged flow works without a backend secret by falling back to deterministic offline suggestions

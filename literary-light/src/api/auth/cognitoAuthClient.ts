@@ -1,17 +1,21 @@
 import type {
   AuthResult,
   AuthUser,
+  ConfirmPasswordResetInput,
   ConfirmSignUpInput,
+  RequestPasswordResetInput,
   ResendSignUpCodeInput,
   SignInInput,
   SignUpInput,
 } from "@contracts/auth";
 import {
+  confirmResetPassword as amplifyConfirmResetPassword,
   confirmSignUp as amplifyConfirmSignUp,
   fetchAuthSession,
   fetchUserAttributes,
   getCurrentUser as amplifyGetCurrentUser,
   resendSignUpCode as amplifyResendSignUpCode,
+  resetPassword as amplifyResetPassword,
   signIn as amplifySignIn,
   signOut as amplifySignOut,
   signUp as amplifySignUp,
@@ -77,6 +81,8 @@ function mapAuthError(error: unknown): string {
       return "We couldn't find an account with that email or username.";
     case "NotAuthorizedException":
       return "Incorrect email, username, or password.";
+    case "PasswordResetRequiredException":
+      return "This account requires a password reset before you can sign in.";
     case "UsernameExistsException":
     case "AliasExistsException":
       return "An account with that email already exists.";
@@ -167,8 +173,9 @@ export class CognitoAuthClient implements AuthClient {
 
       if (result.nextStep.signInStep === "RESET_PASSWORD") {
         return {
-          success: false,
-          error: "This account requires a password reset before you can sign in.",
+          success: true,
+          nextStep: "RESET_PASSWORD",
+          identifier: input.identifier.trim(),
         };
       }
 
@@ -297,6 +304,83 @@ export class CognitoAuthClient implements AuthClient {
         nextStep: "CONFIRM_SIGN_UP",
         identifier: input.identifier.trim(),
         codeDeliveryDestination: getCodeDeliveryDestination(result),
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: mapAuthError(error),
+      };
+    }
+  }
+
+  async requestPasswordReset(
+    input: RequestPasswordResetInput,
+  ): Promise<AuthResult> {
+    if (!input.identifier) {
+      return {
+        success: false,
+        error: "Email or username is required.",
+      };
+    }
+
+    try {
+      const result = await amplifyResetPassword({
+        username: input.identifier.trim(),
+      });
+
+      if (result.isPasswordReset || result.nextStep.resetPasswordStep === "DONE") {
+        return {
+          success: true,
+          nextStep: "DONE",
+          identifier: input.identifier.trim(),
+        };
+      }
+
+      return {
+        success: true,
+        nextStep: "CONFIRM_RESET_PASSWORD",
+        identifier: input.identifier.trim(),
+        codeDeliveryDestination: getCodeDeliveryDestination(
+          result.nextStep.codeDeliveryDetails,
+        ),
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: mapAuthError(error),
+      };
+    }
+  }
+
+  async confirmPasswordReset(
+    input: ConfirmPasswordResetInput,
+  ): Promise<AuthResult> {
+    if (!input.identifier || !input.confirmationCode || !input.newPassword) {
+      return {
+        success: false,
+        error: "Reset code and new password are required.",
+      };
+    }
+
+    const passwordValidationError = validatePassword(input.newPassword);
+    if (passwordValidationError) {
+      return {
+        success: false,
+        error: passwordValidationError,
+      };
+    }
+
+    try {
+      await amplifyConfirmResetPassword({
+        username: input.identifier.trim(),
+        confirmationCode: input.confirmationCode.trim(),
+        newPassword: input.newPassword,
+      });
+
+      return {
+        success: true,
+        nextStep: "DONE",
+        identifier: input.identifier.trim(),
       };
     } catch (error) {
       return {

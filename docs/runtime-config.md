@@ -53,6 +53,11 @@ Implementation status:
 - the frontend runtime config module now consumes Cognito and API base-URL variables
 - the frontend Amplify bootstrap now activates only when Cognito config is present
 - the frontend auth flow now depends on the Cognito variables below when running in Cognito mode
+- the modal auth surface now supports:
+  - sign-up confirmation by emailed 6-digit code
+  - password-reset request by email or immutable username
+  - password-reset confirmation by emailed 6-digit code plus a new password
+- the local auth fallback mirrors those flows so local verification remains behaviorally close to Cognito mode
 
 ### `VITE_APP_ENV`
 
