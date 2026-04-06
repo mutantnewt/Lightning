@@ -311,6 +311,24 @@ Verification:
 - `npm run validate:community` passes in `backend/`
 - `.github/workflows/validate.yml` now runs backend community guard validation after backend build
 
+### Slice X6: Browser smoke coverage for community guardrails
+
+Completed:
+
+- added a repeatable smoke-community probe helper that seeds deterministic paginated comment data in the target user-state table and clears stale smoke-user reviews before browser verification
+- extended the browser-led smoke flow to verify comment load-more behavior instead of only first-page rendering
+- extended the browser-led smoke flow to verify duplicate-review conflict feedback in the rendered UI before deleting the original review
+- kept the same helper shape across local, deployed, staging, production, and hosted smoke paths so the added coverage follows the existing verification commands automatically
+
+Verification:
+
+- `node --check` passes for:
+  - `scripts/local-frontend-smoke.mjs`
+  - `scripts/manage-smoke-community-probe.mjs`
+  - `backend/scripts/manageSmokeCommunityProbe.mjs`
+- `npm run build` passes in `literary-light/`
+- `/usr/local/bin/node scripts/manage-smoke-community-probe.mjs prepare` succeeded against `lightning-user-state-local` with `55` seeded probe comments and `loadMoreExpected = true`
+
 ### Slice H: Public catalog boundary
 
 Completed:

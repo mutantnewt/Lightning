@@ -89,7 +89,7 @@ The repo now includes a browser-led local smoke script at:
 
 - `/Users/steve/Documents/GitHub/Lightning/scripts/local-frontend-smoke.mjs`
 
-It drives a headless local Chrome session against `http://127.0.0.1:5175`, signs in through the live Cognito flow, opens Favorites, verifies DynamoDB-backed user state in the browser, posts and deletes a comment, persists a rating, posts and deletes a review through the rendered UI, and exercises the Add Book search/details flow against the privileged backend. It can also verify the moderator queue and its controls when explicitly enabled.
+It drives a headless local Chrome session against `http://127.0.0.1:5175`, signs in through the live Cognito flow, opens Favorites, verifies DynamoDB-backed user state in the browser, verifies comment pagination through the rendered load-more control, posts and deletes a comment, persists a rating, posts a review, verifies the duplicate-review conflict path, deletes the original review, and exercises the Add Book search/details flow against the privileged backend. It can also verify the moderator queue and its controls when explicitly enabled.
 
 The Add Book UI now requires sign-in and submits suggestions for moderation rather than publishing directly to the shared catalog.
 
@@ -107,6 +107,7 @@ Optional smoke inputs:
 - `LIGHTNING_SMOKE_COMMENT_TEXT` to override the temporary comment body used for the create/delete check
 - `LIGHTNING_SMOKE_REVIEW_TEXT` to override the temporary review body used for the create/delete check
 - `LIGHTNING_SMOKE_TARGET_RATING` to override the persisted rating target, default `5`
+- `LIGHTNING_SMOKE_EXPECTED_FAVORITE_BOOK_ID` to override the favorite-book ID used for deterministic community probe seeding, default `1`
 - `LIGHTNING_SMOKE_ADD_BOOK_QUERY` to force a single Add Book search term
 - `LIGHTNING_SMOKE_ADD_BOOK_QUERIES` to provide a comma-separated fallback list of Add Book search terms
 - `LIGHTNING_SMOKE_VERIFY_MODERATION=true` to make the smoke visit `/moderation` and verify the loaded queue or empty state for a moderator user

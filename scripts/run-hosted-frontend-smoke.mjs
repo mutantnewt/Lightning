@@ -264,6 +264,7 @@ async function main() {
   await run(nodeBin, [smokeScript], {
     cwd: repoRoot,
     env: {
+      LIGHTNING_SMOKE_ENV: args.environmentName,
       LIGHTNING_SMOKE_URL: resolution.smokeUrl,
       LIGHTNING_SMOKE_IDENTIFIER: credentials.identifier,
       LIGHTNING_SMOKE_PASSWORD: credentials.password,

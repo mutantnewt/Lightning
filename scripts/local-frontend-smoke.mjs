@@ -9,6 +9,10 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const nodeBin = process.env.NODE_BIN ?? process.execPath;
 const moderatorScript = join(__dirname, "manage-local-moderator.mjs");
 const smokeModerationScript = join(__dirname, "manage-smoke-moderation-submission.mjs");
+const smokeCommunityProbeScript = join(
+  __dirname,
+  "manage-smoke-community-probe.mjs",
+);
 
 const chromeBinary =
   process.env.CHROME_BIN ??
@@ -20,6 +24,8 @@ const signInPassword = process.env.LIGHTNING_SMOKE_PASSWORD;
 const expectedUserName = process.env.LIGHTNING_SMOKE_EXPECTED_USER ?? "Local Smoke";
 const expectedFavoriteTitle =
   process.env.LIGHTNING_SMOKE_EXPECTED_FAVORITE ?? "Pride and Prejudice";
+const expectedFavoriteBookId =
+  process.env.LIGHTNING_SMOKE_EXPECTED_FAVORITE_BOOK_ID ?? "1";
 const commentText =
   process.env.LIGHTNING_SMOKE_COMMENT_TEXT ??
   `Local smoke comment ${new Date().toISOString()}`;
@@ -43,6 +49,7 @@ const moderationAction = process.env.LIGHTNING_SMOKE_MODERATION_ACTION ?? "rejec
 const moderationNote =
   process.env.LIGHTNING_SMOKE_MODERATION_NOTE ??
   `Local smoke ${moderationAction} decision ${new Date().toISOString()}`;
+const duplicateReviewMessage = "You can only keep one review per book.";
 
 if (!signInIdentifier || !signInPassword) {
   console.error(
@@ -139,6 +146,29 @@ async function runSmokeModerationSubmission(action, extraArgs = []) {
       env: {
         LIGHTNING_SMOKE_IDENTIFIER: signInIdentifier,
         LIGHTNING_SMOKE_EXPECTED_USER: expectedUserName,
+      },
+    },
+  );
+
+  return result.stdout ? JSON.parse(result.stdout) : null;
+}
+
+async function runSmokeCommunityProbe(action, extraArgs = []) {
+  const resolvedSmokeEnv =
+    process.env.LIGHTNING_SMOKE_ENV ??
+    (/^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?\//u.test(targetUrl)
+      ? "local"
+      : undefined);
+
+  const result = await run(
+    nodeBin,
+    [smokeCommunityProbeScript, action, ...extraArgs],
+    {
+      cwd: __dirname,
+      env: {
+        ...(resolvedSmokeEnv ? { LIGHTNING_SMOKE_ENV: resolvedSmokeEnv } : {}),
+        LIGHTNING_SMOKE_EXPECTED_USER: expectedUserName,
+        LIGHTNING_SMOKE_EXPECTED_FAVORITE_BOOK_ID: expectedFavoriteBookId,
       },
     },
   );
@@ -477,6 +507,7 @@ async function main() {
   let moderatorRestoreError = null;
   let moderatorGranted = false;
   let preparedModerationSubmission = null;
+  let preparedCommunityProbe = null;
 
   if (verifyModeration && autoModerator) {
     await runModeratorLifecycle("grant");
@@ -486,6 +517,8 @@ async function main() {
   if (verifyModeration) {
     preparedModerationSubmission = await runSmokeModerationSubmission("prepare");
   }
+
+  preparedCommunityProbe = await runSmokeCommunityProbe("prepare");
 
   const debugPort = await getAvailablePort();
   const userDataDir = mkdtempSync(join(tmpdir(), "lightning-chrome-smoke-"));
@@ -870,6 +903,59 @@ async function main() {
       250,
     );
 
+    let commentPaginationSnapshot = null;
+
+    if (preparedCommunityProbe?.loadMoreExpected && preparedCommunityProbe?.pageTwoProbeText) {
+      await waitFor(
+        async () =>
+          (await client.evaluate(
+            "Boolean(document.querySelector('[data-testid^=\"load-more-comments-\"]'))",
+          ))
+            ? true
+            : null,
+        "comment load-more control",
+        10_000,
+        250,
+      );
+
+      commentPaginationSnapshot = await client.evaluate(`(() => ({
+        loadMoreVisible: Boolean(document.querySelector('[data-testid^="load-more-comments-"]')),
+        probeVisibleBeforeLoadMore: [...document.querySelectorAll('[data-testid^="comment-item-"]')].some(
+          (node) => (node.textContent || '').includes(${JSON.stringify(preparedCommunityProbe.pageTwoProbeText)}),
+        ),
+      }))()`);
+
+      await clickSelector(
+        client,
+        '[data-testid^="load-more-comments-"]',
+        "load-more-comments button",
+      );
+
+      await waitFor(
+        async () =>
+          (await client.evaluate(`(() => {
+            return [...document.querySelectorAll('[data-testid^="comment-item-"]')].some(
+              (node) => (node.textContent || '').includes(${JSON.stringify(preparedCommunityProbe.pageTwoProbeText)}),
+            );
+          })()`))
+            ? true
+            : null,
+        "comment pagination second page render",
+        20_000,
+        500,
+      );
+
+      commentPaginationSnapshot = await client.evaluate(`(() => ({
+        loadMoreVisible: Boolean(document.querySelector('[data-testid^="load-more-comments-"]')),
+        probeVisibleBeforeLoadMore: ${JSON.stringify(
+          commentPaginationSnapshot?.probeVisibleBeforeLoadMore ?? false,
+        )},
+        probeVisibleAfterLoadMore: [...document.querySelectorAll('[data-testid^="comment-item-"]')].some(
+          (node) => (node.textContent || '').includes(${JSON.stringify(preparedCommunityProbe.pageTwoProbeText)}),
+        ),
+      }))()`);
+    }
+
     await setElementValue(client, '[data-testid^="comment-input-"]', commentText);
     await clickSelector(client, '[data-testid^="post-comment-"]', "post-comment button");
 
@@ -972,6 +1058,37 @@ async function main() {
       20_000,
       500,
     );
+
+    const duplicateReviewText = `${reviewText} duplicate attempt`;
+
+    await setElementValue(
+      client,
+      '[data-testid^="review-input-"]',
+      duplicateReviewText,
+    );
+    await clickSelector(client, '[data-testid^="post-review-"]', "post-review button");
+
+    await waitFor(
+      async () =>
+        (await client.evaluate(
+          `document.body?.innerText?.includes(${JSON.stringify(duplicateReviewMessage)})`,
+        ))
+          ? true
+          : null,
+      "duplicate review conflict feedback",
+      10_000,
+      250,
+    );
+
+    const duplicateReviewSnapshot = await client.evaluate(`(() => ({
+      duplicateMessageVisible: document.body?.innerText?.includes(${JSON.stringify(duplicateReviewMessage)}) ?? false,
+      duplicateAttemptRendered: [...document.querySelectorAll('[data-testid^="review-item-"]')].some(
+        (node) => (node.textContent || '').includes(${JSON.stringify(duplicateReviewText)}),
+      ),
+      originalReviewStillVisible: [...document.querySelectorAll('[data-testid^="review-item-"]')].some(
+        (node) => (node.textContent || '').includes(${JSON.stringify(reviewText)}),
+      ),
+    }))()`);
 
     await clickReviewDeleteButton(client, reviewText);
 
@@ -1151,7 +1268,10 @@ async function main() {
           preparedModerationSubmission,
           moderationSnapshot,
           moderationDecisionSnapshot,
+          preparedCommunityProbe,
+          commentPaginationSnapshot,
           ratingUpdate,
+          duplicateReviewSnapshot,
           communitySnapshot,
           finalSnapshot,
         },

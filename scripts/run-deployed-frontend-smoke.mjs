@@ -237,6 +237,7 @@ async function runSmoke() {
   return run(nodeBin, [smokeScript], {
     env: {
       LIGHTNING_SMOKE_URL: frontendUrl,
+      LIGHTNING_SMOKE_ENV: bootstrapEnvName,
     },
     echoStdout: true,
     echoStderr: true,
