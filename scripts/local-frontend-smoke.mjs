@@ -69,6 +69,7 @@ const moderationNote =
   process.env.LIGHTNING_SMOKE_MODERATION_NOTE ??
   `Local smoke ${moderationAction} decision ${new Date().toISOString()}`;
 const duplicateReviewMessage = "You can only keep one review per book.";
+const skipReviewDelete = process.env.LIGHTNING_SMOKE_SKIP_REVIEW_DELETE === "true";
 
 if (!signInIdentifier || !signInPassword) {
   console.error(
@@ -1184,41 +1185,43 @@ async function main() {
       ),
     }))()`);
 
-    await waitFor(
-      async () =>
-        (await client.evaluate(`(() => {
-          const reviewCard = [...document.querySelectorAll('[data-testid^="review-item-"]')].find(
-            (node) => (node.textContent || '').includes(${JSON.stringify(reviewText)}),
-          );
+    if (!skipReviewDelete) {
+      await waitFor(
+        async () =>
+          (await client.evaluate(`(() => {
+            const reviewCard = [...document.querySelectorAll('[data-testid^="review-item-"]')].find(
+              (node) => (node.textContent || '').includes(${JSON.stringify(reviewText)}),
+            );
 
-          if (!(reviewCard instanceof HTMLElement)) {
-            return false;
-          }
+            if (!(reviewCard instanceof HTMLElement)) {
+              return false;
+            }
 
-          return reviewCard.querySelector('[data-testid^="delete-review-"]') instanceof HTMLElement;
-        })()`))
-          ? true
-          : null,
-      "review delete button ready",
-      10_000,
-      250,
-    );
+            return reviewCard.querySelector('[data-testid^="delete-review-"]') instanceof HTMLElement;
+          })()`))
+            ? true
+            : null,
+        "review delete button ready",
+        10_000,
+        250,
+      );
 
-    await clickReviewDeleteButton(client, reviewText);
+      await clickReviewDeleteButton(client, reviewText);
 
-    await waitFor(
-      async () =>
-        (await client.evaluate(`(() => {
-          return ![...document.querySelectorAll('[data-testid^="review-item-"]')].some(
-            (node) => (node.textContent || '').includes(${JSON.stringify(reviewText)}),
-          );
-        })()`))
-          ? true
-          : null,
-      "review deletion render",
-      20_000,
-      500,
-    );
+      await waitFor(
+        async () =>
+          (await client.evaluate(`(() => {
+            return ![...document.querySelectorAll('[data-testid^="review-item-"]')].some(
+              (node) => (node.textContent || '').includes(${JSON.stringify(reviewText)}),
+            );
+          })()`))
+            ? true
+            : null,
+        "review deletion render",
+        20_000,
+        500,
+      );
+    }
 
     const communitySnapshot = await client.evaluate(`(() => ({
       path: location.pathname,
