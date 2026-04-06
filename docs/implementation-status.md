@@ -2165,6 +2165,11 @@ Completed:
   - the summary step now runs after hosted smoke completes, not before it
   - the summary now includes explicit hosted-smoke completion coverage for the selected environment
   - the workflow no longer relies on pipe-to-`tee` behavior that can hide summary-generation failures
+- later normalized the summary helper against the real release-status payload shape:
+  - the helper now reads single-environment GitHub release-status output from `results[0]`
+  - the summary now reports the real short commit SHA from the release manifest build metadata
+  - the summary now reports the real release-archive bucket/object and selected verification target
+  - the summary now reports the actual manifest-match result instead of falling back to `unavailable`
 
 Verification:
 
@@ -2178,12 +2183,26 @@ Verification:
   - publish
   - release-status verification
   - hosted staging smoke
-  - post-smoke release-summary rendering with `hosted smoke: completed successfully (staging hosted frontend)`
+  - post-smoke release-summary rendering
 - GitHub Actions workflow run `24054137731` passes on 2026-04-06 for the corrected production frontend-release workflow with:
   - publish
   - release-status verification
   - hosted production smoke
-  - post-smoke release-summary rendering with `hosted smoke: completed successfully (production hosted apex plus www redirect)`
+  - post-smoke release-summary rendering
+- GitHub Actions workflow run `24054330413` passes on 2026-04-06 for the fully corrected staging frontend-release summary path with:
+  - release id `staging-20260406T222836Z-999c14d`
+  - commit `999c14d`
+  - archive bucket `lightning-frontend-releases-staging-310505389001-eu-west-2`
+  - selected verification target `custom-domain`
+  - `manifest checks: all matched expected stack outputs`
+  - `hosted smoke: completed successfully (staging hosted frontend)`
+- GitHub Actions workflow run `24054401376` passes on 2026-04-06 for the fully corrected production frontend-release summary path with:
+  - release id `production-20260406T223036Z-999c14d`
+  - commit `999c14d`
+  - archive bucket `lightning-frontend-releases-prod-310505389001-eu-west-2`
+  - selected verification target `custom-domain`
+  - `manifest checks: all matched expected stack outputs`
+  - `hosted smoke: completed successfully (production hosted apex plus www redirect)`
 
 ### Slice BN: Operations-status workflow summaries
 

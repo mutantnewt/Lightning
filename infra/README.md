@@ -413,11 +413,12 @@ This path now:
 - immediately verifies the live release manifest after publish
 - writes `frontend-release.json` directly through `--json-output`, so the raw release artifact is no longer polluted by hosted build logs
 - writes a GitHub job summary plus uploaded artifact for a human-readable release summary after hosted smoke completes
+- normalizes the single-environment release-status payload correctly, so the summary now reports the real commit SHA, archive bucket, selected verification target, and manifest-match result
 - then re-assumes the target environment’s hosted-smoke role and runs the real browser smoke as part of the same workflow
 - safely bootstraps smoke users even when the generated password begins with `-`, by passing AWS CLI password arguments in `--flag=value` form
 - has now been live-verified in GitHub Actions on 2026-04-06 through:
   - staging run `24052374191`
   - production run `24052639174`
 - the corrected release-summary rendering path has also been live-verified through:
-  - staging run `24054062010`
-  - production run `24054137731`
+  - staging run `24054330413`
+  - production run `24054401376`
