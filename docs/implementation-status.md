@@ -2206,7 +2206,10 @@ Verification:
 
 - `node --check` passes for `scripts/write-cutover-evidence-summary.mjs`
 - the workflow YAML remains valid after the summary step was added
-- the next live proof should show the summary step succeeding inside the GitHub cutover-evidence workflow
+- GitHub Actions workflow run `24053489438` passes on 2026-04-06 for the GitHub cutover-evidence workflow with:
+  - evidence capture
+  - summary rendering
+  - summary and raw-artifact upload
 
 ## Immediate Next Steps
 

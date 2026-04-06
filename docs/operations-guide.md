@@ -114,6 +114,7 @@ Repository validation baseline:
 - the summary enhancement has now been live-verified on 2026-04-06 through workflow run `24053402068`
 - the repo now also includes a GitHub OIDC cutover-evidence workflow plus `npm run github:ops:sync-secrets` for its read-only role secret
 - the GitHub-hosted cutover-evidence workflow now also writes a human-readable summary into the GitHub job summary and uploads it alongside the raw JSON artifact
+- the summary enhancement has now been live-verified on 2026-04-06 through workflow run `24053489438`
 - the repo now also includes a manual GitHub OIDC alarm-subscriptions workflow plus `npm run github:alerting:sync-secrets` for its dedicated alerting-management role secret
 - the repo now also includes a manual GitHub OIDC frontend-release workflow plus `npm run github:frontend:release:sync-secrets` for its dedicated frontend-release role secret
 - the repo now also includes `npm run ops:subscribe:emails` as a safe operator wrapper for attaching SNS email subscriptions and then checking live subscription readiness
