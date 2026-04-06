@@ -1829,6 +1829,34 @@ The repo is now in a transition state:
 - the repo now also includes a GitHub OIDC operations-status workflow for staging and production
 - the GitHub-hosted operations-status workflow now passes for both environments in GitHub Actions as of 2026-04-06
 
+### Slice AY: Direct alarm-destination operator path
+
+Completed:
+
+- tightened `scripts/print-operations-status.mjs` so staging and production no longer report alarm-subscription readiness when the SNS topic exists but no confirmed live destination exists
+- added a minimum live destination baseline of one confirmed subscription for staging and production unless a higher configured-email count is explicitly deployed
+- added `scripts/subscribe-alarm-topic-emails.mjs` as a direct operator path for attaching SNS email subscriptions to the live staging and production alarm topics without a stack deploy
+- added direct operator commands in `infra/package.json`:
+  - `npm run ops:subscribe:emails:direct`
+  - `npm run ops:subscribe:emails:direct:staging`
+  - `npm run ops:subscribe:emails:direct:production`
+- updated the canonical runbooks so operators can choose between:
+  - deploy-time codified email configuration
+  - direct live-topic attachment for urgent notification enablement
+
+Verification:
+
+- `/usr/local/bin/node --check scripts/subscribe-alarm-topic-emails.mjs` passes
+- `/usr/local/bin/node --check scripts/print-operations-status.mjs` passes
+- `npm run ops:subscribe:emails:direct -- --dry-run` passes with a sample email plan
+- live `npm run ops:status` now reports:
+  - `alarmSubscriptionReadiness.minimumConfirmedSubscriptionCount = 1` in staging and production
+  - `alarmSubscriptionReadiness.ready = false` in staging and production while no confirmed destinations exist
+
+Current limitation:
+
+- no real staging or production alarm destinations are confirmed yet, so the new readiness baseline now reports that gap explicitly until we attach and confirm at least one subscription
+
 ## Immediate Next Steps
 
 ### Next slice: Post-Go-Live Hardening
@@ -1838,6 +1866,7 @@ Needed:
 - capture and archive a post-cutover operator snapshot with `npm run cutover:evidence`
 - attach real email, chat, PagerDuty, or Incident Manager subscriptions to the live SNS alarm topics
   - email can now be attached through `npm run ops:subscribe:emails`
+  - email can now also be attached without a stack deploy through `npm run ops:subscribe:emails:direct`
 - decide whether staging and production should stay on manual Amplify artifact deploys or move to repository-connected Amplify CI/CD
 - decide whether to add `www.lightningclassics.com` as a redirect or secondary hostname
 - add replication or cross-account protection to the hosted frontend release-archive buckets if disaster-recovery duplication is required beyond the new lifecycle baseline

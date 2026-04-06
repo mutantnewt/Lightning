@@ -180,6 +180,7 @@ After any recovery or rollback, verify:
 1. `ops:status` shows healthy public health and no active alarms for the affected environment.
 2. `ops:status` shows `alarmActionCoverage.complete` for the affected environment.
 3. `ops:status` shows `alarmSubscriptionReadiness.ready` for the affected environment.
+   In staging and production this now means at least one confirmed live alarm destination exists unless a higher configured-email target is in use.
 4. The affected browser smoke path passes.
 5. `frontend:release:status` shows the hosted release manifest matches the expected stack outputs.
 6. If domains were involved, `cutover:evidence` reflects the intended state.

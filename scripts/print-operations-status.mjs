@@ -133,6 +133,22 @@ function buildDashboardUrl(dashboardName, region) {
   return `https://${region}.console.aws.amazon.com/cloudwatch/home?region=${region}#dashboards:name=${encodeURIComponent(dashboardName)}`;
 }
 
+function getMinimumConfirmedSubscriptionCount(
+  environmentName,
+  configuredAlarmNotificationEmailCount,
+) {
+  if (
+    Number.isFinite(configuredAlarmNotificationEmailCount) &&
+    configuredAlarmNotificationEmailCount > 0
+  ) {
+    return configuredAlarmNotificationEmailCount;
+  }
+
+  return environmentName === "staging" || environmentName === "production"
+    ? 1
+    : 0;
+}
+
 function collectEnvironmentStatus(environmentName, region) {
   const stackName = getStackName(environmentName);
   const outputs = getStackOutputs(stackName, region);
@@ -171,18 +187,24 @@ function collectEnvironmentStatus(environmentName, region) {
   const pendingSubscriptions = alarmTopicSubscriptions.filter(
     (subscription) => subscription.pendingConfirmation,
   );
+  const minimumConfirmedSubscriptionCount = getMinimumConfirmedSubscriptionCount(
+    environmentName,
+    configuredAlarmNotificationEmailCount,
+  );
   const alarmSubscriptionReadiness = {
     configuredEmailCount: Number.isFinite(configuredAlarmNotificationEmailCount)
       ? configuredAlarmNotificationEmailCount
       : 0,
+    minimumConfirmedSubscriptionCount,
+    expectationSource:
+      Number.isFinite(configuredAlarmNotificationEmailCount) &&
+      configuredAlarmNotificationEmailCount > 0
+        ? "configured-email-count"
+        : "minimum-live-destination-baseline",
     confirmedCount: confirmedSubscriptions.length,
     pendingCount: pendingSubscriptions.length,
     totalCount: alarmTopicSubscriptions.length,
-    ready:
-      !Number.isFinite(configuredAlarmNotificationEmailCount) ||
-      configuredAlarmNotificationEmailCount === 0
-        ? true
-        : confirmedSubscriptions.length >= configuredAlarmNotificationEmailCount,
+    ready: confirmedSubscriptions.length >= minimumConfirmedSubscriptionCount,
   };
   const allClear =
     publicHealth.ok &&

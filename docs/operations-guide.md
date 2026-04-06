@@ -251,6 +251,27 @@ This flow:
 - immediately runs `ops:status` per environment after deploy
 - makes the post-deploy state explicit when SNS subscriptions are still `PendingConfirmation`
 
+Direct live-topic email subscription workflow:
+
+```sh
+cd /Users/steve/Documents/GitHub/Lightning/infra
+LIGHTNING_ALARM_NOTIFICATION_EMAILS=ops@example.com /usr/local/bin/npm run ops:subscribe:emails:direct -- --dry-run
+```
+
+```sh
+cd /Users/steve/Documents/GitHub/Lightning/infra
+LIGHTNING_ALARM_NOTIFICATION_EMAILS=ops@example.com /usr/local/bin/npm run ops:subscribe:emails:direct
+```
+
+This flow:
+
+- reads the live SNS topic ARNs from the deployed staging and production stack outputs
+- attaches email subscriptions directly to the existing SNS alarm topics without a CDK deploy
+- skips already-present email subscriptions so repeated runs stay idempotent
+- immediately re-runs `ops:status` so the live post-subscription state is visible
+- is the fastest path for closing the current live alert-delivery gap
+- does not change the stack output `OperationsAlarmNotificationEmailCount`, so deploy-time configuration remains the preferred fully codified path when desired
+
 Hosted frontend release verification:
 
 ```sh
@@ -349,6 +370,8 @@ The current codified CloudWatch baseline for `staging` and `production` is:
   - context `alarmNotificationEmails=email1@example.com,email2@example.com`
   - env var `LIGHTNING_ALARM_NOTIFICATION_EMAILS=email1@example.com,email2@example.com`
 - `npm run ops:subscribe:emails` now wraps that same capability with a safer operator flow and immediate post-deploy readiness reporting
+- `npm run ops:subscribe:emails:direct` now also supports attaching SNS email subscriptions directly to the live alarm topics without a stack deploy
+- `ops:status` now treats staging and production as not fully clear until at least one confirmed live alarm destination exists, even when the stack-level configured email count is still `0`
 - the hosted frontend release-archive buckets now also have cost/governance lifecycle rules without deleting current retained archives
 
 Operator check:
@@ -364,6 +387,7 @@ Healthy operator expectation now includes:
 - no codified alarms are in `ALARM`
 - `alarmActionCoverage.complete` is `true` for the environment under review
 - `alarmSubscriptionReadiness.ready` is `true` for the environment under review
+- `alarmSubscriptionReadiness.confirmedCount` is at least `1` in staging and production unless a higher configured-email target is in use
 
 Current alarm scope intentionally favors low-noise platform failure indicators over feature-specific business alarms.
 
@@ -421,6 +445,6 @@ Before major release or cutover:
 
 ## Known Future Operational Improvements
 
-- attach real email, chat, PagerDuty, or Incident Manager destinations on top of the existing environment alarm topics
+- attach real chat, PagerDuty, or Incident Manager destinations on top of the existing environment alarm topics after at least one confirmed email destination is in place
 - add feature-level business metrics for search success and moderation throughput
 - add lifecycle, replication, or cross-account retention on top of the new remote hosted-frontend archive buckets

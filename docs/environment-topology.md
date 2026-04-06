@@ -181,6 +181,7 @@ Current staging implementation:
 - API Gateway access log group `/aws/apigateway/lightning-http-api-access-staging`
 - SNS alarm topic `lightning-operations-alerts-staging`
 - configured alarm-notification email count `0`
+- current confirmed live alarm-destination count `0`
 - route-level API throttling now further tightens authenticated and privileged writes on top of the stage default throttle
 - staging API CORS now explicitly allows both:
   - `https://staging.lightningclassics.com`
@@ -207,6 +208,7 @@ Verification status:
 - staging Lambda tracing is now active for public, authenticated, and privileged runtimes
 - staging codified alarms now all publish to `arn:aws:sns:eu-west-2:310505389001:lightning-operations-alerts-staging`
 - staging alarm subscription readiness is now visible in `ops:status`
+- staging `ops:status` now only reports alarm-subscription readiness once at least one destination is confirmed, unless a higher configured-email target is in use
 - the Amplify-hosted staging frontend stack is now deployed as `LightningStagingFrontendStack`
 - staging hosted-frontend outputs are now:
   - Amplify app ID `dy2grocxp5fe9`
@@ -259,6 +261,7 @@ Current production implementation:
 - API Gateway access log group `/aws/apigateway/lightning-http-api-access-prod`
 - SNS alarm topic `lightning-operations-alerts-prod`
 - configured alarm-notification email count `0`
+- current confirmed live alarm-destination count `0`
 - route-level API throttling now further tightens authenticated and privileged writes on top of the stage default throttle
 - production API CORS now allows only:
   - `https://lightningclassics.com`
@@ -288,6 +291,7 @@ Verification status:
 - production Lambda tracing is now active for public, authenticated, and privileged runtimes
 - production codified alarms now all publish to `arn:aws:sns:eu-west-2:310505389001:lightning-operations-alerts-prod`
 - production alarm subscription readiness is now visible in `ops:status`
+- production `ops:status` now only reports alarm-subscription readiness once at least one destination is confirmed, unless a higher configured-email target is in use
 - the default Amplify production URL now responds successfully over HTTPS
 - the custom production hostname `https://lightningclassics.com` now responds successfully over HTTPS
 - browser-led hosted production verification now also passes against `https://lightningclassics.com`

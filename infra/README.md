@@ -289,6 +289,7 @@ Note:
 - the guarded cutover finalizer now passes end to end with hosted browser smoke on both custom domains
 - alarm email destinations can now be injected at deploy time with `LIGHTNING_ALARM_NOTIFICATION_EMAILS` or `--context alarmNotificationEmails=...`
 - the repo now also includes `npm run ops:subscribe:emails` to apply alarm email destinations and then report the live SNS subscription state
+- the repo now also includes `npm run ops:subscribe:emails:direct` to attach email subscriptions directly to the live SNS topics without a CDK deploy
 - current access-log groups are:
   - `/aws/apigateway/lightning-http-api-access-staging`
   - `/aws/apigateway/lightning-http-api-access-prod`
@@ -302,7 +303,7 @@ Note:
   - all staging alarms `OK`
   - all production alarms `OK`
   - complete alarm-action coverage in both environments
-  - alarm-subscription readiness in both environments
+  - alarm-subscription readiness now reflects the lack of confirmed live destinations until at least one subscription is confirmed
 - as of 2026-04-02, hosted browser smoke still passes after the observability rollout on:
   - `https://staging.dy2grocxp5fe9.amplifyapp.com`
   - `https://main.d1te9vk2z7t41u.amplifyapp.com`
@@ -332,3 +333,17 @@ LIGHTNING_ALARM_NOTIFICATION_EMAILS=ops@example.com /usr/local/bin/npm run ops:s
 ```
 
 This wrapper now deploys the alarm-email change for both long-lived cloud environments and prints the post-deploy SNS readiness state so `PendingConfirmation` is obvious.
+
+Direct live-topic operator path:
+
+```sh
+cd /Users/steve/Documents/GitHub/Lightning/infra
+LIGHTNING_ALARM_NOTIFICATION_EMAILS=ops@example.com /usr/local/bin/npm run ops:subscribe:emails:direct -- --dry-run
+```
+
+```sh
+cd /Users/steve/Documents/GitHub/Lightning/infra
+LIGHTNING_ALARM_NOTIFICATION_EMAILS=ops@example.com /usr/local/bin/npm run ops:subscribe:emails:direct
+```
+
+This path attaches email subscriptions directly to the live staging and production SNS topics, skips existing subscriptions, and immediately reruns `ops:status` so the confirmed or pending state is visible without a stack deploy.
