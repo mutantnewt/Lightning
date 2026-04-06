@@ -280,6 +280,9 @@ Note:
 - the repo now also includes `LightningGithubAutomationStack` for GitHub OIDC hosted-smoke access
 - the repo now also includes `npm run github:smoke:staging:sync-secrets` and `npm run github:smoke:production:sync-secrets` so the required OIDC role secrets can be refreshed from live AWS outputs
 - as of 2026-04-06, the hosted staging and production smoke workflows both pass in GitHub Actions without stored smoke identifier or password repository secrets
+- the current secretless proof points are workflow runs:
+  - staging `24050885863`
+  - production `24050885734`
 - the repo now also includes a pre-cutover backend CORS preparation helper so the default Amplify hosted URLs can complete authenticated browser smoke before custom-domain attachment
 - the hosted-smoke preparation helper now also supports forced redeploys through:
   - `npm run prepare:staging:hosted-smoke:force`

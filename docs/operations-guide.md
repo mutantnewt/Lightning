@@ -190,7 +190,7 @@ Hosted staging smoke in GitHub Actions:
 - it resolves a Linux Chrome or Chromium binary on the runner and passes that path into `CHROME_BIN`
 - it intentionally skips the smoke job with a warning when the required role secret is not configured yet
 - the required OIDC role is now output by `LightningGithubAutomationStack` as `GitHubHostedSmokeRoleArnStaging`
-- the current live proof point is workflow run `24042496599`, which passed on 2026-04-06
+- the current live proof point is workflow run `24050885863`, which passed on 2026-04-06
 - the workflow intentionally skips review-delete cleanup and relies on the deterministic probe-preparation path to remove stale smoke reviews before the next run
 - the workflow now bootstraps or resets the dedicated `Staging Local Smoke` user directly through the hosted smoke OIDC role and no longer depends on stored smoke-user secrets
 
@@ -222,7 +222,7 @@ Hosted production smoke in GitHub Actions:
 - it uses the hosted production frontend and now bootstraps a dedicated `Production Local Smoke` user inside the workflow at runtime
 - it now runs both the canonical apex hosted smoke and the `www.lightningclassics.com` redirect-alias smoke in the same workflow job
 - it intentionally skips review-delete cleanup and relies on deterministic smoke preparation to reset production smoke state between runs
-- the current live proof point is workflow run `24048137450`, which passed on 2026-04-06 and covered both the canonical production apex path and the `www` redirect alias
+- the current live proof point is workflow run `24050885734`, which passed on 2026-04-06 and covered both the canonical production apex path and the `www` redirect alias
 - the GitHub Actions workflow baseline is now upgraded to Node 24-ready action majors across checkout, setup-node, and configure-aws-credentials, with `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true` applied during the transition
 - the workflow now bootstraps or resets the dedicated `Production Local Smoke` user directly through the hosted smoke OIDC role and no longer depends on stored production smoke-user secrets
 

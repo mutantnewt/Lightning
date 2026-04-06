@@ -2075,10 +2075,13 @@ Verification:
 
 - `npm run build` passes in `infra`
 - `npm run deploy:automation` succeeds on 2026-04-06 and updates `LightningGithubAutomationStack`
+- a live rerun exposed and fixed one remaining runner portability issue in `backend/scripts/bootstrapSmokeUser.mjs`, which now defaults to `AWS_CLI_BIN` or `aws` instead of assuming the Homebrew-only `/opt/homebrew/bin/aws` path
 - the live automation stack still outputs:
   - `GitHubHostedSmokeRoleArnStaging = arn:aws:iam::310505389001:role/lightning-github-actions-hosted-smoke-staging`
   - `GitHubHostedSmokeRoleArnProduction = arn:aws:iam::310505389001:role/lightning-github-actions-hosted-smoke-prod`
-- GitHub-hosted staging and production smoke can now be re-run without smoke identifier or password repository secrets once the workflow files are pushed
+- GitHub Actions workflow run `24050885863` passes on 2026-04-06 for the secretless hosted staging smoke path
+- GitHub Actions workflow run `24050885734` passes on 2026-04-06 for the secretless hosted production smoke path, including the `www.lightningclassics.com` redirect coverage
+- GitHub-hosted staging and production smoke now run end to end without smoke identifier or password repository secrets
 
 Current limitation:
 
