@@ -90,11 +90,18 @@ jobs:
           node ../scripts/print-operations-status.mjs --environment ${{ matrix.environment }} > ops-status-${{ matrix.environment }}.json
           cat ops-status-${{ matrix.environment }}.json
 
+      - name: Summarize operations status
+        working-directory: infra
+        run: |
+          node ../scripts/write-operations-status-summary.mjs --input ops-status-${{ matrix.environment }}.json | tee ops-status-${{ matrix.environment }}.summary.md
+
       - name: Upload operations status artifact
         uses: actions/upload-artifact@v4
         with:
           name: ops-status-${{ matrix.environment }}
-          path: infra/ops-status-${{ matrix.environment }}.json
+          path: |
+            infra/ops-status-${{ matrix.environment }}.json
+            infra/ops-status-${{ matrix.environment }}.summary.md
 
   missing-prerequisites:
     name: Operations Status Skipped

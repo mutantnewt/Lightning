@@ -2176,6 +2176,20 @@ Verification:
   - release-summary rendering
   - hosted production smoke
 
+### Slice BN: Operations-status workflow summaries
+
+Completed:
+
+- added `scripts/write-operations-status-summary.mjs` so the GitHub operations-status workflow now renders a human-readable summary from the existing JSON status output
+- extended `.github/workflows/ops-status.yml` so each environment job now writes that summary into the GitHub job summary and uploads it alongside the raw JSON artifact
+- kept the summary generation aligned with the existing operator path by deriving it from `ops-status-<environment>.json` instead of adding new AWS reads
+
+Verification:
+
+- `node --check` passes for `scripts/write-operations-status-summary.mjs`
+- the workflow YAML remains valid after the summary step was added
+- the next live proof should show the summary step succeeding inside the GitHub operations-status workflow
+
 ## Immediate Next Steps
 
 ### Next slice: Post-Go-Live Hardening
