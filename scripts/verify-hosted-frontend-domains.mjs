@@ -4,6 +4,7 @@ import {
   defaultRegion,
   getAmplifyDomainAssociation,
   getDelegationStatus,
+  getHostedFrontendRedirectAliases,
   getHostedFrontendTargets,
   getHttpsStatus,
   getStackOutputs,
@@ -140,6 +141,8 @@ async function getSingleEnvironmentStatus(target, args) {
       (entry) =>
         (entry.subDomainSetting?.prefix ?? "") === target.subdomainPrefix,
     ) ?? null;
+  const redirectAliasDomainNames =
+    getHostedFrontendRedirectAliases(args.domainName)[target.environmentName] ?? [];
 
   const httpsRoot =
     domainStatus === "AVAILABLE"
@@ -152,12 +155,44 @@ async function getSingleEnvironmentStatus(target, args) {
   const subDomainVerificationSatisfied =
     matchingSubDomain?.verified === true ||
     (isApexTarget && domainStatus === "AVAILABLE");
+  const redirectAliasStatuses =
+    domainStatus === "AVAILABLE"
+      ? await Promise.all(
+          redirectAliasDomainNames.map(async (aliasDomainName) => {
+            const httpsRootStatus = await getHttpsStatus(
+              `https://${aliasDomainName}`,
+            );
+            const expectedTargetPrefix = `https://${customDomainName}`;
+            const redirectsToCanonical =
+              httpsRootStatus.ok === true &&
+              (httpsRootStatus.finalUrl ?? "").startsWith(expectedTargetPrefix);
+
+            return {
+              domainName: aliasDomainName,
+              expectedTargetPrefix,
+              httpsRoot: httpsRootStatus,
+              redirectsToCanonical,
+              ready: redirectsToCanonical,
+            };
+          }),
+        )
+      : redirectAliasDomainNames.map((aliasDomainName) => ({
+          domainName: aliasDomainName,
+          expectedTargetPrefix: `https://${customDomainName}`,
+          httpsRoot: null,
+          redirectsToCanonical: false,
+          ready: false,
+        }));
+  const redirectAliasesReady = redirectAliasStatuses.every(
+    (aliasStatus) => aliasStatus.ready,
+  );
 
   const ready =
     domainStatus === "AVAILABLE" &&
     subDomainVerificationSatisfied &&
     httpsRoot?.ok === true &&
-    httpsFavicon?.ok === true;
+    httpsFavicon?.ok === true &&
+    redirectAliasesReady;
 
   return {
     environmentName: target.environmentName,
@@ -171,6 +206,7 @@ async function getSingleEnvironmentStatus(target, args) {
     subDomainVerified: matchingSubDomain?.verified ?? null,
     subDomainVerificationSatisfied,
     subDomainDnsRecord: matchingSubDomain?.dnsRecord ?? null,
+    redirectAliasStatuses,
     httpsRoot,
     httpsFavicon,
     ready,

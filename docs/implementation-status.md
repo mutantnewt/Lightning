@@ -1857,6 +1857,33 @@ Current limitation:
 
 - no real staging or production alarm destinations are confirmed yet, so the new readiness baseline now reports that gap explicitly until we attach and confirm at least one subscription
 
+### Slice AZ: Production www alias redirect
+
+Completed:
+
+- updated the production Amplify frontend stack so `www.lightningclassics.com` is attached as a secondary subdomain on the existing production app
+- added a codified `301` hosted-frontend redirect from `https://www.lightningclassics.com` to `https://lightningclassics.com`
+- exposed `FrontendRedirectAliasDomainName` in the production frontend stack outputs
+- extended the hosted-domain verification and cutover evidence scripts so the production redirect alias is now part of the operator-visible final state
+- updated the cutover-status report so it now shows the production redirect alias and no longer recommends rerunning finalization once cutover is already complete
+
+Verification:
+
+- `npm run deploy:frontend:production` succeeds
+- live production CloudFormation outputs now include:
+  - `FrontendRedirectAliasDomainName = www.lightningclassics.com`
+- `curl -L -I https://www.lightningclassics.com` now returns:
+  - `301` to `https://lightningclassics.com/`
+  - then `200` from the canonical apex host
+- `/usr/local/bin/node scripts/verify-hosted-frontend-domains.mjs --environment production --require-ready` now passes live and reports:
+  - `redirectAliasStatuses[0].domainName = www.lightningclassics.com`
+  - `redirectsToCanonical = true`
+  - `ready = true`
+
+Current limitation:
+
+- the production hosted browser smoke still targets the canonical apex host rather than asserting the `www` redirect path in-browser, so the redirect itself is currently verified by HTTPS and operator scripts rather than by the browser smoke suite
+
 ## Immediate Next Steps
 
 ### Next slice: Post-Go-Live Hardening
@@ -1868,7 +1895,6 @@ Needed:
   - email can now be attached through `npm run ops:subscribe:emails`
   - email can now also be attached without a stack deploy through `npm run ops:subscribe:emails:direct`
 - decide whether staging and production should stay on manual Amplify artifact deploys or move to repository-connected Amplify CI/CD
-- decide whether to add `www.lightningclassics.com` as a redirect or secondary hostname
 - add replication or cross-account protection to the hosted frontend release-archive buckets if disaster-recovery duplication is required beyond the new lifecycle baseline
 - decide later whether to keep manual Amplify deploys or switch staging and production to repository-connected CI/CD
 - keep review environments ephemeral and separate from the long-lived stack set

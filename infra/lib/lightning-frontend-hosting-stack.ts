@@ -31,6 +31,11 @@ export interface LightningFrontendHostingStackProps extends StackProps {
   catalogModeratorGroupName: string;
 }
 
+interface AdditionalSubDomainSetting {
+  branchName: string;
+  prefix: string;
+}
+
 function toCspSource(value: string): string {
   try {
     return new URL(value).origin;
@@ -140,13 +145,40 @@ function buildAmplifyCustomHeaders(
   ].join("\n");
 }
 
-function buildAmplifySpaRules(): amplify.CfnApp.CustomRuleProperty[] {
+function buildAmplifyCustomRules(
+  props: LightningFrontendHostingStackProps,
+): amplify.CfnApp.CustomRuleProperty[] {
+  const rules: amplify.CfnApp.CustomRuleProperty[] = [];
+
+  if (props.environmentName === "production") {
+    rules.push({
+      source: `https://www.${props.rootDomainName}`,
+      target: `https://${props.rootDomainName}`,
+      status: "301",
+    });
+  }
+
+  rules.push({
+    source:
+      "</^[^.]+$|\\.(?!(css|gif|ico|jpg|jpeg|js|json|map|png|svg|txt|webp|woff|woff2|ttf)$)([^.]+$)/>",
+    target: "/index.html",
+    status: "200",
+  });
+
+  return rules;
+}
+
+function buildAdditionalSubDomainSettings(
+  props: LightningFrontendHostingStackProps,
+): AdditionalSubDomainSetting[] {
+  if (props.environmentName !== "production") {
+    return [];
+  }
+
   return [
     {
-      source:
-        "</^[^.]+$|\\.(?!(css|gif|ico|jpg|jpeg|js|json|map|png|svg|txt|webp|woff|woff2|ttf)$)([^.]+$)/>",
-      target: "/index.html",
-      status: "200",
+      branchName: props.branchName,
+      prefix: "www",
     },
   ];
 }
@@ -358,7 +390,7 @@ export class LightningFrontendHostingStack extends Stack {
       platform: "WEB",
       buildSpec: buildAmplifyBuildSpec(),
       customHeaders: buildAmplifyCustomHeaders(props),
-      customRules: buildAmplifySpaRules(),
+      customRules: buildAmplifyCustomRules(props),
       enableBranchAutoDeletion: Fn.conditionIf(
         useRepositoryModeCondition.logicalId,
         true,
@@ -417,6 +449,7 @@ export class LightningFrontendHostingStack extends Stack {
           branchName,
           prefix: subdomainPrefix,
         },
+        ...buildAdditionalSubDomainSettings(props),
       ],
     });
     domain.cfnOptions.condition = createDomainAssociationCondition;
@@ -440,6 +473,13 @@ export class LightningFrontendHostingStack extends Stack {
 
     new CfnOutput(this, "FrontendCustomDomainName", {
       value: customDomainName,
+    });
+
+    new CfnOutput(this, "FrontendRedirectAliasDomainName", {
+      value:
+        environmentName === "production"
+          ? `www.${rootDomainName}`
+          : "",
     });
 
     new CfnOutput(this, "FrontendRepositoryUrl", {

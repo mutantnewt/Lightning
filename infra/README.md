@@ -265,6 +265,7 @@ Note:
 - staging and production are now both live on their custom domains:
   - `https://staging.lightningclassics.com`
   - `https://lightningclassics.com`
+- the production hosted frontend now also serves `https://www.lightningclassics.com` as a redirect to the canonical apex host
 - the Route 53 hosted zone is now authoritative for `lightningclassics.com`
 - the repo now also includes a script-backed domain delegation checker plus guarded domain-attachment helpers for staging and production
 - the repo now also includes a script-backed custom-domain verification helper for staging and production

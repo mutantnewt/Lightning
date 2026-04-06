@@ -172,6 +172,15 @@ export function getHostedFrontendTargets(
   };
 }
 
+export function getHostedFrontendRedirectAliases(
+  domainName = lightningRootDomainName,
+) {
+  return {
+    staging: [],
+    production: [`www.${domainName}`],
+  };
+}
+
 export async function getHttpsStatus(url, options = {}) {
   const controller = new AbortController();
   const timeoutMs = options.timeoutMs ?? 10_000;

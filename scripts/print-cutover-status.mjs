@@ -5,6 +5,7 @@ import {
   defaultRegion,
   getAmplifyDomainAssociation,
   getDelegationStatus,
+  getHostedFrontendRedirectAliases,
   getHostedFrontendTargets,
   getStackOutputs,
   lightningDnsStackName,
@@ -74,6 +75,21 @@ function getDomainAssociationSummary(domainAssociation, target) {
   };
 }
 
+function isDomainAssociationReady(domainAssociationSummary) {
+  return (
+    domainAssociationSummary?.domainStatus === "AVAILABLE" &&
+    domainAssociationSummary?.verificationSatisfied === true
+  );
+}
+
+function hasCanonicalProductionCorsOnly(corsAllowedOrigins) {
+  return (
+    Array.isArray(corsAllowedOrigins) &&
+    corsAllowedOrigins.length === 1 &&
+    corsAllowedOrigins[0] === "https://lightningclassics.com"
+  );
+}
+
 function safeGetDomainAssociation(appId, domainName, region) {
   try {
     return getAmplifyDomainAssociation({
@@ -100,6 +116,8 @@ function getEnvironmentStatus(environmentName, args) {
     args.domainName,
     args.region,
   );
+  const redirectAliasDomainNames =
+    getHostedFrontendRedirectAliases(args.domainName)[environmentName] ?? [];
 
   return {
     environmentName,
@@ -107,6 +125,7 @@ function getEnvironmentStatus(environmentName, args) {
     frontendStackName: frontendTarget.stackName,
     apiBaseUrl: backendOutputs.HttpApiUrl ?? null,
     customDomainName: frontendTarget.customDomainName,
+    redirectAliasDomainNames,
     hostedAmplifyUrl,
     corsAllowedOrigins: listOrigins(backendOutputs.CorsAllowedOrigins ?? ""),
     amplify: {
@@ -148,6 +167,11 @@ async function main() {
 
   const staging = getEnvironmentStatus("staging", args);
   const production = getEnvironmentStatus("production", args);
+  const cutoverComplete =
+    delegationStatus.delegationMatches &&
+    isDomainAssociationReady(staging.amplify.domainAssociation) &&
+    isDomainAssociationReady(production.amplify.domainAssociation) &&
+    hasCanonicalProductionCorsOnly(production.corsAllowedOrigins);
 
   console.log(
     JSON.stringify(
@@ -161,9 +185,12 @@ async function main() {
           expectedRoute53NameServers: delegationStatus.expectedNameServers,
           delegationMatches: delegationStatus.delegationMatches,
         },
+        cutoverComplete,
         staging,
         production,
-        nextStep: delegationStatus.delegationMatches
+        nextStep: cutoverComplete
+          ? "Custom-domain cutover is already complete. Use /usr/local/bin/npm run cutover:evidence for ongoing verification or /usr/local/bin/npm run verify:frontend:domains -- --require-ready for targeted checks."
+          : delegationStatus.delegationMatches
           ? "Run /usr/local/bin/npm run cutover:finalize:with-hosted-smoke from infra/."
           : "Update the registrar nameservers to the expected Route 53 values, wait for delegation to settle, then run /usr/local/bin/npm run cutover:finalize:with-hosted-smoke from infra/.",
         finalCutoverCommand:

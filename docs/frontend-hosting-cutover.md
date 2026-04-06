@@ -4,7 +4,7 @@
 
 This runbook covers the AWS-hosted frontend delivery path for Lightning Classics.
 
-As of 2026-04-02:
+As of 2026-04-06:
 
 - the Route 53 DNS stack is deployed as `LightningDnsStack`
 - the Amplify staging and production hosting stacks are codified and synth cleanly
@@ -13,7 +13,8 @@ As of 2026-04-02:
 - the staging Amplify app is deployed in `MANUAL` mode and currently serves from the default Amplify domain
 - the production hosted frontend stack is live as `LightningProductionFrontendStack`
 - the production Amplify app is deployed in `MANUAL` mode and currently serves from the default Amplify domain
-- custom-domain association is disabled by default until DNS delegation is in place
+- staging and production custom-domain associations are live
+- `www.lightningclassics.com` now redirects to `https://lightningclassics.com/`
 
 Live DNS outputs as of 2026-04-02:
 
@@ -51,6 +52,7 @@ Current live production hosted-frontend outputs:
 - default domain `d1te9vk2z7t41u.amplifyapp.com`
 - hosted production URL `https://main.d1te9vk2z7t41u.amplifyapp.com`
 - deployment mode `MANUAL`
+- redirect alias `https://www.lightningclassics.com`
 
 Current branch baseline:
 
@@ -61,6 +63,7 @@ Current custom-domain baseline:
 
 - staging `staging.lightningclassics.com`
 - production `lightningclassics.com`
+- production redirect alias `www.lightningclassics.com -> https://lightningclassics.com/`
 
 ## Deploy Order
 
@@ -113,8 +116,10 @@ This report prints:
 - the current registrar nameservers
 - the expected Route 53 nameservers
 - the live staging and production hosted URLs
+- any configured production redirect aliases such as `www.lightningclassics.com`
 - the current CORS allow-lists for staging and production
-- the final cutover command to run once delegation is ready
+- whether cutover already appears complete
+- the final cutover command to run once delegation is ready, when cutover is not already complete
 
 Evidence capture:
 
@@ -306,6 +311,7 @@ These commands check:
 - Amplify domain-association status is available
 - the custom hostname responds over HTTPS
 - the custom hostname serves `/favicon.svg`
+- the production redirect alias, when present, resolves over HTTPS and lands on the canonical apex domain
 
 Browser-level hosted verification:
 
@@ -425,6 +431,8 @@ Current verification status:
 - hosted custom-domain browser smoke now also passes on 2026-04-03 for:
   - `https://staging.lightningclassics.com`
   - `https://lightningclassics.com`
+- the production hosted-frontend stack now also outputs `FrontendRedirectAliasDomainName = www.lightningclassics.com`
+- `https://www.lightningclassics.com` now returns `301` to `https://lightningclassics.com/` with the same hosted security-header baseline
 
 Repository-connected mode remains available later:
 
@@ -467,6 +475,7 @@ Post-cutover live status on 2026-04-03:
 - registrar delegation now matches the Route 53 hosted zone
 - `staging.lightningclassics.com` is attached and serving over HTTPS
 - `lightningclassics.com` is attached and serving over HTTPS
+- `www.lightningclassics.com` now redirects over HTTPS to `https://lightningclassics.com/`
 - `npm run cutover:finalize:with-hosted-smoke` completed successfully
 - a post-cutover evidence snapshot is archived at `/Users/steve/Documents/GitHub/Lightning/docs/archive/cutover-evidence/cutover-evidence-2026-04-03T08-41-30Z.json`
 - production CORS is now locked to `https://lightningclassics.com` only
@@ -474,6 +483,7 @@ Post-cutover live status on 2026-04-03:
   - domain attachment parameters had to be stack-scoped to the frontend stacks
   - the post-cutover production cleanup deploy had to use `deploy:frontend:production`, not `deploy:production`, to avoid cross-stack export rollback
 - the apex-domain verifier now treats `domainStatus=AVAILABLE` plus successful HTTPS as authoritative readiness, because Amplify keeps the root subdomain `verified` flag false even while the live host is healthy
+- the hosted-domain verifier now also treats the production `www` alias as part of the healthy final state by requiring it to redirect to the canonical apex host
 
 ## Certificate Rule
 

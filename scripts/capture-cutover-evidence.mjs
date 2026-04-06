@@ -7,6 +7,7 @@ import {
   defaultRegion,
   getAmplifyDomainAssociation,
   getDelegationStatus,
+  getHostedFrontendRedirectAliases,
   getHostedFrontendTargets,
   getStackOutputs,
   lightningDnsStackName,
@@ -225,6 +226,8 @@ async function collectEnvironmentEvidence(environmentName, args) {
   const backendOutputs = getStackOutputs(backendStackName, args.region);
   const hostedAmplifyUrl = buildHostedFrontendUrlFromOutputs(frontendOutputs);
   const customDomainUrl = `https://${target.customDomainName}`;
+  const redirectAliasDomainNames =
+    getHostedFrontendRedirectAliases(args.domainName)[environmentName] ?? [];
   const corsAllowedOrigins = splitCsv(backendOutputs.CorsAllowedOrigins);
 
   let domainAssociation = null;
@@ -268,6 +271,28 @@ async function collectEnvironmentEvidence(environmentName, args) {
     : buildSkippedHttpsStatus(
         "Custom-domain favicon probe skipped because Amplify does not report the domain as AVAILABLE yet.",
       );
+  const redirectAliasHttps =
+    shouldProbeCustomDomain
+      ? redirectAliasDomainNames.map((aliasDomainName) => {
+          const httpsRoot = getHttpsStatusWithCurl(`https://${aliasDomainName}`);
+
+          return {
+            domainName: aliasDomainName,
+            expectedFinalUrlPrefix: customDomainUrl,
+            httpsRoot,
+            redirectsToCanonical:
+              httpsRoot.ok === true &&
+              (httpsRoot.finalUrl ?? "").startsWith(customDomainUrl),
+          };
+        })
+      : redirectAliasDomainNames.map((aliasDomainName) => ({
+          domainName: aliasDomainName,
+          expectedFinalUrlPrefix: customDomainUrl,
+          httpsRoot: buildSkippedHttpsStatus(
+            "Redirect-alias HTTPS probe skipped because Amplify does not report the custom domain as AVAILABLE yet.",
+          ),
+          redirectsToCanonical: false,
+        }));
 
   return {
     environmentName,
@@ -305,6 +330,7 @@ async function collectEnvironmentEvidence(environmentName, args) {
       hostedAmplifyFavicon: hostedHttpsFavicon,
       customDomainRoot: customHttpsRoot,
       customDomainFavicon: customHttpsFavicon,
+      redirectAliases: redirectAliasHttps,
     },
     customDomainReady,
     hostedSmoke: args.runHostedSmoke

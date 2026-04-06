@@ -242,7 +242,7 @@ Target shape:
 Hostname:
 
 - `https://lightningclassics.com`
-- `https://www.lightningclassics.com` can be added later as a redirect or secondary host, but the canonical application origin is `https://lightningclassics.com`
+- `https://www.lightningclassics.com` now redirects to `https://lightningclassics.com/`, while the canonical application origin remains `https://lightningclassics.com`
 
 Status:
 
@@ -271,6 +271,7 @@ Current production implementation:
   - default domain `d1te9vk2z7t41u.amplifyapp.com`
   - hosted production URL `https://main.d1te9vk2z7t41u.amplifyapp.com`
   - deployment mode `MANUAL`
+  - redirect alias `https://www.lightningclassics.com`
 
 Verification status:
 
@@ -294,6 +295,7 @@ Verification status:
 - production `ops:status` now only reports alarm-subscription readiness once at least one destination is confirmed, unless a higher configured-email target is in use
 - the default Amplify production URL now responds successfully over HTTPS
 - the custom production hostname `https://lightningclassics.com` now responds successfully over HTTPS
+- the production redirect alias `https://www.lightningclassics.com` now redirects successfully over HTTPS to the canonical apex host
 - browser-led hosted production verification now also passes against `https://lightningclassics.com`
 - the repo now includes a repeatable post-delegation attach path instead of relying on manual stack parameter entry at cutover time
 - the repo now also includes a repeatable verification path for custom-domain HTTPS health after Amplify attachment
