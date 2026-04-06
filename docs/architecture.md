@@ -74,6 +74,7 @@ Transitional implementation status:
 - sign-up confirmation by emailed code is now supported in the frontend flow
 - password-reset request and confirm-reset-password are now supported in the frontend flow
 - frontend token storage is configured for `sessionStorage`
+- non-local frontend runtime fallback is now fail-closed rather than silently degrading to local auth or seed/local data paths
 - a public catalog client boundary now exists for books, FAQ entries, and author-book reads
 - local public API handlers now serve catalog and FAQ content from a backend-owned store
 - a privileged Add Book client boundary now exists for suggestion search, detail enrichment, and acceptance audit recording

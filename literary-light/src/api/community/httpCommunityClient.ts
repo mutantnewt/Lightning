@@ -24,7 +24,11 @@ import type {
 } from "@contracts/user-state";
 import { fetchAuthSession } from "aws-amplify/auth";
 import { getLocalAuthHeaders } from "@/api/auth/localSession";
-import { runtimeConfig } from "@/config/runtime";
+import {
+  allowLocalRuntimeFallbacks,
+  createFailClosedError,
+  runtimeConfig,
+} from "@/config/runtime";
 import type { CommunityClient, RatingSummary } from "./client";
 
 class HttpError extends Error {
@@ -58,7 +62,11 @@ function getAuthBaseUrl(): string {
 }
 
 async function getAuthHeaders(): Promise<Record<string, string>> {
-  if (runtimeConfig.authMode === "local") {
+  if (runtimeConfig.authMode === "disabled") {
+    throw createFailClosedError("Authentication");
+  }
+
+  if (runtimeConfig.authMode === "local" && allowLocalRuntimeFallbacks()) {
     const headers = getLocalAuthHeaders();
 
     if (!headers["x-lightning-local-user-id"]) {

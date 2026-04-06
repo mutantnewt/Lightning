@@ -1,9 +1,33 @@
-import { runtimeConfig } from "@/config/runtime";
+import {
+  allowLocalRuntimeFallbacks,
+  createFailClosedError,
+  runtimeConfig,
+} from "@/config/runtime";
 import type { ModerationClient } from "./client";
 import { HttpModerationClient } from "./httpModerationClient";
 import { LocalModerationClient } from "./localModerationClient";
 
 export type { ModerationClient } from "./client";
+
+class DisabledModerationClient implements ModerationClient {
+  readonly mode = "disabled" as const;
+
+  async listPendingSubmissions(): Promise<never> {
+    throw createFailClosedError("Moderation services");
+  }
+
+  async acceptSubmission(): Promise<never> {
+    throw createFailClosedError("Moderation services");
+  }
+
+  async deferSubmission(): Promise<never> {
+    throw createFailClosedError("Moderation services");
+  }
+
+  async rejectSubmission(): Promise<never> {
+    throw createFailClosedError("Moderation services");
+  }
+}
 
 export function createModerationClient(): ModerationClient {
   if (
@@ -14,5 +38,9 @@ export function createModerationClient(): ModerationClient {
     return new HttpModerationClient();
   }
 
-  return new LocalModerationClient();
+  if (allowLocalRuntimeFallbacks()) {
+    return new LocalModerationClient();
+  }
+
+  return new DisabledModerationClient();
 }

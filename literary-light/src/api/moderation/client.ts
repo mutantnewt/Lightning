@@ -5,7 +5,7 @@ import type {
 } from "@contracts/book-suggestions";
 
 export interface ModerationClient {
-  readonly mode: "local" | "http";
+  readonly mode: "local" | "http" | "disabled";
   listPendingSubmissions(): Promise<BookSuggestionSubmission[]>;
   acceptSubmission(
     submission: BookSuggestionSubmission,

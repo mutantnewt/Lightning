@@ -58,6 +58,8 @@ Implementation status:
   - password-reset request by email or immutable username
   - password-reset confirmation by emailed 6-digit code plus a new password
 - the local auth fallback mirrors those flows so local verification remains behaviorally close to Cognito mode
+- runtime fallback policy is now fail-closed outside `local`
+- if Cognito or required API base URLs are missing in `staging` or `production`, the frontend now surfaces a configuration/runtime error instead of switching to local auth or seed/local persistence
 
 ### `VITE_APP_ENV`
 
@@ -159,7 +161,8 @@ Use for:
 Implementation status:
 
 - the frontend catalog client now uses this value for books, FAQ entries, and author-book reads
-- if this value is absent, those reads continue to use the local in-app seed fallback
+- if this value is absent in `local`, those reads continue to use the local in-app seed fallback
+- if this value is absent in `staging` or `production`, the frontend now fails closed and surfaces a runtime/configuration error
 - the current workspace default still points this at the local Node backend for fast feedback
 - this value can also point at the deployed `PublicApiBaseUrl` output from `LightningLocalStack` for AWS-backed verification
 - the new `npm run smoke:staging` path now temporarily points it at the deployed staging API Gateway URL while still serving the frontend from `http://127.0.0.1:5175`
@@ -177,7 +180,8 @@ Required:
 Implementation status:
 
 - the frontend favorites and reading-lists client boundary now switches to authenticated HTTP mode when this value is configured
-- if this value is absent, those features continue to use the local fallback client
+- if this value is absent in `local`, those features continue to use the local fallback client
+- if this value is absent in `staging` or `production`, the frontend now fails closed and surfaces a runtime/configuration error
 - in local mode without Cognito, the frontend now uses a local-only auth-header bridge for backend testing
 - authenticated community writes now also use this base URL when configured
 - the current workspace default still points this at the local Node backend for fast feedback
@@ -205,7 +209,8 @@ Use for:
 Implementation status:
 
 - the frontend Add Book flow and moderator queue now use this value when configured
-- if this value is absent, the Add Book HTTP client falls back to the authenticated or public API base URL before finally using the local offline suggestion client
+- if this value is absent in `local`, the Add Book HTTP client falls back to the authenticated or public API base URL before finally using the local offline suggestion client
+- if privileged/API config is absent in `staging` or `production`, the Add Book and moderation surfaces now fail closed instead of dropping into the local suggestion client
 - no browser secret is required for the active Add Book path
 - the current workspace still points this at the local Node backend by default for fast feedback
 - this value can also point at the deployed `PrivilegedApiBaseUrl` output from `LightningLocalStack` for AWS-backed verification

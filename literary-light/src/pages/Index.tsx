@@ -15,7 +15,7 @@ const RESULTS_PER_PAGE = 10;
 
 const Index = () => {
   const navigate = useNavigate();
-  const { books, isLoading } = useBooks();
+  const { books, isLoading, error } = useBooks();
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [hasSearched, setHasSearched] = useState(false);
@@ -136,6 +136,13 @@ const Index = () => {
             {[...Array(3)].map((_, i) => (
               <BookCardSkeleton key={i} />
             ))}
+          </div>
+        ) : error ? (
+          <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-10 text-center">
+            <h2 className="font-serif text-xl font-semibold text-foreground">
+              Catalog temporarily unavailable
+            </h2>
+            <p className="mt-2 text-muted-foreground">{error}</p>
           </div>
         ) : hasSearched ? (
           paginatedBooks.length > 0 ? (

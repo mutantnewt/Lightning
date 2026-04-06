@@ -14,7 +14,11 @@ import type {
 } from "@contracts/book-suggestions";
 import { fetchAuthSession } from "aws-amplify/auth";
 import { getLocalAuthHeaders } from "@/api/auth/localSession";
-import { runtimeConfig } from "@/config/runtime";
+import {
+  allowLocalRuntimeFallbacks,
+  createFailClosedError,
+  runtimeConfig,
+} from "@/config/runtime";
 import type { ModerationClient } from "./client";
 
 class HttpError extends Error {
@@ -28,7 +32,11 @@ class HttpError extends Error {
 }
 
 async function getRequiredAuthHeaders(): Promise<Record<string, string>> {
-  if (runtimeConfig.authMode === "local") {
+  if (runtimeConfig.authMode === "disabled") {
+    throw createFailClosedError("Authentication");
+  }
+
+  if (runtimeConfig.authMode === "local" && allowLocalRuntimeFallbacks()) {
     const headers = getLocalAuthHeaders();
 
     if (headers["x-lightning-local-user-id"]) {
@@ -59,7 +67,7 @@ async function requestJson<T>(path: string, init: RequestInit = {}): Promise<T> 
     runtimeConfig.apiPublicBaseUrl;
 
   if (!baseUrl) {
-    throw new Error("Privileged API base URL is not configured.");
+    throw createFailClosedError("Moderation services");
   }
 
   const authHeaders = await getRequiredAuthHeaders();

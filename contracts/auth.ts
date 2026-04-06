@@ -53,4 +53,4 @@ export interface AuthResult {
   username?: string | null;
 }
 
-export type AuthProviderMode = "local" | "cognito";
+export type AuthProviderMode = "local" | "cognito" | "disabled";

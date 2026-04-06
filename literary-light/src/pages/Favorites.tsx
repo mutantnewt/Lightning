@@ -13,8 +13,8 @@ type SortOrder = "asc" | "desc";
 
 const Favorites = () => {
   const { user, isAuthenticated } = useAuth();
-  const { books } = useBooks();
-  const { favorites, getFavoriteBookIds } = useFavorites(user?.id);
+  const { books, error: booksError } = useBooks();
+  const { favorites, error: favoritesError, getFavoriteBookIds } = useFavorites(user?.id);
 
   const [sortField, setSortField] = useState<SortField>("title");
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
@@ -95,6 +95,24 @@ const Favorites = () => {
             </h2>
             <p className="mt-3 text-muted-foreground">
               Create an account to save your favorite books and build your personal collection.
+            </p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (booksError || favoritesError) {
+    return (
+      <Layout>
+        <div className="mx-auto max-w-4xl">
+          <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-10 text-center">
+            <Heart className="mx-auto h-12 w-12 text-destructive mb-4" />
+            <h2 className="font-serif text-2xl font-semibold text-foreground">
+              Favorites temporarily unavailable
+            </h2>
+            <p className="mt-3 text-muted-foreground">
+              {favoritesError ?? booksError}
             </p>
           </div>
         </div>

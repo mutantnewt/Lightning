@@ -24,7 +24,7 @@ export interface BookSuggestionDetailsResponse {
 }
 
 export interface BookSuggestionsClient {
-  readonly mode: "local" | "http";
+  readonly mode: "local" | "http" | "disabled";
   searchBooks(input: SearchBookSuggestionsInput): Promise<BookSuggestionSearchResponse>;
   getBookDetails(title: string, author: string): Promise<BookSuggestionDetailsResponse>;
   submitBookSuggestion(

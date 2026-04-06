@@ -6,7 +6,7 @@ export interface RatingSummary {
 }
 
 export interface CommunityClient {
-  readonly mode: "local" | "http";
+  readonly mode: "local" | "http" | "disabled";
   subscribe(listener: () => void): () => void;
   listComments(bookId: string): Promise<CommentRecord[]>;
   addComment(

@@ -47,11 +47,27 @@ export const runtimeConfig: RuntimeConfig = {
   ),
   siteUrl: normalizeBaseUrl(import.meta.env.VITE_SITE_URL),
   authMode:
-    cognitoUserPoolId && cognitoUserPoolClientId ? "cognito" : "local",
+    cognitoUserPoolId && cognitoUserPoolClientId
+      ? "cognito"
+      : import.meta.env.VITE_APP_ENV === "local"
+        ? "local"
+        : "disabled",
 };
 
 export function isCognitoConfigured(): boolean {
   return runtimeConfig.authMode === "cognito";
+}
+
+export function allowLocalRuntimeFallbacks(): boolean {
+  return runtimeConfig.appEnv === "local";
+}
+
+export function getFailClosedMessage(feature: string): string {
+  return `${feature} is not configured for the ${runtimeConfig.appEnv} environment. Lightning Classics is running in fail-closed mode.`;
+}
+
+export function createFailClosedError(feature: string): Error {
+  return new Error(getFailClosedMessage(feature));
 }
 
 export function isCatalogModerator(groups: string[] | null | undefined): boolean {

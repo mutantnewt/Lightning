@@ -76,6 +76,40 @@ Verification:
   - `src/api/auth/cognitoAuthClient.ts`
   - `src/api/auth/localStorageAuthClient.ts`
 
+### Slice C3: Fail-closed frontend runtime hardening
+
+Completed:
+
+- changed the frontend runtime policy so only `local` may use local fallback clients
+- changed non-local frontend auth to fail closed when Cognito config is missing instead of silently degrading to the local auth client
+- changed non-local user-state, community, catalog, moderation, and Add Book client factories to fail closed when their API base URLs are missing
+- removed the production/staging first-paint seed-data flash by initializing catalog and FAQ hooks from empty state outside local mode
+- changed the catalog, FAQ, author, and favorites pages to surface backend or configuration errors instead of silently presenting fallback content
+
+Verification:
+
+- `npm run build` passes in `literary-light/`
+- targeted eslint passes for:
+  - `src/config/runtime.ts`
+  - `src/api/auth/index.ts`
+  - `src/api/user-state/index.ts`
+  - `src/api/community/index.ts`
+  - `src/api/catalog/index.ts`
+  - `src/api/book-suggestions/index.ts`
+  - `src/api/moderation/index.ts`
+  - `src/api/user-state/httpUserStateClient.ts`
+  - `src/api/community/httpCommunityClient.ts`
+  - `src/api/book-suggestions/httpBookSuggestionsClient.ts`
+  - `src/api/moderation/httpModerationClient.ts`
+  - `src/hooks/useBooks.ts`
+  - `src/hooks/useFaqEntries.ts`
+  - `src/hooks/useAuthorBooks.ts`
+  - `src/hooks/useFavorites.ts`
+  - `src/pages/Index.tsx`
+  - `src/pages/FAQ.tsx`
+  - `src/pages/Author.tsx`
+  - `src/pages/Favorites.tsx`
+
 ### Slice D: Favorites and reading-lists client boundary
 
 Completed:

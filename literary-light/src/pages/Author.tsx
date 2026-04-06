@@ -10,7 +10,7 @@ const Author = () => {
   const navigate = useNavigate();
 
   const authorName = decodeURIComponent(name || "");
-  const { books: authorBooks, isLoading } = useAuthorBooks(authorName);
+  const { books: authorBooks, isLoading, error } = useAuthorBooks(authorName);
 
   if (isLoading) {
     return (
@@ -35,10 +35,12 @@ const Author = () => {
               <User className="h-7 w-7 text-muted-foreground" />
             </div>
             <h2 className="font-serif text-2xl font-semibold text-foreground">
-              Author not found
+              {error ? "Author page unavailable" : "Author not found"}
             </h2>
             <p className="mt-3 text-muted-foreground max-w-md mx-auto">
-              We couldn't find any books by {authorName} in our collection.
+              {error
+                ? error
+                : `We couldn't find any books by ${authorName} in our collection.`}
             </p>
             <Button onClick={() => navigate("/")} className="btn-accent mt-6">
               <ArrowLeft className="mr-2 h-4 w-4" />

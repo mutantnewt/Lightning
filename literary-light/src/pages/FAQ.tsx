@@ -4,7 +4,7 @@ import { useFaqEntries } from "@/hooks/useFaqEntries";
 import { HelpCircle } from "lucide-react";
 
 const FAQ = () => {
-  const { faqEntries, isLoading } = useFaqEntries();
+  const { faqEntries, isLoading, error } = useFaqEntries();
 
   return (
     <Layout>
@@ -24,6 +24,10 @@ const FAQ = () => {
         {isLoading ? (
           <div className="rounded-lg border border-border bg-card p-6 text-center text-sm text-muted-foreground">
             Loading frequently asked questions...
+          </div>
+        ) : error ? (
+          <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-6 text-center text-sm text-foreground">
+            {error}
           </div>
         ) : (
           <FaqAccordion entries={faqEntries} />

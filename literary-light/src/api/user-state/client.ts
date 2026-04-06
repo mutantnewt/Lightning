@@ -8,7 +8,7 @@ export interface UpsertReadingListInput {
 }
 
 export interface UserStateClient {
-  readonly mode: "local" | "http";
+  readonly mode: "local" | "http" | "disabled";
   subscribe(listener: () => void): () => void;
   listFavorites(userId: string): Promise<FavoriteRecord[]>;
   addFavorite(userId: string, bookId: string): Promise<void>;

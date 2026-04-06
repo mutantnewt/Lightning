@@ -1,7 +1,7 @@
 import type { Book, FaqEntry } from "@contracts/domain";
 
 export interface CatalogClient {
-  readonly mode: "local" | "http";
+  readonly mode: "local" | "http" | "disabled";
   listBooks(): Promise<Book[]>;
   listFaqEntries(): Promise<FaqEntry[]>;
   listBooksByAuthor(authorName: string): Promise<Book[]>;

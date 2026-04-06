@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Book } from "@/types";
 import { createCatalogClient } from "@/api/catalog";
+import { allowLocalRuntimeFallbacks } from "@/config/runtime";
 import { seedBooks } from "@/data/books";
 
 const catalogClient = createCatalogClient();
@@ -10,8 +11,11 @@ function sortBooks(books: Book[]): Book[] {
 }
 
 export function useBooks() {
-  const [books, setBooks] = useState<Book[]>(seedBooks);
+  const [books, setBooks] = useState<Book[]>(
+    allowLocalRuntimeFallbacks() ? seedBooks : [],
+  );
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -22,12 +26,23 @@ export function useBooks() {
 
         if (isMounted) {
           setBooks(sortBooks(nextBooks));
+          setError(null);
         }
       } catch (error) {
         console.error("Error loading catalog books:", error);
 
         if (isMounted) {
-          setBooks(sortBooks(seedBooks));
+          if (allowLocalRuntimeFallbacks()) {
+            setBooks(sortBooks(seedBooks));
+            setError(null);
+          } else {
+            setBooks([]);
+            setError(
+              error instanceof Error
+                ? error.message
+                : "Unable to load the catalog right now.",
+            );
+          }
         }
       } finally {
         if (isMounted) {
@@ -61,5 +76,6 @@ export function useBooks() {
     addBook,
     removeBook,
     isLoading,
+    error,
   };
 }

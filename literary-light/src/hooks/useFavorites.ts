@@ -8,6 +8,7 @@ export type Favorite = FavoriteRecord;
 
 export function useFavorites(userId?: string) {
   const [favorites, setFavorites] = useState<Favorite[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -22,11 +23,17 @@ export function useFavorites(userId?: string) {
         const nextFavorites = await userStateClient.listFavorites(userId);
         if (isMounted) {
           setFavorites(nextFavorites);
+          setError(null);
         }
       } catch (error) {
         console.error("Error loading favorites:", error);
         if (isMounted) {
           setFavorites([]);
+          setError(
+            error instanceof Error
+              ? error.message
+              : "Unable to load favorites right now.",
+          );
         }
       }
     };
@@ -78,6 +85,7 @@ export function useFavorites(userId?: string) {
 
   return {
     favorites,
+    error,
     isFavorite,
     toggleFavorite,
     getFavoriteBookIds,
