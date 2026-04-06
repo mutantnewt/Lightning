@@ -190,6 +190,8 @@ Hosted frontend baseline:
 - the staging GitHub secret-sync path is now live-verified through `npm run github:smoke:staging:sync-secrets`
 - the hosted staging smoke workflow is now live-verified in GitHub Actions against `https://staging.lightningclassics.com`
 - the repo now also includes a matching hosted production smoke workflow plus a production secret-sync path
+- the production GitHub secret-sync path is now live-verified through `npm run github:smoke:production:sync-secrets`
+- the hosted production smoke workflow is now live-verified in GitHub Actions against `https://lightningclassics.com`
 - the hosted frontend stacks now also provision durable S3 archive buckets for retained releases:
   - `lightning-frontend-releases-staging-310505389001-eu-west-2`
   - `lightning-frontend-releases-prod-310505389001-eu-west-2`
@@ -269,6 +271,7 @@ Note:
 - the repo now also includes `LightningGithubAutomationStack` for GitHub OIDC hosted-smoke access
 - the repo now also includes `npm run github:smoke:staging:sync-secrets` so the staging hosted-smoke GitHub secrets can be refreshed from live AWS outputs and Cognito
 - as of 2026-04-06, the hosted staging smoke workflow itself also passes in GitHub Actions after the live secret-sync path provisions the required repository secrets
+- as of 2026-04-06, the hosted production smoke workflow also passes in GitHub Actions after the live production secret-sync path provisions the required repository secrets
 - the repo now also includes a pre-cutover backend CORS preparation helper so the default Amplify hosted URLs can complete authenticated browser smoke before custom-domain attachment
 - the hosted-smoke preparation helper now also supports forced redeploys through:
   - `npm run prepare:staging:hosted-smoke:force`
