@@ -343,7 +343,7 @@ Alarm subscriptions in GitHub Actions:
 - dry-run artifacts now also include the current `ops:status` alert-readiness snapshot for each target environment, so missing confirmations are visible before any live subscription attempt
 - `npm run github:alerting:sync-secrets` now publishes the live alerting-management role ARN from `LightningGithubAutomationStack`
 - the recommended first use is a dry-run dispatch with a placeholder address such as `ops@example.com`, because that validates role assumption and workflow wiring without creating SNS subscriptions
-- the current live proof point is workflow run `24051302102`, which passed on 2026-04-06 in dry-run mode
+- the current live proof point is workflow run `24052959607`, which passed on 2026-04-06 in dry-run mode with the readiness-summary and artifact path enabled
 
 Hosted frontend release verification:
 

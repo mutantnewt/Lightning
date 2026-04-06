@@ -2107,12 +2107,8 @@ Verification:
 - `npm run build` passes in `infra`
 - the new alerting-management role can be deployed with `LightningGithubAutomationStack`
 - the new secret-sync path can publish `LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_ALERTING` from live stack outputs
-- GitHub Actions workflow run `24051302102` passes on 2026-04-06 for the new alert-subscription workflow in dry-run mode with `ops@example.com`
-- that dry-run proof validates role assumption, workflow input handling, and artifact upload without creating SNS subscriptions
-
-Current limitation:
-
-- a fresh live proof run is still needed for the new summary-and-readiness artifact enhancements, even though the underlying alerting workflow baseline is already live-verified
+- GitHub Actions workflow run `24052959607` passes on 2026-04-06 for the enhanced alert-subscription workflow in dry-run mode with `ops@example.com`
+- that dry-run proof validates role assumption, workflow input handling, summary rendering, readiness-artifact upload, and dry-run `ops:status` snapshot capture without creating SNS subscriptions
 
 - a real confirmed alert destination is still not attached, so `npm run ops:status` remains the live operational gap until a real recipient confirms the SNS subscription email
 
