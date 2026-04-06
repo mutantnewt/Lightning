@@ -256,6 +256,8 @@ Note:
 - the repo now also includes a script-backed custom-domain verification helper for staging and production
 - the repo now also includes a guarded final cutover command that chains domain attachment, custom-host verification, and production CORS cleanup
 - the repo now also includes hosted-frontend browser-smoke wrappers in `/Users/steve/Documents/GitHub/Lightning/scripts/run-hosted-frontend-smoke.mjs` so staged and production hosted URLs can be verified directly
+- the repo now also includes `LightningGithubAutomationStack` for GitHub OIDC hosted-smoke access
+- the repo now also includes `npm run github:smoke:staging:sync-secrets` so the staging hosted-smoke GitHub secrets can be refreshed from live AWS outputs and Cognito
 - the repo now also includes a pre-cutover backend CORS preparation helper so the default Amplify hosted URLs can complete authenticated browser smoke before custom-domain attachment
 - the hosted-smoke preparation helper now also supports forced redeploys through:
   - `npm run prepare:staging:hosted-smoke:force`

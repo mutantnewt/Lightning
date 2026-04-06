@@ -9,6 +9,7 @@ import {
 import { LightningDnsStack } from "../lib/lightning-dns-stack";
 import { LightningEnvironmentStack } from "../lib/lightning-environment-stack";
 import { LightningFrontendHostingStack } from "../lib/lightning-frontend-hosting-stack";
+import { LightningGithubAutomationStack } from "../lib/lightning-github-automation-stack";
 
 const app = new cdk.App();
 const requestedComponent =
@@ -26,6 +27,10 @@ const requestedRegion =
   process.env.CDK_DEFAULT_REGION ??
   process.env.AWS_REGION ??
   "eu-west-2";
+const requestedGithubRepository =
+  app.node.tryGetContext("githubRepository") ??
+  process.env.LIGHTNING_GITHUB_REPOSITORY ??
+  "mutantnewt/Lightning";
 const requestedFrontendOrigin =
   app.node.tryGetContext("frontendOrigin") ??
   process.env.LIGHTNING_FRONTEND_ORIGIN ??
@@ -63,6 +68,12 @@ const stackEnv = account
 if (requestedComponent === "dns") {
   new LightningDnsStack(app, lightningDnsStackName, {
     rootDomainName: lightningRootDomainName,
+    env: stackEnv,
+  });
+} else if (requestedComponent === "automation") {
+  new LightningGithubAutomationStack(app, "LightningGithubAutomationStack", {
+    regionName: requestedRegion,
+    repositoryFullName: requestedGithubRepository,
     env: stackEnv,
   });
 } else if (requestedComponent === "frontend") {

@@ -103,6 +103,8 @@ Repository validation baseline:
   - `LIGHTNING_STAGING_SMOKE_IDENTIFIER`
   - `LIGHTNING_STAGING_SMOKE_PASSWORD`
 - the hosted staging smoke workflow runs on manual dispatch and on a daily schedule, using the hosted staging frontend rather than a local Vite server
+- the repo now also includes a dedicated GitHub OIDC automation stack, `LightningGithubAutomationStack`
+- the repo now also includes `npm run github:smoke:staging:sync-secrets` to bootstrap the staging smoke user and write the three required GitHub repository secrets
 - the repo now also includes `npm run ops:subscribe:emails` as a safe operator wrapper for attaching SNS email subscriptions and then checking live subscription readiness
 
 Custom-domain cutover:
@@ -159,6 +161,28 @@ Hosted staging smoke in GitHub Actions:
 - it uses GitHub OIDC plus `aws-actions/configure-aws-credentials@v4`
 - it resolves a Linux Chrome or Chromium binary on the runner and passes that path into `CHROME_BIN`
 - it intentionally skips the smoke job with a warning when the required secrets are not configured yet
+- the required OIDC role is now output by `LightningGithubAutomationStack` as `GitHubHostedSmokeRoleArnStaging`
+
+Hosted staging smoke secret sync:
+
+```sh
+cd /Users/steve/Documents/GitHub/Lightning/infra
+/usr/local/bin/npm run github:smoke:staging:sync-secrets -- --dry-run
+```
+
+```sh
+cd /Users/steve/Documents/GitHub/Lightning/infra
+/usr/local/bin/npm run github:smoke:staging:sync-secrets
+```
+
+This flow now:
+
+- reads the live OIDC role ARN from `LightningGithubAutomationStack`
+- bootstraps or resets the staging smoke user in Cognito with a strong password
+- writes `LIGHTNING_GITHUB_ACTIONS_ROLE_ARN`
+- writes `LIGHTNING_STAGING_SMOKE_IDENTIFIER`
+- writes `LIGHTNING_STAGING_SMOKE_PASSWORD`
+- leaves the hosted staging workflow ready to run in GitHub Actions
 
 Alarm email subscription workflow:
 
