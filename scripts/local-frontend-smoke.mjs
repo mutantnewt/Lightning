@@ -563,7 +563,12 @@ async function main() {
       chrome.kill("SIGKILL");
     }
 
-    rmSync(userDataDir, { recursive: true, force: true });
+    rmSync(userDataDir, {
+      recursive: true,
+      force: true,
+      maxRetries: 10,
+      retryDelay: 200,
+    });
   };
 
   process.on("exit", cleanup);
