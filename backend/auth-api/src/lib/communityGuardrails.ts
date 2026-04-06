@@ -26,6 +26,13 @@ export class InvalidCommunityCursorError extends Error {
   }
 }
 
+export class DuplicateReviewError extends Error {
+  constructor(message = "You can only keep one review per book.") {
+    super(message);
+    this.name = "DuplicateReviewError";
+  }
+}
+
 export function normalizeCommunityPageSize(value: unknown): number | null {
   if (typeof value === "undefined" || value === null || value === "") {
     return communityPolicy.defaultPageSize;

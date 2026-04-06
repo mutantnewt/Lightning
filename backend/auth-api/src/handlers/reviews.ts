@@ -3,6 +3,7 @@ import { communityPolicy } from "../../../../contracts/user-state";
 import { getAuthenticatedUser } from "../../../shared/auth";
 import {
   badRequest,
+  conflict,
   forbidden,
   noContent,
   ok,
@@ -16,7 +17,10 @@ import {
   addReviewForBook,
   removeReviewForBook,
 } from "../services/bookCommunityService";
-import { validateReviewText } from "../lib/communityGuardrails";
+import {
+  DuplicateReviewError,
+  validateReviewText,
+} from "../lib/communityGuardrails";
 
 function normalizeRating(value: unknown): number | null {
   if (typeof value !== "number" || Number.isNaN(value)) {
@@ -66,6 +70,10 @@ export async function createReviewHandler(
     );
     return ok({ review: createdReview });
   } catch (error) {
+    if (error instanceof DuplicateReviewError) {
+      return conflict(error.message);
+    }
+
     console.error("Error creating review:", error);
     return serverError("Unable to save review.");
   }

@@ -33,10 +33,13 @@ export function ReviewsSection({ bookId }: ReviewsSectionProps) {
         title: "Review posted",
         description: "Your review has been added successfully",
       });
-    } catch {
+    } catch (error) {
       toast({
         title: "Unable to post review",
-        description: "Something went wrong while saving your review.",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Something went wrong while saving your review.",
         variant: "destructive",
       });
     } finally {

@@ -152,8 +152,16 @@ export class LocalStorageCommunityClient implements CommunityClient {
     review: string,
   ): Promise<ReviewRecord> {
     const reviews = getStoredItems<ReviewRecord>(REVIEWS_STORAGE_KEY);
+    const existingReview = reviews.find(
+      (item) => item.bookId === bookId && item.userId === userId,
+    );
+
+    if (existingReview) {
+      throw new Error("You can only keep one review per book.");
+    }
+
     const createdReview: ReviewRecord = {
-      id: createId("review"),
+      id: `review:${userId}:${bookId}`,
       userId,
       userName,
       bookId,

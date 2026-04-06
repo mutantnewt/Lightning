@@ -398,6 +398,8 @@ Transitional implementation status:
 - comments, reviews, and ratings now sit behind a dedicated community client boundary with public-read and authenticated-write local/API paths
 - community reads for comments and reviews are now bounded server-side and return pagination metadata even though the current UX still renders only the first page
 - comment and review writes now have explicit server-side length limits with matching frontend input constraints
+- review writes are now constrained to one active review per user per book
+- staging and production HTTP API stages now apply default-route throttling as a baseline API-edge abuse control
 - manual hosted frontend publishes now run under a repo-local deploy lock so staging and production cannot race on the same build output
 - books, FAQ entries, and author pages now have a dedicated public catalog client boundary with a local/API path
 - Add Book enrichment and audit recording now sit behind a dedicated privileged client boundary with local/API paths

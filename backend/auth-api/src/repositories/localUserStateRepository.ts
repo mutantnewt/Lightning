@@ -13,7 +13,10 @@ import type {
   CommunityListRequest,
   CommunityListResult,
 } from "../lib/communityGuardrails";
-import { paginateCommunityItems } from "../lib/communityGuardrails";
+import {
+  DuplicateReviewError,
+  paginateCommunityItems,
+} from "../lib/communityGuardrails";
 import { getEnv } from "../../../shared/env";
 
 interface UserStateFile {
@@ -332,24 +335,34 @@ export class LocalUserStateRepository {
     rating: number,
     review: string,
   ): Promise<ReviewRecord> {
-    const createdReview: ReviewRecord = {
-      id: this.createId("review"),
-      userId,
-      userName,
-      bookId,
-      rating,
-      review,
-      createdAt: new Date().toISOString(),
-      helpful: 0,
-    };
+    return this.updateStateWithResult((state) => {
+      const existingReview = state.reviews.find(
+        (item) => item.userId === userId && item.bookId === bookId,
+      );
 
-    return this.updateStateWithResult((state) => ({
-      nextState: {
-        ...state,
-        reviews: [...state.reviews, createdReview],
-      },
-      result: createdReview,
-    }));
+      if (existingReview) {
+        throw new DuplicateReviewError();
+      }
+
+      const createdReview: ReviewRecord = {
+        id: `review:${userId}:${bookId}`,
+        userId,
+        userName,
+        bookId,
+        rating,
+        review,
+        createdAt: new Date().toISOString(),
+        helpful: 0,
+      };
+
+      return {
+        nextState: {
+          ...state,
+          reviews: [...state.reviews, createdReview],
+        },
+        result: createdReview,
+      };
+    });
   }
 
   async removeReview(

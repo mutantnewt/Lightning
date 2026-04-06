@@ -219,6 +219,9 @@ The current codified CloudWatch baseline for `staging` and `production` is:
   - `/aws/apigateway/lightning-http-api-access-staging`
   - `/aws/apigateway/lightning-http-api-access-prod`
 - active Lambda tracing on public, authenticated, and privileged runtimes
+- HTTP API default-route throttling enabled at the API edge:
+  - staging burst `50`, rate `25`
+  - production burst `100`, rate `50`
 - one SNS alarm topic per environment with every codified alarm wired to it:
   - `lightning-operations-alerts-staging`
   - `lightning-operations-alerts-prod`

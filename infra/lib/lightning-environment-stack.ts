@@ -315,6 +315,12 @@ export class LightningEnvironmentStack extends Stack {
         }),
       },
     });
+    const cfnHttpStage = httpStage.node.defaultChild as apigwv2.CfnStage;
+    cfnHttpStage.defaultRouteSettings = {
+      detailedMetricsEnabled: true,
+      throttlingBurstLimit: environmentName === "production" ? 100 : 50,
+      throttlingRateLimit: environmentName === "production" ? 50 : 25,
+    };
 
     const publicApiIntegration = new integrations.HttpLambdaIntegration(
       "PublicApiIntegration",

@@ -260,6 +260,20 @@ Verification:
   - `backend` build
   - `infra` TypeScript build
 
+### Slice X3: Community write-abuse hardening
+
+Completed:
+
+- enforced one-review-per-user-per-book across the DynamoDB-backed backend, local backend, and local browser fallback client
+- changed review creation conflicts to return `409` with a user-readable message instead of a generic failure
+- improved review and comment create toasts so backend validation and conflict messages now surface to the user
+- enabled default HTTP API stage throttling in staging and production as a basic API-edge speed limit in front of Lambda
+
+Verification:
+
+- backend and frontend builds pass
+- staging and production stacks now deploy with HTTP API default-route throttling enabled
+
 ### Slice H: Public catalog boundary
 
 Completed:

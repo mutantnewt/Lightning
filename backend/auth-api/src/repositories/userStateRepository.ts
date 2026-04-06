@@ -17,7 +17,10 @@ import type {
   CommunityListRequest,
   CommunityListResult,
 } from "../lib/communityGuardrails";
-import { paginateCommunityItems } from "../lib/communityGuardrails";
+import {
+  DuplicateReviewError,
+  paginateCommunityItems,
+} from "../lib/communityGuardrails";
 import { getDynamoDocumentClient } from "../../../shared/dynamo";
 import { getRequiredEnv } from "../../../shared/env";
 
@@ -107,6 +110,10 @@ function getRatingSortKey(userId: string): string {
 
 function getReviewSortKey(reviewId: string): string {
   return `REVIEW#${reviewId}`;
+}
+
+function createDeterministicReviewId(userId: string, bookId: string): string {
+  return `review:${userId}:${bookId}`;
 }
 
 function toFavoriteRecord(item: FavoriteItem): FavoriteRecord {
@@ -493,8 +500,27 @@ export class UserStateRepository {
     rating: number,
     review: string,
   ): Promise<ReviewRecord> {
+    const existingReviewsResponse = await this.client.send(
+      new QueryCommand({
+        TableName: this.tableName,
+        KeyConditionExpression: "pk = :pk AND begins_with(sk, :skPrefix)",
+        ExpressionAttributeValues: {
+          ":pk": getBookPartitionKey(bookId),
+          ":skPrefix": "REVIEW#",
+        },
+      }),
+    );
+
+    const existingReview = ((existingReviewsResponse.Items ?? []) as ReviewItem[]).find(
+      (item) => item.userId === userId,
+    );
+
+    if (existingReview) {
+      throw new DuplicateReviewError();
+    }
+
     const createdAt = new Date().toISOString();
-    const reviewId = `review:${randomUUID()}`;
+    const reviewId = createDeterministicReviewId(userId, bookId);
     const item: ReviewItem = {
       pk: getBookPartitionKey(bookId),
       sk: getReviewSortKey(reviewId),
@@ -509,12 +535,26 @@ export class UserStateRepository {
       helpful: 0,
     };
 
-    await this.client.send(
-      new PutCommand({
-        TableName: this.tableName,
-        Item: item,
-      }),
-    );
+    try {
+      await this.client.send(
+        new PutCommand({
+          TableName: this.tableName,
+          Item: item,
+          ConditionExpression: "attribute_not_exists(pk) AND attribute_not_exists(sk)",
+        }),
+      );
+    } catch (error) {
+      if (
+        error &&
+        typeof error === "object" &&
+        "name" in error &&
+        error.name === "ConditionalCheckFailedException"
+      ) {
+        throw new DuplicateReviewError();
+      }
+
+      throw error;
+    }
 
     return toReviewRecord(item);
   }
