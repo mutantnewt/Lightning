@@ -15,15 +15,17 @@ import {
 import { createHash } from "node:crypto";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-export const repoRoot = "/Users/steve/Documents/GitHub/Lightning";
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+export const repoRoot = path.resolve(__dirname, "..");
 export const frontendDir = path.join(repoRoot, "literary-light");
 export const frontendDistDir = path.join(frontendDir, "dist");
 export const frontendReleaseArchiveRoot =
   process.env.LIGHTNING_FRONTEND_RELEASE_ARCHIVE_ROOT ??
   path.join(repoRoot, ".local", "frontend-releases");
-export const awsCli = "/opt/homebrew/bin/aws";
-export const npmCli = "/usr/local/bin/npm";
+export const awsCli = process.env.AWS_CLI_BIN ?? "aws";
+export const npmCli = process.env.NPM_CLI_BIN ?? "npm";
 export const releaseManifestFileName = "lightning-release.json";
 export const releaseArchiveMetadataFileName = "release-archive.json";
 export const releaseArchiveZipFileName = "frontend-dist.zip";

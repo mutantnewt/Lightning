@@ -92,6 +92,12 @@ Repository validation baseline:
   - backend community-guard validation for duplicate-review blocking and multi-page comment pagination
   - infra TypeScript build
 - full-repo lint is still intentionally deferred until the pre-existing repo-wide lint backlog is reduced
+- the repo now also includes a dedicated hosted staging smoke workflow in `.github/workflows/hosted-staging-smoke.yml`
+- the hosted staging smoke workflow is designed for OIDC-backed AWS access and only runs the smoke job when these GitHub secrets exist:
+  - `LIGHTNING_GITHUB_ACTIONS_ROLE_ARN`
+  - `LIGHTNING_STAGING_SMOKE_IDENTIFIER`
+  - `LIGHTNING_STAGING_SMOKE_PASSWORD`
+- the hosted staging smoke workflow runs on manual dispatch and on a daily schedule, using the hosted staging frontend rather than a local Vite server
 
 Custom-domain cutover:
 
@@ -139,6 +145,14 @@ cd /Users/steve/Documents/GitHub/Lightning/literary-light
 cd /Users/steve/Documents/GitHub/Lightning/literary-light
 /usr/local/bin/npm run smoke:production:hosted
 ```
+
+Hosted staging smoke in GitHub Actions:
+
+- the workflow lives at `.github/workflows/hosted-staging-smoke.yml`
+- it resolves the live staging hosted URL from the deployed AWS stack outputs
+- it uses GitHub OIDC plus `aws-actions/configure-aws-credentials@v4`
+- it resolves a Linux Chrome or Chromium binary on the runner and passes that path into `CHROME_BIN`
+- it intentionally skips the smoke job with a warning when the required secrets are not configured yet
 
 Hosted frontend release verification:
 

@@ -131,6 +131,8 @@ Current behavior:
 - `npm run smoke:production:hosted` does not require the local frontend dev server because it targets the hosted frontend URL directly
 - as of 2026-04-02, `npm run smoke:staging:hosted` passes against `https://staging.dy2grocxp5fe9.amplifyapp.com`
 - as of 2026-04-02, `npm run smoke:production:hosted` passes against `https://main.d1te9vk2z7t41u.amplifyapp.com`
+- the hosted smoke and release helpers now resolve the repository root and CLI binaries dynamically, so the same commands can run on a GitHub-hosted Linux runner instead of only on one local workstation
+- the repo now also includes `.github/workflows/hosted-staging-smoke.yml` for OIDC-backed hosted staging browser verification in GitHub Actions
 - ratings are currently persistent in smoke runs because the app does not yet expose a rating delete/reset path
 - moderation verification requires the signed-in test user to be in `lightning-catalog-moderators-<env>` for that run unless `LIGHTNING_SMOKE_AUTO_MODERATOR=true` is set
 - moderation verification now prepares a synthetic queue submission and executes a real reject or defer decision through the rendered moderation UI
@@ -185,6 +187,10 @@ For the hosted smoke commands:
 - once Amplify marks the custom domain ready, the same command will prefer `staging.lightningclassics.com` or `lightningclassics.com` automatically
 - before custom-domain cutover, run the matching `prepare:<env>:hosted-smoke` helper in `/Users/steve/Documents/GitHub/Lightning/infra` if the backend CORS allow-list does not yet include the default Amplify hostname
 - after custom-domain cutover, the repo-level finalizer can run the same hosted browser smoke on the custom domains when `LIGHTNING_STAGING_SMOKE_*` and `LIGHTNING_PRODUCTION_SMOKE_*` are supplied
+- GitHub Actions can now run the hosted staging smoke through `.github/workflows/hosted-staging-smoke.yml` once these repository secrets exist:
+  - `LIGHTNING_GITHUB_ACTIONS_ROLE_ARN`
+  - `LIGHTNING_STAGING_SMOKE_IDENTIFIER`
+  - `LIGHTNING_STAGING_SMOKE_PASSWORD`
 
 Optional moderator example:
 

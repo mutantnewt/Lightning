@@ -1809,6 +1809,12 @@ The repo is now in a transition state:
 - the hosted-domain verification and hosted-smoke helpers now treat the apex production domain as ready when Amplify reports `domainStatus=AVAILABLE` and HTTPS succeeds, even though the apex `verified` flag remains `false`
 - environment-specific hosted smoke credentials are now bridged into the inner browser smoke runner automatically
 - a post-cutover evidence snapshot is now archived at `docs/archive/cutover-evidence/cutover-evidence-2026-04-03T08-41-30Z.json`
+- the hosted smoke and release helper libraries no longer assume a single developer workstation path or Homebrew-only CLI locations
+- the repo now also includes a dedicated GitHub Actions hosted staging smoke workflow with OIDC-ready AWS credentials and Linux Chrome resolution
+- the hosted staging smoke workflow is intentionally conditional on three GitHub secrets so it can be enabled safely without breaking the default validation baseline:
+  - `LIGHTNING_GITHUB_ACTIONS_ROLE_ARN`
+  - `LIGHTNING_STAGING_SMOKE_IDENTIFIER`
+  - `LIGHTNING_STAGING_SMOKE_PASSWORD`
 
 ## Immediate Next Steps
 
@@ -1818,6 +1824,7 @@ Needed:
 
 - capture and archive a post-cutover operator snapshot with `npm run cutover:evidence`
 - attach real email, chat, PagerDuty, or Incident Manager subscriptions to the live SNS alarm topics
+- configure the GitHub repository secrets needed for `.github/workflows/hosted-staging-smoke.yml` so the scheduled hosted staging smoke can run for real
 - decide whether staging and production should stay on manual Amplify artifact deploys or move to repository-connected Amplify CI/CD
 - decide whether to add `www.lightningclassics.com` as a redirect or secondary hostname
 - add lifecycle or replication rules to the hosted frontend release-archive buckets if longer retention or disaster-recovery duplication is required

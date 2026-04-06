@@ -1,0 +1,109 @@
+name: Hosted Staging Smoke
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "30 6 * * *"
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: hosted-staging-smoke-${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  preflight:
+    name: Hosted Staging Smoke Preflight
+    runs-on: ubuntu-latest
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+      missing: ${{ steps.check.outputs.missing }}
+    steps:
+      - name: Check required secrets
+        id: check
+        env:
+          LIGHTNING_GITHUB_ACTIONS_ROLE_ARN: ${{ secrets.LIGHTNING_GITHUB_ACTIONS_ROLE_ARN }}
+          LIGHTNING_STAGING_SMOKE_IDENTIFIER: ${{ secrets.LIGHTNING_STAGING_SMOKE_IDENTIFIER }}
+          LIGHTNING_STAGING_SMOKE_PASSWORD: ${{ secrets.LIGHTNING_STAGING_SMOKE_PASSWORD }}
+        run: |
+          missing=()
+
+          if [ -z "$LIGHTNING_GITHUB_ACTIONS_ROLE_ARN" ]; then
+            missing+=("LIGHTNING_GITHUB_ACTIONS_ROLE_ARN")
+          fi
+
+          if [ -z "$LIGHTNING_STAGING_SMOKE_IDENTIFIER" ]; then
+            missing+=("LIGHTNING_STAGING_SMOKE_IDENTIFIER")
+          fi
+
+          if [ -z "$LIGHTNING_STAGING_SMOKE_PASSWORD" ]; then
+            missing+=("LIGHTNING_STAGING_SMOKE_PASSWORD")
+          fi
+
+          if [ "${#missing[@]}" -eq 0 ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            echo "missing=none" >> "$GITHUB_OUTPUT"
+            echo "Hosted staging smoke prerequisites are configured."
+            exit 0
+          fi
+
+          missing_csv=$(IFS=,; printf '%s' "${missing[*]}")
+          echo "ready=false" >> "$GITHUB_OUTPUT"
+          echo "missing=$missing_csv" >> "$GITHUB_OUTPUT"
+          echo "Hosted staging smoke prerequisites are missing: $missing_csv"
+
+  smoke:
+    name: Hosted Staging Smoke
+    needs: preflight
+    if: needs.preflight.outputs.ready == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Resolve Chrome binary
+        run: |
+          for candidate in google-chrome google-chrome-stable chromium-browser chromium; do
+            if command -v "$candidate" >/dev/null 2>&1; then
+              echo "CHROME_BIN=$(command -v "$candidate")" >> "$GITHUB_ENV"
+              exit 0
+            fi
+          done
+
+          echo "No supported Chrome or Chromium binary is installed on this runner." >&2
+          exit 1
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.LIGHTNING_GITHUB_ACTIONS_ROLE_ARN }}
+          aws-region: eu-west-2
+
+      - name: Run hosted staging smoke
+        working-directory: literary-light
+        env:
+          AWS_REGION: eu-west-2
+          AWS_DEFAULT_REGION: eu-west-2
+          AWS_CLI_BIN: aws
+          CHROME_BIN: ${{ env.CHROME_BIN }}
+          LIGHTNING_STAGING_SMOKE_IDENTIFIER: ${{ secrets.LIGHTNING_STAGING_SMOKE_IDENTIFIER }}
+          LIGHTNING_STAGING_SMOKE_PASSWORD: ${{ secrets.LIGHTNING_STAGING_SMOKE_PASSWORD }}
+        run: npm run smoke:staging:hosted
+
+  missing-prerequisites:
+    name: Hosted Staging Smoke Skipped
+    needs: preflight
+    if: needs.preflight.outputs.ready != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report skipped smoke
+        run: |
+          echo "::warning::Hosted staging smoke skipped because these required secrets are missing: ${{ needs.preflight.outputs.missing }}"

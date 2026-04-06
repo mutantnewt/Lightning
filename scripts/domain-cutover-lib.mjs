@@ -3,11 +3,13 @@
 import { execFileSync } from "node:child_process";
 import { resolveNs } from "node:dns/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-export const repoRoot = "/Users/steve/Documents/GitHub/Lightning";
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+export const repoRoot = path.resolve(__dirname, "..");
 export const infraDir = path.join(repoRoot, "infra");
-export const awsCli = process.env.AWS_CLI_BIN ?? "/opt/homebrew/bin/aws";
-export const npmCli = process.env.NPM_CLI_BIN ?? "/usr/local/bin/npm";
+export const awsCli = process.env.AWS_CLI_BIN ?? "aws";
+export const npmCli = process.env.NPM_CLI_BIN ?? "npm";
 export const lightningRootDomainName = "lightningclassics.com";
 export const lightningDnsStackName = "LightningDnsStack";
 export const defaultRegion =

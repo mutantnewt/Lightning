@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { mkdtempSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -14,9 +14,27 @@ const smokeCommunityProbeScript = join(
   "manage-smoke-community-probe.mjs",
 );
 
-const chromeBinary =
-  process.env.CHROME_BIN ??
-  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
+function resolveChromeBinary() {
+  if (process.env.CHROME_BIN) {
+    return process.env.CHROME_BIN;
+  }
+
+  const candidatePaths = [
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    "/usr/bin/google-chrome",
+    "/usr/bin/google-chrome-stable",
+    "/usr/bin/chromium-browser",
+    "/usr/bin/chromium",
+  ];
+
+  const resolvedCandidate = candidatePaths.find((candidatePath) =>
+    existsSync(candidatePath),
+  );
+
+  return resolvedCandidate ?? "google-chrome";
+}
+
+const chromeBinary = resolveChromeBinary();
 
 const targetUrl = process.env.LIGHTNING_SMOKE_URL ?? "http://127.0.0.1:5175/";
 const signInIdentifier = process.env.LIGHTNING_SMOKE_IDENTIFIER;
