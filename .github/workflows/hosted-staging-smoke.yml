@@ -100,6 +100,7 @@ jobs:
           AWS_DEFAULT_REGION: eu-west-2
           AWS_CLI_BIN: aws
           CHROME_BIN: ${{ env.CHROME_BIN }}
+          LIGHTNING_SMOKE_EXPECTED_USER: Staging Smoke
           LIGHTNING_STAGING_SMOKE_IDENTIFIER: ${{ secrets.LIGHTNING_STAGING_SMOKE_IDENTIFIER }}
           LIGHTNING_STAGING_SMOKE_PASSWORD: ${{ secrets.LIGHTNING_STAGING_SMOKE_PASSWORD }}
         run: npm run smoke:staging:hosted
