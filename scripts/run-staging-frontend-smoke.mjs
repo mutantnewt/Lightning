@@ -1,6 +1,10 @@
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
+import {
+  ensureCloudSmokeCredentials,
+  requiresSmokeCredentialBootstrap,
+} from "./ensure-cloud-smoke-credentials.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(__dirname, "..");
@@ -62,6 +66,7 @@ function run(command, args, options = {}) {
 async function main() {
   let primaryError = null;
   let restoreError = null;
+  let resolvedSmokeCredentials = null;
 
   const sharedEnv = {
     LIGHTNING_BOOTSTRAP_ENV:
@@ -82,14 +87,39 @@ async function main() {
       process.env.LIGHTNING_FRONTEND_ORIGIN ?? "http://127.0.0.1:5175",
   };
 
+  if (requiresSmokeCredentialBootstrap(process.env)) {
+    console.log(
+      "Bootstrapping a dedicated local staging smoke user because no local smoke credentials were supplied ...",
+    );
+    resolvedSmokeCredentials = ensureCloudSmokeCredentials({
+      environmentName: "staging",
+      identifier: process.env.LIGHTNING_SMOKE_IDENTIFIER,
+      displayName: process.env.LIGHTNING_SMOKE_EXPECTED_USER,
+      password: process.env.LIGHTNING_SMOKE_PASSWORD,
+    });
+  }
+
+  const smokeEnv = {
+    ...sharedEnv,
+    LIGHTNING_SMOKE_IDENTIFIER:
+      process.env.LIGHTNING_SMOKE_IDENTIFIER ??
+      resolvedSmokeCredentials?.smokeIdentifier,
+    LIGHTNING_SMOKE_PASSWORD:
+      process.env.LIGHTNING_SMOKE_PASSWORD ??
+      resolvedSmokeCredentials?.smokePassword,
+    LIGHTNING_SMOKE_EXPECTED_USER:
+      process.env.LIGHTNING_SMOKE_EXPECTED_USER ??
+      resolvedSmokeCredentials?.smokeDisplayName,
+  };
+
   try {
     console.log("Temporarily enabling staging CORS for the local smoke origin ...");
     await run(nodeBin, [stagingCorsScript, "--action", "enable"], {
-      env: sharedEnv,
+      env: smokeEnv,
     });
 
     await run(nodeBin, [delegatedScript], {
-      env: sharedEnv,
+      env: smokeEnv,
     });
   } catch (error) {
     primaryError = error;
@@ -97,7 +127,7 @@ async function main() {
     try {
       console.log("Restoring staging CORS to the canonical staging-only baseline ...");
       await run(nodeBin, [stagingCorsScript, "--action", "restore"], {
-        env: sharedEnv,
+        env: smokeEnv,
       });
     } catch (error) {
       restoreError = error;

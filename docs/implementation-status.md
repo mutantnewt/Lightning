@@ -2008,7 +2008,32 @@ Verification:
 
 Current limitation:
 
-- the local staging smoke wrapper is now operator-safe, but a full browser-led rerun still requires smoke credentials in the local environment
+- the explicit local staging smoke path is now operator-safe, but it still depends on a browser-capable local environment for full end-to-end proof
+
+### Slice BG: Self-bootstrapping local staging smoke credentials
+
+Completed:
+
+- added `scripts/ensure-cloud-smoke-credentials.mjs` so live cloud smoke users can be bootstrapped from stack outputs without depending on GitHub secret sync
+- taught `scripts/run-staging-frontend-smoke.mjs` to bootstrap a dedicated local staging smoke user automatically when `LIGHTNING_SMOKE_IDENTIFIER` and `LIGHTNING_SMOKE_PASSWORD` are absent
+- kept the local staging smoke path isolated from the GitHub-hosted smoke credential set by using a dedicated local staging smoke identifier and display name
+- fixed `scripts/manage-staging-local-smoke-cors.mjs` restore behavior so it clears `LIGHTNING_FRONTEND_ORIGIN` during the canonical restore deploy instead of accidentally preserving the temporary local-origin override
+
+Verification:
+
+- `/usr/local/bin/node --check scripts/ensure-cloud-smoke-credentials.mjs` passes
+- `/usr/local/bin/node --check scripts/run-staging-frontend-smoke.mjs` passes
+- `npm run smoke:staging` succeeds on 2026-04-06 with no pre-set local smoke credentials
+- the same live run now proves all of the following in one path:
+  - automatic bootstrapping of a dedicated `Staging Local Smoke` Cognito user
+  - temporary staging CORS broadening to `http://127.0.0.1:5175`
+  - successful browser-led staging verification through the local Vite dev server
+  - restoration of local frontend env back to `local-backend` mode
+  - restoration of staging CORS back to `https://staging.lightningclassics.com` only
+
+Current limitation:
+
+- the self-bootstrapping path is currently implemented for local staging smoke; production still relies on the hosted verification path as the preferred post-cutover operator check
 
 ## Immediate Next Steps
 

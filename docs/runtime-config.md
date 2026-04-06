@@ -168,6 +168,7 @@ Implementation status:
 - this value can also point at the deployed `PublicApiBaseUrl` output from `LightningLocalStack` for AWS-backed verification
 - the new `npm run smoke:staging` path now temporarily points it at the deployed staging API Gateway URL while still serving the frontend from `http://127.0.0.1:5175`
 - the staging browser-smoke wrapper now temporarily enables `http://127.0.0.1:5175` in staging CORS before the run and restores the canonical staging-only CORS baseline afterward
+- when local staging smoke credentials are absent, the wrapper now bootstraps a dedicated staging-only smoke user automatically instead of relying on the GitHub-hosted smoke credential set
 
 ### `VITE_API_AUTH_BASE_URL`
 

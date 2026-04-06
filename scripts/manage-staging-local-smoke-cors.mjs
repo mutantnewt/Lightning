@@ -145,6 +145,9 @@ function deployEnable(frontendOrigin) {
     {
       cwd: infraDir,
       stdio: "inherit",
+      env: {
+        LIGHTNING_FRONTEND_ORIGIN: frontendOrigin,
+      },
     },
   );
 }
@@ -153,6 +156,9 @@ function deployRestore() {
   run(npmCli, ["run", "deploy:frontend:staging"], {
     cwd: infraDir,
     stdio: "inherit",
+    env: {
+      LIGHTNING_FRONTEND_ORIGIN: "",
+    },
   });
 }
 

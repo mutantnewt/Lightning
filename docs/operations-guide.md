@@ -144,6 +144,7 @@ cd /Users/steve/Documents/GitHub/Lightning/literary-light
 ```
 
 The staging browser-smoke wrapper now temporarily enables `http://127.0.0.1:5175` in staging CORS and restores the canonical staging-only baseline afterward.
+When `LIGHTNING_SMOKE_IDENTIFIER` and `LIGHTNING_SMOKE_PASSWORD` are absent, it also bootstraps a dedicated local staging smoke user automatically instead of depending on the GitHub-hosted smoke credentials.
 The underlying operator commands are:
 
 ```sh
