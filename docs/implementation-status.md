@@ -2153,6 +2153,20 @@ Verification:
   - staging run `24052374191`
   - production run `24052639174`
 
+### Slice BM: Frontend-release workflow summaries
+
+Completed:
+
+- added `scripts/write-frontend-release-summary.mjs` so the GitHub frontend-release workflow now renders a human-readable summary from the publish output and the release-status verification output
+- extended `.github/workflows/frontend-release.yml` so each run now writes that summary into the GitHub job summary and uploads it as an artifact alongside the raw JSON files
+- kept the summary generation aligned with the existing release path by deriving it from the already-produced `frontend-release.json` and `frontend-release-status.json` files instead of introducing new live AWS reads
+
+Verification:
+
+- `node --check` passes for `scripts/write-frontend-release-summary.mjs`
+- the workflow YAML remains valid after the summary step was added
+- the next live proof should show publish, release-summary rendering, manifest verification, and hosted smoke in the same GitHub workflow run
+
 ## Immediate Next Steps
 
 ### Next slice: Post-Go-Live Hardening

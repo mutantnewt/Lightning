@@ -403,6 +403,7 @@ This path now:
 - enables the manual `.github/workflows/frontend-release.yml` workflow
 - keeps the GitHub release path aligned with the local operator path by running the same manual Amplify publish script
 - immediately verifies the live release manifest after publish
+- writes a GitHub job summary plus uploaded artifact for a human-readable release summary
 - then re-assumes the target environment’s hosted-smoke role and runs the real browser smoke as part of the same workflow
 - safely bootstraps smoke users even when the generated password begins with `-`, by passing AWS CLI password arguments in `--flag=value` form
 - has now been live-verified in GitHub Actions on 2026-04-06 through:
