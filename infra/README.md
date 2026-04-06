@@ -401,6 +401,7 @@ This path now:
 - enables the manual `.github/workflows/frontend-release.yml` workflow
 - keeps the GitHub release path aligned with the local operator path by running the same manual Amplify publish script
 - immediately verifies the live release manifest after publish
+- then re-assumes the target environment’s hosted-smoke role and runs the real browser smoke as part of the same workflow
 - has now been live-verified in GitHub Actions on 2026-04-06 through:
   - staging run `24051996446`
   - production run `24052047522`

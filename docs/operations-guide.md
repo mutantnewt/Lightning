@@ -361,6 +361,9 @@ Frontend release in GitHub Actions:
   - `LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_FRONTEND_RELEASE`
 - it runs the existing hosted frontend publish path in `scripts/deploy-manual-amplify-frontend.mjs`
 - it then runs `scripts/print-hosted-frontend-release-status.mjs --require-match` so the live release manifest is verified immediately after publish
+- it now also assumes the existing hosted-smoke role for the target environment and runs the real browser smoke after publish:
+  - staging uses `LIGHTNING_GITHUB_ACTIONS_ROLE_ARN`
+  - production uses `LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_PRODUCTION`
 - `npm run github:frontend:release:sync-secrets` now publishes the live frontend-release role ARN from `LightningGithubAutomationStack`
 - the workflow has now been live-verified in both environments on 2026-04-06:
   - staging run `24051996446`

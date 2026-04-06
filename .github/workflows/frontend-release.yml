@@ -34,12 +34,23 @@ jobs:
       - name: Check required secrets
         id: check
         env:
+          INPUT_ENVIRONMENT: ${{ inputs.environment }}
           LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_FRONTEND_RELEASE: ${{ secrets.LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_FRONTEND_RELEASE }}
+          LIGHTNING_GITHUB_ACTIONS_ROLE_ARN: ${{ secrets.LIGHTNING_GITHUB_ACTIONS_ROLE_ARN }}
+          LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_PRODUCTION: ${{ secrets.LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_PRODUCTION }}
         run: |
           missing=()
 
           if [ -z "$LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_FRONTEND_RELEASE" ]; then
             missing+=("LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_FRONTEND_RELEASE")
+          fi
+
+          if [ "$INPUT_ENVIRONMENT" = "staging" ] && [ -z "$LIGHTNING_GITHUB_ACTIONS_ROLE_ARN" ]; then
+            missing+=("LIGHTNING_GITHUB_ACTIONS_ROLE_ARN")
+          fi
+
+          if [ "$INPUT_ENVIRONMENT" = "production" ] && [ -z "$LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_PRODUCTION" ]; then
+            missing+=("LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_PRODUCTION")
           fi
 
           if [ "${#missing[@]}" -eq 0 ]; then
@@ -69,13 +80,31 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: literary-light/package-lock.json
+          cache-dependency-path: |
+            literary-light/package-lock.json
+            backend/package-lock.json
 
       - name: Install frontend dependencies
         working-directory: literary-light
         run: npm ci
 
-      - name: Configure AWS credentials
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Resolve Chrome binary
+        run: |
+          for candidate in google-chrome google-chrome-stable chromium-browser chromium; do
+            if command -v "$candidate" >/dev/null 2>&1; then
+              echo "CHROME_BIN=$(command -v "$candidate")" >> "$GITHUB_ENV"
+              exit 0
+            fi
+          done
+
+          echo "No supported Chrome or Chromium binary is installed on this runner." >&2
+          exit 1
+
+      - name: Configure AWS credentials for release
         uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: ${{ secrets.LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_FRONTEND_RELEASE }}
@@ -99,6 +128,46 @@ jobs:
         run: |
           node ../scripts/print-hosted-frontend-release-status.mjs --environment "${{ github.event.inputs.environment }}" --require-match > frontend-release-status.json
           cat frontend-release-status.json
+
+      - name: Configure AWS credentials for staging smoke
+        if: github.event.inputs.environment == 'staging'
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ secrets.LIGHTNING_GITHUB_ACTIONS_ROLE_ARN }}
+          aws-region: eu-west-2
+
+      - name: Run hosted staging smoke after release
+        if: github.event.inputs.environment == 'staging'
+        working-directory: literary-light
+        env:
+          AWS_REGION: eu-west-2
+          AWS_DEFAULT_REGION: eu-west-2
+          AWS_CLI_BIN: aws
+          CHROME_BIN: ${{ env.CHROME_BIN }}
+          LIGHTNING_SMOKE_EXPECTED_USER: Staging Local Smoke
+          LIGHTNING_SMOKE_SKIP_REVIEW_DELETE: "true"
+        run: npm run smoke:staging:hosted
+
+      - name: Configure AWS credentials for production smoke
+        if: github.event.inputs.environment == 'production'
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ secrets.LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_PRODUCTION }}
+          aws-region: eu-west-2
+
+      - name: Run hosted production smoke after release
+        if: github.event.inputs.environment == 'production'
+        working-directory: literary-light
+        env:
+          AWS_REGION: eu-west-2
+          AWS_DEFAULT_REGION: eu-west-2
+          AWS_CLI_BIN: aws
+          CHROME_BIN: ${{ env.CHROME_BIN }}
+          LIGHTNING_SMOKE_EXPECTED_USER: Production Local Smoke
+          LIGHTNING_SMOKE_SKIP_REVIEW_DELETE: "true"
+        run: |
+          npm run smoke:production:hosted
+          npm run smoke:production:hosted:www
 
       - name: Upload frontend release artifacts
         uses: actions/upload-artifact@v4

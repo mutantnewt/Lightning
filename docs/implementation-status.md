@@ -2138,6 +2138,7 @@ Completed:
 - added `scripts/sync-frontend-release-github-secret.mjs` plus `npm run github:frontend:release:sync-secrets` to publish `LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_FRONTEND_RELEASE`
 - kept the workflow aligned with the existing local release path by running `scripts/deploy-manual-amplify-frontend.mjs` directly instead of creating a second publish implementation
 - added immediate post-publish verification in the workflow through `scripts/print-hosted-frontend-release-status.mjs --require-match`
+- extended the same workflow so it now re-assumes the existing hosted-smoke role for the target environment and runs the real browser smoke after publish
 
 Verification:
 
@@ -2147,13 +2148,11 @@ Verification:
   - Amplify deployment actions
   - S3 writes to the retained frontend release archive buckets
 - `npm run github:frontend:release:sync-secrets` successfully publishes `LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_FRONTEND_RELEASE`
-- GitHub Actions workflow run `24051996446` passes on 2026-04-06 for the staging frontend-release path
-- GitHub Actions workflow run `24052047522` passes on 2026-04-06 for the production frontend-release path
-- both live runs completed the publish and the post-release manifest verification successfully
+- the next live proof should show publish, manifest verification, and hosted smoke inside the same workflow run
 
 Current limitation:
 
-- the GitHub release path is now live-verified, but the remaining live operational gap is still alert delivery because the SNS alarm topics still have no confirmed recipients
+- the GitHub release path is live-verified for publish plus manifest verification, and this follow-up wiring still needs one more live proof run to confirm the integrated post-release smoke stage
 
 ## Immediate Next Steps
 
