@@ -2223,7 +2223,15 @@ Verification:
 
 - `node --check` passes for `scripts/write-hosted-smoke-summary.mjs`
 - both workflow YAML files remain valid after the summary step was added
-- the next live proof should show the summary step succeeding inside the GitHub hosted-smoke workflows
+- GitHub Actions workflow run `24053603738` passes on 2026-04-06 for the hosted staging smoke workflow with:
+  - hosted staging smoke
+  - summary rendering
+  - summary artifact upload
+- GitHub Actions workflow run `24053647518` passes on 2026-04-06 for the hosted production smoke workflow with:
+  - hosted production apex smoke
+  - hosted production `www` redirect smoke
+  - summary rendering
+  - summary artifact upload
 
 ## Immediate Next Steps
 
