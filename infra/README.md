@@ -193,6 +193,7 @@ Hosted frontend baseline:
 - the production GitHub secret-sync path is now live-verified through `npm run github:smoke:production:sync-secrets`
 - the hosted production smoke workflow is now live-verified in GitHub Actions against `https://lightningclassics.com`
 - the repo now also includes a GitHub OIDC operations-status workflow for staging and production
+- the GitHub-hosted operations-status workflow is now live-verified for both staging and production
 - the hosted frontend stacks now also provision durable S3 archive buckets for retained releases:
   - `lightning-frontend-releases-staging-310505389001-eu-west-2`
   - `lightning-frontend-releases-prod-310505389001-eu-west-2`

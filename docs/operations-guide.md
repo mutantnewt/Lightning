@@ -109,6 +109,7 @@ Repository validation baseline:
 - the repo now also includes a matching hosted production smoke workflow plus `npm run github:smoke:production:sync-secrets`
 - the GitHub-hosted production smoke path has now also been live-verified end to end, including OIDC role assumption, Cognito sign-in, and hosted browser smoke against `https://lightningclassics.com`
 - the repo now also includes a GitHub OIDC operations-status workflow for staging and production
+- the GitHub-hosted operations-status path has now been live-verified for both environments through GitHub Actions
 - the repo now also includes `npm run ops:subscribe:emails` as a safe operator wrapper for attaching SNS email subscriptions and then checking live subscription readiness
 
 Custom-domain cutover:
@@ -229,6 +230,7 @@ Operations status in GitHub Actions:
 - it uses GitHub OIDC plus the existing staging and production role secrets
 - it runs the same `print-operations-status.mjs` check used by local operators
 - it uploads per-environment JSON artifacts for staging and production
+- the current live proof point is workflow run `24046418678`, which passed on 2026-04-06
 
 Alarm email subscription workflow:
 
