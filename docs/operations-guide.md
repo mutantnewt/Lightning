@@ -81,6 +81,16 @@ Hosted frontend deploy note:
 - the manual Amplify publish helper now also emits a hosted release manifest at `/lightning-release.json`
 - the manual Amplify publish helper now also retains a local rollback artifact under `/Users/steve/Documents/GitHub/Lightning/.local/frontend-releases/<environment>/<releaseId>/`
 - the manual Amplify publish helper now also uploads the retained release zip plus `release-archive.json` into the environment-specific S3 archive bucket
+- the manual Amplify publish helper now runs under a repo-local deploy lock, so staging and production publishes must be executed serially rather than in parallel
+
+Repository validation baseline:
+
+- GitHub Actions now runs a lightweight validation workflow on push and pull request
+- the current baseline covers:
+  - frontend build
+  - backend build
+  - infra TypeScript build
+- full-repo lint is still intentionally deferred until the pre-existing repo-wide lint backlog is reduced
 
 Custom-domain cutover:
 

@@ -245,6 +245,21 @@ Verification:
 - production custom domain now serves release `production-20260406T112555Z-465550b`
 - `npm run frontend:release:status` now reports `allMatch = true`
 
+### Slice X2: Repository validation baseline
+
+Completed:
+
+- added the first GitHub Actions validation workflow at `.github/workflows/validate.yml`
+- wired separate frontend, backend, and infra build jobs on push, pull request, and manual dispatch
+- kept the baseline intentionally passable by the current repo instead of enabling full-repo lint checks that are still blocked by pre-existing issues outside the active migration slices
+
+Verification:
+
+- workflow definition added for:
+  - `literary-light` build
+  - `backend` build
+  - `infra` TypeScript build
+
 ### Slice H: Public catalog boundary
 
 Completed:
