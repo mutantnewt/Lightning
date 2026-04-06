@@ -223,6 +223,13 @@ The current codified CloudWatch baseline for `staging` and `production` is:
 - HTTP API default-route throttling enabled at the API edge:
   - staging burst `50`, rate `25`
   - production burst `100`, rate `50`
+- HTTP API route-level throttling now tightens authenticated and privileged namespaces further:
+  - staging `POST|PUT /auth/{proxy+}` burst `16`, rate `8`
+  - staging `DELETE /auth/{proxy+}` burst `12`, rate `6`
+  - staging `POST /privileged/{proxy+}` burst `12`, rate `6`
+  - production `POST|PUT /auth/{proxy+}` burst `30`, rate `15`
+  - production `DELETE /auth/{proxy+}` burst `20`, rate `10`
+  - production `POST /privileged/{proxy+}` burst `20`, rate `10`
 - one SNS alarm topic per environment with every codified alarm wired to it:
   - `lightning-operations-alerts-staging`
   - `lightning-operations-alerts-prod`
@@ -289,6 +296,7 @@ Weekly:
 
 - review staging and production alarms
 - review CloudWatch dashboards for elevated latency or repeated throttling
+- review whether repeated 429s are concentrated on authenticated or privileged write methods before relaxing limits
 - review pending moderation backlog
 
 Before major release or cutover:

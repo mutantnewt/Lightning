@@ -316,11 +316,97 @@ export class LightningEnvironmentStack extends Stack {
       },
     });
     const cfnHttpStage = httpStage.node.defaultChild as apigwv2.CfnStage;
+    const defaultBurstLimit = environmentName === "production" ? 100 : 50;
+    const defaultRateLimit = environmentName === "production" ? 50 : 25;
+    const routeSettings: Record<
+      string,
+      {
+        DetailedMetricsEnabled: boolean;
+        ThrottlingBurstLimit: number;
+        ThrottlingRateLimit: number;
+      }
+    > =
+      environmentName === "production"
+        ? {
+            "GET /public/{proxy+}": {
+              DetailedMetricsEnabled: true,
+              ThrottlingBurstLimit: 120,
+              ThrottlingRateLimit: 60,
+            },
+            "GET /auth/{proxy+}": {
+              DetailedMetricsEnabled: true,
+              ThrottlingBurstLimit: 80,
+              ThrottlingRateLimit: 40,
+            },
+            "POST /auth/{proxy+}": {
+              DetailedMetricsEnabled: true,
+              ThrottlingBurstLimit: 30,
+              ThrottlingRateLimit: 15,
+            },
+            "PUT /auth/{proxy+}": {
+              DetailedMetricsEnabled: true,
+              ThrottlingBurstLimit: 30,
+              ThrottlingRateLimit: 15,
+            },
+            "DELETE /auth/{proxy+}": {
+              DetailedMetricsEnabled: true,
+              ThrottlingBurstLimit: 20,
+              ThrottlingRateLimit: 10,
+            },
+            "GET /privileged/{proxy+}": {
+              DetailedMetricsEnabled: true,
+              ThrottlingBurstLimit: 30,
+              ThrottlingRateLimit: 15,
+            },
+            "POST /privileged/{proxy+}": {
+              DetailedMetricsEnabled: true,
+              ThrottlingBurstLimit: 20,
+              ThrottlingRateLimit: 10,
+            },
+          }
+        : {
+            "GET /public/{proxy+}": {
+              DetailedMetricsEnabled: true,
+              ThrottlingBurstLimit: 60,
+              ThrottlingRateLimit: 30,
+            },
+            "GET /auth/{proxy+}": {
+              DetailedMetricsEnabled: true,
+              ThrottlingBurstLimit: 40,
+              ThrottlingRateLimit: 20,
+            },
+            "POST /auth/{proxy+}": {
+              DetailedMetricsEnabled: true,
+              ThrottlingBurstLimit: 16,
+              ThrottlingRateLimit: 8,
+            },
+            "PUT /auth/{proxy+}": {
+              DetailedMetricsEnabled: true,
+              ThrottlingBurstLimit: 16,
+              ThrottlingRateLimit: 8,
+            },
+            "DELETE /auth/{proxy+}": {
+              DetailedMetricsEnabled: true,
+              ThrottlingBurstLimit: 12,
+              ThrottlingRateLimit: 6,
+            },
+            "GET /privileged/{proxy+}": {
+              DetailedMetricsEnabled: true,
+              ThrottlingBurstLimit: 20,
+              ThrottlingRateLimit: 10,
+            },
+            "POST /privileged/{proxy+}": {
+              DetailedMetricsEnabled: true,
+              ThrottlingBurstLimit: 12,
+              ThrottlingRateLimit: 6,
+            },
+          };
     cfnHttpStage.defaultRouteSettings = {
       detailedMetricsEnabled: true,
-      throttlingBurstLimit: environmentName === "production" ? 100 : 50,
-      throttlingRateLimit: environmentName === "production" ? 50 : 25,
+      throttlingBurstLimit: defaultBurstLimit,
+      throttlingRateLimit: defaultRateLimit,
     };
+    cfnHttpStage.routeSettings = routeSettings;
 
     const publicApiIntegration = new integrations.HttpLambdaIntegration(
       "PublicApiIntegration",

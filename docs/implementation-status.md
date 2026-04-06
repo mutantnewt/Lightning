@@ -329,6 +329,20 @@ Verification:
 - `npm run build` passes in `literary-light/`
 - `/usr/local/bin/node scripts/manage-smoke-community-probe.mjs prepare` succeeded against `lightning-user-state-local` with `55` seeded probe comments and `loadMoreExpected = true`
 
+### Slice X7: Method-and-surface API-edge throttling
+
+Completed:
+
+- extended the HTTP API stage configuration so route-level throttles now complement the existing default-stage throttle
+- kept higher read throughput for the public read surface while tightening authenticated and privileged write methods
+- aligned the throttling model with the current namespace catch-all route shape rather than pretending per-endpoint API Gateway routes already exist
+
+Verification:
+
+- `npm run build` passes in `infra/`
+- `npm run synth:staging` passes with route-level stage throttles
+- `npm run synth:production` passes with route-level stage throttles
+
 ### Slice H: Public catalog boundary
 
 Completed:

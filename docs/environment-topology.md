@@ -181,6 +181,7 @@ Current staging implementation:
 - API Gateway access log group `/aws/apigateway/lightning-http-api-access-staging`
 - SNS alarm topic `lightning-operations-alerts-staging`
 - configured alarm-notification email count `0`
+- route-level API throttling now further tightens authenticated and privileged writes on top of the stage default throttle
 - staging API CORS now explicitly allows both:
   - `https://staging.lightningclassics.com`
   - `http://127.0.0.1:5175`
@@ -258,6 +259,7 @@ Current production implementation:
 - API Gateway access log group `/aws/apigateway/lightning-http-api-access-prod`
 - SNS alarm topic `lightning-operations-alerts-prod`
 - configured alarm-notification email count `0`
+- route-level API throttling now further tightens authenticated and privileged writes on top of the stage default throttle
 - production API CORS now allows only:
   - `https://lightningclassics.com`
 - the Amplify-hosted production frontend stack is now deployed as `LightningProductionFrontendStack`

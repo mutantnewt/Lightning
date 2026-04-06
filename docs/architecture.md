@@ -401,6 +401,7 @@ Transitional implementation status:
 - comment and review writes now have explicit server-side length limits with matching frontend input constraints
 - review writes are now constrained to one active review per user per book
 - staging and production HTTP API stages now apply default-route throttling as a baseline API-edge abuse control
+- staging and production HTTP API stages now also apply stricter route-level throttles for authenticated and privileged write surfaces behind the namespace catch-all routes
 - manual hosted frontend publishes now run under a repo-local deploy lock so staging and production cannot race on the same build output
 - books, FAQ entries, and author pages now have a dedicated public catalog client boundary with a local/API path
 - Add Book enrichment and audit recording now sit behind a dedicated privileged client boundary with local/API paths
