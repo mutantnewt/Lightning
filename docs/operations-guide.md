@@ -339,6 +339,7 @@ Alarm subscriptions in GitHub Actions:
 - it runs the same `scripts/subscribe-alarm-topic-emails.mjs` operator path used locally, so dry-run and live behavior stay aligned
 - `npm run github:alerting:sync-secrets` now publishes the live alerting-management role ARN from `LightningGithubAutomationStack`
 - the recommended first use is a dry-run dispatch with a placeholder address such as `ops@example.com`, because that validates role assumption and workflow wiring without creating SNS subscriptions
+- the current live proof point is workflow run `24051302102`, which passed on 2026-04-06 in dry-run mode
 
 Hosted frontend release verification:
 

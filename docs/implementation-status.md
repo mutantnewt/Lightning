@@ -2105,7 +2105,8 @@ Verification:
 - `npm run build` passes in `infra`
 - the new alerting-management role can be deployed with `LightningGithubAutomationStack`
 - the new secret-sync path can publish `LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_ALERTING` from live stack outputs
-- the recommended first live proof is a dry-run GitHub workflow dispatch with a placeholder email such as `ops@example.com`, because it validates role assumption and workflow wiring without creating SNS subscriptions
+- GitHub Actions workflow run `24051302102` passes on 2026-04-06 for the new alert-subscription workflow in dry-run mode with `ops@example.com`
+- that dry-run proof validates role assumption, workflow input handling, and artifact upload without creating SNS subscriptions
 
 Current limitation:
 
