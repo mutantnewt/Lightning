@@ -1,6 +1,10 @@
 import { LocalUserStateRepository } from "./localUserStateRepository";
 import { UserStateRepository } from "./userStateRepository";
 import { getEnv } from "../../../shared/env";
+import type {
+  CommunityListRequest,
+  CommunityListResult,
+} from "../lib/communityGuardrails";
 
 export interface UserStateStore {
   listFavorites(userId: string): Promise<import("../../../../contracts/domain").FavoriteRecord[]>;
@@ -17,7 +21,12 @@ export interface UserStateStore {
     },
   ): Promise<void>;
   removeReadingList(userId: string, bookId: string): Promise<void>;
-  listComments(bookId: string): Promise<import("../../../../contracts/domain").CommentRecord[]>;
+  listComments(
+    bookId: string,
+    request?: CommunityListRequest,
+  ): Promise<
+    CommunityListResult<import("../../../../contracts/domain").CommentRecord>
+  >;
   addComment(
     userId: string,
     userName: string,
@@ -28,7 +37,12 @@ export interface UserStateStore {
   getRatingSummary(bookId: string): Promise<{ averageRating: number; ratingCount: number }>;
   getUserRating(userId: string, bookId: string): Promise<number>;
   setRating(userId: string, bookId: string, rating: number): Promise<void>;
-  listReviews(bookId: string): Promise<import("../../../../contracts/domain").ReviewRecord[]>;
+  listReviews(
+    bookId: string,
+    request?: CommunityListRequest,
+  ): Promise<
+    CommunityListResult<import("../../../../contracts/domain").ReviewRecord>
+  >;
   addReview(
     userId: string,
     userName: string,

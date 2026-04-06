@@ -6,6 +6,13 @@ import type {
   ReviewRecord,
 } from "./domain";
 
+export const communityPolicy = {
+  defaultPageSize: 50,
+  maxPageSize: 100,
+  maxCommentLength: 2000,
+  maxReviewLength: 5000,
+} as const;
+
 export interface FavoritesResponse {
   favorites: FavoriteRecord[];
 }
@@ -35,6 +42,9 @@ export interface RemoveReadingListRequest {
 
 export interface CommentsResponse {
   comments: CommentRecord[];
+  nextCursor: string | null;
+  hasMore: boolean;
+  pageSize: number;
 }
 
 export interface CreateCommentRequest {
@@ -56,6 +66,9 @@ export interface SetRatingRequest {
 
 export interface ReviewsResponse {
   reviews: ReviewRecord[];
+  nextCursor: string | null;
+  hasMore: boolean;
+  pageSize: number;
 }
 
 export interface CreateReviewRequest {

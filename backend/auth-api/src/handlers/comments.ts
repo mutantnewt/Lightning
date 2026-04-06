@@ -1,4 +1,5 @@
 import type { CreateCommentRequest } from "../../../../contracts/user-state";
+import { communityPolicy } from "../../../../contracts/user-state";
 import { getAuthenticatedUser } from "../../../shared/auth";
 import {
   badRequest,
@@ -15,15 +16,7 @@ import {
   addCommentForBook,
   removeCommentForBook,
 } from "../services/bookCommunityService";
-
-function normalizeCommentText(value: unknown): string | null {
-  if (typeof value !== "string") {
-    return null;
-  }
-
-  const trimmed = value.trim();
-  return trimmed ? trimmed : null;
-}
+import { validateCommentText } from "../lib/communityGuardrails";
 
 export async function createCommentHandler(
   event: HttpEvent,
@@ -36,10 +29,12 @@ export async function createCommentHandler(
   }
 
   const body = parseJsonBody<CreateCommentRequest>(event);
-  const text = normalizeCommentText(body?.text);
+  const text = validateCommentText(body?.text);
 
   if (!text) {
-    return badRequest("A non-empty comment is required.");
+    return badRequest(
+      `A non-empty comment up to ${communityPolicy.maxCommentLength} characters is required.`,
+    );
   }
 
   try {

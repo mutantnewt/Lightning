@@ -110,6 +110,20 @@ export function getRequestMethod(event: HttpEvent): string {
   return event.requestContext?.http?.method ?? event.httpMethod ?? "GET";
 }
 
+export function getQueryStringParameter(
+  event: HttpEvent,
+  key: string,
+): string | null {
+  const value = event.queryStringParameters?.[key];
+
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  return trimmed ? trimmed : null;
+}
+
 export function jsonResponse(
   statusCode: number,
   body: unknown,

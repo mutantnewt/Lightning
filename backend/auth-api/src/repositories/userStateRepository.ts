@@ -13,6 +13,11 @@ import type {
   ReadingListType,
   ReviewRecord,
 } from "../../../../contracts/domain";
+import type {
+  CommunityListRequest,
+  CommunityListResult,
+} from "../lib/communityGuardrails";
+import { paginateCommunityItems } from "../lib/communityGuardrails";
 import { getDynamoDocumentClient } from "../../../shared/dynamo";
 import { getRequiredEnv } from "../../../shared/env";
 
@@ -304,7 +309,10 @@ export class UserStateRepository {
     );
   }
 
-  async listComments(bookId: string): Promise<CommentRecord[]> {
+  async listComments(
+    bookId: string,
+    request?: CommunityListRequest,
+  ): Promise<CommunityListResult<CommentRecord>> {
     const response = await this.client.send(
       new QueryCommand({
         TableName: this.tableName,
@@ -317,10 +325,10 @@ export class UserStateRepository {
     );
 
     const items = (response.Items ?? []) as CommentItem[];
-
-    return items
-      .map((item) => toCommentRecord(item))
-      .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+    return paginateCommunityItems(
+      items.map((item) => toCommentRecord(item)),
+      request,
+    );
   }
 
   async addComment(
@@ -456,7 +464,10 @@ export class UserStateRepository {
     );
   }
 
-  async listReviews(bookId: string): Promise<ReviewRecord[]> {
+  async listReviews(
+    bookId: string,
+    request?: CommunityListRequest,
+  ): Promise<CommunityListResult<ReviewRecord>> {
     const response = await this.client.send(
       new QueryCommand({
         TableName: this.tableName,
@@ -469,10 +480,10 @@ export class UserStateRepository {
     );
 
     const items = (response.Items ?? []) as ReviewItem[];
-
-    return items
-      .map((item) => toReviewRecord(item))
-      .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+    return paginateCommunityItems(
+      items.map((item) => toReviewRecord(item)),
+      request,
+    );
   }
 
   async addReview(

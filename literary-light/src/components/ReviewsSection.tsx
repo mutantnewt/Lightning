@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useReviews } from "@/hooks/useRatings";
+import { communityPolicy } from "@contracts/user-state";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { StarRating } from "@/components/StarRating";
@@ -90,9 +91,13 @@ export function ReviewsSection({ bookId }: ReviewsSectionProps) {
             onChange={(e) => setNewReview(e.target.value)}
             placeholder="Write your review..."
             className="min-h-[100px]"
+            maxLength={communityPolicy.maxReviewLength}
             disabled={isSubmitting}
             data-testid={`review-input-${bookId}`}
           />
+          <p className="text-xs text-muted-foreground text-right">
+            Up to {communityPolicy.maxReviewLength.toLocaleString()} characters
+          </p>
           <Button
             onClick={() => void handleSubmit()}
             disabled={!newReview.trim() || isSubmitting}

@@ -1,4 +1,8 @@
 import type { CommentRecord, ReviewRecord } from "../../../../contracts/domain";
+import type {
+  CommunityListRequest,
+  CommunityListResult,
+} from "../lib/communityGuardrails";
 import { getUserStateStore, type UserStateStore } from "../repositories/userStateStore";
 
 let store: UserStateStore | null = null;
@@ -11,8 +15,11 @@ function getStore(): UserStateStore {
   return store;
 }
 
-export async function listCommentsForBook(bookId: string): Promise<CommentRecord[]> {
-  return getStore().listComments(bookId);
+export async function listCommentsForBook(
+  bookId: string,
+  request?: CommunityListRequest,
+): Promise<CommunityListResult<CommentRecord>> {
+  return getStore().listComments(bookId, request);
 }
 
 export async function addCommentForBook(
@@ -53,8 +60,11 @@ export async function setRatingForBook(
   return getStore().setRating(userId, bookId, rating);
 }
 
-export async function listReviewsForBook(bookId: string): Promise<ReviewRecord[]> {
-  return getStore().listReviews(bookId);
+export async function listReviewsForBook(
+  bookId: string,
+  request?: CommunityListRequest,
+): Promise<CommunityListResult<ReviewRecord>> {
+  return getStore().listReviews(bookId, request);
 }
 
 export async function addReviewForBook(

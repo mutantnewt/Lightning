@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useComments } from "@/hooks/useComments";
+import { communityPolicy } from "@contracts/user-state";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -121,9 +122,13 @@ export function CommentsSection({ bookId }: CommentsSectionProps) {
             onChange={(e) => setNewComment(e.target.value)}
             placeholder="Share your thoughts about this book..."
             className="min-h-[80px] resize-none"
+            maxLength={communityPolicy.maxCommentLength}
             disabled={isSubmitting}
             data-testid={`comment-input-${bookId}`}
           />
+          <p className="text-xs text-muted-foreground text-right">
+            Up to {communityPolicy.maxCommentLength.toLocaleString()} characters
+          </p>
           <div className="flex justify-end">
             <Button
               type="submit"

@@ -144,7 +144,7 @@ export async function handler(event: HttpEvent): Promise<HttpResponse> {
         return methodNotAllowed(["GET"]);
       }
 
-      return getCommentsHandler(commentRouteMatch.bookId);
+      return getCommentsHandler(event, commentRouteMatch.bookId);
     }
 
     if (ratingRouteMatch) {
@@ -160,7 +160,7 @@ export async function handler(event: HttpEvent): Promise<HttpResponse> {
         return methodNotAllowed(["GET"]);
       }
 
-      return getReviewsHandler(reviewRouteMatch.bookId);
+      return getReviewsHandler(event, reviewRouteMatch.bookId);
     }
 
     return notFound(`No public route is registered for ${method} ${path}`);

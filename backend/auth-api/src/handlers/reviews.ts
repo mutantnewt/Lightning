@@ -1,4 +1,5 @@
 import type { CreateReviewRequest } from "../../../../contracts/user-state";
+import { communityPolicy } from "../../../../contracts/user-state";
 import { getAuthenticatedUser } from "../../../shared/auth";
 import {
   badRequest,
@@ -15,6 +16,7 @@ import {
   addReviewForBook,
   removeReviewForBook,
 } from "../services/bookCommunityService";
+import { validateReviewText } from "../lib/communityGuardrails";
 
 function normalizeRating(value: unknown): number | null {
   if (typeof value !== "number" || Number.isNaN(value)) {
@@ -30,15 +32,6 @@ function normalizeRating(value: unknown): number | null {
   return normalized;
 }
 
-function normalizeReviewText(value: unknown): string | null {
-  if (typeof value !== "string") {
-    return null;
-  }
-
-  const trimmed = value.trim();
-  return trimmed ? trimmed : null;
-}
-
 export async function createReviewHandler(
   event: HttpEvent,
   bookId: string,
@@ -51,14 +44,16 @@ export async function createReviewHandler(
 
   const body = parseJsonBody<CreateReviewRequest>(event);
   const rating = normalizeRating(body?.rating);
-  const review = normalizeReviewText(body?.review);
+  const review = validateReviewText(body?.review);
 
   if (!rating) {
     return badRequest("A whole-number rating between 1 and 5 is required.");
   }
 
   if (!review) {
-    return badRequest("A non-empty review is required.");
+    return badRequest(
+      `A non-empty review up to ${communityPolicy.maxReviewLength} characters is required.`,
+    );
   }
 
   try {

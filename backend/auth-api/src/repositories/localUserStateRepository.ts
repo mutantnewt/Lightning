@@ -9,6 +9,11 @@ import type {
   ReviewRecord,
   RatingRecord,
 } from "../../../../contracts/domain";
+import type {
+  CommunityListRequest,
+  CommunityListResult,
+} from "../lib/communityGuardrails";
+import { paginateCommunityItems } from "../lib/communityGuardrails";
 import { getEnv } from "../../../shared/env";
 
 interface UserStateFile {
@@ -197,12 +202,16 @@ export class LocalUserStateRepository {
     }));
   }
 
-  async listComments(bookId: string): Promise<CommentRecord[]> {
+  async listComments(
+    bookId: string,
+    request?: CommunityListRequest,
+  ): Promise<CommunityListResult<CommentRecord>> {
     const state = await this.readState();
 
-    return state.comments
-      .filter((comment) => comment.bookId === bookId)
-      .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+    return paginateCommunityItems(
+      state.comments.filter((comment) => comment.bookId === bookId),
+      request,
+    );
   }
 
   async addComment(
@@ -304,12 +313,16 @@ export class LocalUserStateRepository {
     });
   }
 
-  async listReviews(bookId: string): Promise<ReviewRecord[]> {
+  async listReviews(
+    bookId: string,
+    request?: CommunityListRequest,
+  ): Promise<CommunityListResult<ReviewRecord>> {
     const state = await this.readState();
 
-    return state.reviews
-      .filter((review) => review.bookId === bookId)
-      .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+    return paginateCommunityItems(
+      state.reviews.filter((review) => review.bookId === bookId),
+      request,
+    );
   }
 
   async addReview(

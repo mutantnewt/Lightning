@@ -216,6 +216,21 @@ Verification:
   - `POST /auth/books/:bookId/reviews`
   - `DELETE /auth/books/:bookId/reviews/:reviewId`
 
+### Slice G2: Community guardrails and bounded reads
+
+Completed:
+
+- added shared community policy constants for comment length, review length, and public read page-size defaults
+- added backend validation so comments and reviews are now rejected when empty or over the approved length limit
+- changed public comments and reviews responses to return bounded server-side pages with `nextCursor`, `hasMore`, and `pageSize` metadata
+- implemented the same pagination shape in both the DynamoDB-backed and local file-backed community repositories
+- aligned the frontend comment and review textareas with the backend write limits
+
+Verification:
+
+- `npm run build` passes in `backend/`
+- `npm run build` passes in `literary-light/`
+
 ### Slice H: Public catalog boundary
 
 Completed:
