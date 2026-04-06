@@ -216,7 +216,10 @@ async function main() {
           emails,
           note:
             "Direct SNS subscription attaches recipients without a CDK deploy. Confirm each SNS email before expecting alarmSubscriptionReadiness.ready to become true.",
-          plans,
+          plans: plans.map((plan) => ({
+            ...plan,
+            status: getEnvironmentStatus(plan.environmentName, args.region),
+          })),
         },
         null,
         2,

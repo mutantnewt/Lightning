@@ -381,6 +381,8 @@ This path now:
 - enables the manual `.github/workflows/alarm-subscriptions.yml` workflow
 - lets the workflow use either a manual `emails` input or the repository secret `LIGHTNING_ALARM_NOTIFICATION_EMAILS`
 - supports a dry-run first pass so the AWS/GitHub wiring can be verified without creating SNS subscriptions
+- writes a GitHub job summary plus uploaded artifacts for both the raw subscription JSON and a human-readable readiness summary
+- includes the current per-environment `ops:status` alert-readiness snapshot even in dry-run mode
 - has now been live-verified in GitHub Actions on 2026-04-06 through workflow run `24051302102` in dry-run mode
 
 GitHub Actions frontend-release path:

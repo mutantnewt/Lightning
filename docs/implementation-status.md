@@ -2099,6 +2099,8 @@ Completed:
 - added `scripts/sync-alerting-github-secret.mjs` plus `npm run github:alerting:sync-secrets` to publish `LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_ALERTING`
 - kept the workflow aligned with the existing local operator path by running `scripts/subscribe-alarm-topic-emails.mjs` directly instead of creating a second subscription implementation
 - allowed the workflow to use either a manual `emails` input or the repository secret `LIGHTNING_ALARM_NOTIFICATION_EMAILS`
+- extended the same workflow so it now renders a human-readable readiness summary and uploads both the raw JSON and the summary artifact
+- extended `scripts/subscribe-alarm-topic-emails.mjs` so dry-run mode now also captures the current `ops:status` alert-readiness snapshot for each target environment
 
 Verification:
 
@@ -2109,6 +2111,8 @@ Verification:
 - that dry-run proof validates role assumption, workflow input handling, and artifact upload without creating SNS subscriptions
 
 Current limitation:
+
+- a fresh live proof run is still needed for the new summary-and-readiness artifact enhancements, even though the underlying alerting workflow baseline is already live-verified
 
 - a real confirmed alert destination is still not attached, so `npm run ops:status` remains the live operational gap until a real recipient confirms the SNS subscription email
 

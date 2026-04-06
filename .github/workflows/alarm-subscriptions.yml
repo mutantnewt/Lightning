@@ -108,11 +108,18 @@ jobs:
 
           node "${args[@]}" | tee alarm-subscriptions.json
 
+      - name: Summarize alarm subscription readiness
+        working-directory: infra
+        run: |
+          node ../scripts/write-alarm-subscription-summary.mjs --input alarm-subscriptions.json | tee alarm-subscriptions-summary.md
+
       - name: Upload alarm subscription artifact
         uses: actions/upload-artifact@v4
         with:
           name: alarm-subscriptions
-          path: infra/alarm-subscriptions.json
+          path: |
+            infra/alarm-subscriptions.json
+            infra/alarm-subscriptions-summary.md
 
   missing-prerequisites:
     name: Alarm Subscriptions Skipped
