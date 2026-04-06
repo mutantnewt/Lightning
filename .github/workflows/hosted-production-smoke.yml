@@ -91,7 +91,7 @@ jobs:
           role-to-assume: ${{ secrets.LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_PRODUCTION }}
           aws-region: eu-west-2
 
-      - name: Run hosted production smoke
+      - name: Run hosted production apex smoke
         working-directory: literary-light
         env:
           AWS_REGION: eu-west-2
@@ -103,6 +103,19 @@ jobs:
           LIGHTNING_PRODUCTION_SMOKE_IDENTIFIER: ${{ secrets.LIGHTNING_PRODUCTION_SMOKE_IDENTIFIER }}
           LIGHTNING_PRODUCTION_SMOKE_PASSWORD: ${{ secrets.LIGHTNING_PRODUCTION_SMOKE_PASSWORD }}
         run: npm run smoke:production:hosted
+
+      - name: Run hosted production www redirect smoke
+        working-directory: literary-light
+        env:
+          AWS_REGION: eu-west-2
+          AWS_DEFAULT_REGION: eu-west-2
+          AWS_CLI_BIN: aws
+          CHROME_BIN: ${{ env.CHROME_BIN }}
+          LIGHTNING_SMOKE_EXPECTED_USER: Production Smoke
+          LIGHTNING_SMOKE_SKIP_REVIEW_DELETE: "true"
+          LIGHTNING_PRODUCTION_SMOKE_IDENTIFIER: ${{ secrets.LIGHTNING_PRODUCTION_SMOKE_IDENTIFIER }}
+          LIGHTNING_PRODUCTION_SMOKE_PASSWORD: ${{ secrets.LIGHTNING_PRODUCTION_SMOKE_PASSWORD }}
+        run: npm run smoke:production:hosted:www
 
   missing-prerequisites:
     name: Hosted Production Smoke Skipped

@@ -441,6 +441,7 @@ Current verification status:
 - the production hosted-frontend stack now also outputs `FrontendRedirectAliasDomainName = www.lightningclassics.com`
 - `https://www.lightningclassics.com` now returns `301` to `https://lightningclassics.com/` with the same hosted security-header baseline
 - `npm run smoke:production:hosted:www` now also passes live on 2026-04-06
+- the GitHub-hosted production smoke workflow now also verifies the `www` redirect path in CI as part of the same production smoke run
 
 Repository-connected mode remains available later:
 

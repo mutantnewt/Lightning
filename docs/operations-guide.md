@@ -206,8 +206,9 @@ Hosted production smoke in GitHub Actions:
 - it uses the production OIDC role output from `LightningGithubAutomationStack`
 - it is manual-dispatch only, so production smoke remains an operator-triggered verification path
 - it uses the hosted production frontend and the environment-specific `LIGHTNING_PRODUCTION_SMOKE_*` credentials
+- it now runs both the canonical apex hosted smoke and the `www.lightningclassics.com` redirect-alias smoke in the same workflow job
 - it intentionally skips review-delete cleanup and relies on deterministic smoke preparation to reset production smoke state between runs
-- the current live proof point is workflow run `24043252268`, which passed on 2026-04-06
+- the most recent live proof point before this extension is workflow run `24043252268`, which passed on 2026-04-06 for the canonical production apex path
 
 Hosted production smoke secret sync:
 

@@ -1905,6 +1905,22 @@ Current limitation:
 
 - the local live-proof path currently depends on resetting or otherwise supplying the production smoke-user password in the operator environment before the run
 
+### Slice BB: GitHub production www smoke coverage
+
+Completed:
+
+- extended `.github/workflows/hosted-production-smoke.yml` so the production GitHub-hosted smoke job now runs both `npm run smoke:production:hosted` and `npm run smoke:production:hosted:www`
+- updated the operations and cutover docs so the GitHub-hosted production verification path explicitly includes the `www.lightningclassics.com` redirect alias
+
+Verification:
+
+- the production GitHub Actions workflow is now configured to verify both the canonical apex domain and the `www` redirect path in a single run
+- live GitHub-hosted verification of the new combined production smoke path is the next proof point to record
+
+Current limitation:
+
+- this GitHub-hosted proof still depends on the existing production smoke-user secret-sync path remaining aligned with Cognito after any future smoke-user password reset
+
 ## Immediate Next Steps
 
 ### Next slice: Post-Go-Live Hardening
