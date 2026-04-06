@@ -442,7 +442,7 @@ Current verification status:
 - `https://www.lightningclassics.com` now returns `301` to `https://lightningclassics.com/` with the same hosted security-header baseline
 - `npm run smoke:production:hosted:www` now also passes live on 2026-04-06
 - the GitHub-hosted production smoke workflow now also verifies the `www` redirect path in CI as part of the same production smoke run
-- workflow run `24047862607` passed on 2026-04-06 and is the current GitHub-hosted proof point for both production apex and `www` redirect smoke
+- workflow run `24048137450` passed on 2026-04-06 and is the current GitHub-hosted proof point for both production apex and `www` redirect smoke
 
 Repository-connected mode remains available later:
 

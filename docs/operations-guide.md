@@ -208,8 +208,8 @@ Hosted production smoke in GitHub Actions:
 - it uses the hosted production frontend and the environment-specific `LIGHTNING_PRODUCTION_SMOKE_*` credentials
 - it now runs both the canonical apex hosted smoke and the `www.lightningclassics.com` redirect-alias smoke in the same workflow job
 - it intentionally skips review-delete cleanup and relies on deterministic smoke preparation to reset production smoke state between runs
-- the current live proof point is workflow run `24047862607`, which passed on 2026-04-06 and covered both the canonical production apex path and the `www` redirect alias
-- the GitHub Actions workflow baseline is now also upgraded to Node 24-ready action majors across checkout, setup-node, and configure-aws-credentials
+- the current live proof point is workflow run `24048137450`, which passed on 2026-04-06 and covered both the canonical production apex path and the `www` redirect alias
+- the GitHub Actions workflow baseline is now upgraded to Node 24-ready action majors across checkout, setup-node, and configure-aws-credentials, with `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true` applied during the transition
 
 Hosted production smoke secret sync:
 

@@ -1931,11 +1931,12 @@ Completed:
 
 Verification:
 
-- live GitHub-hosted workflow verification of the Node 24-forced baseline is the next proof point to record
+- GitHub Actions workflow run `24048137450` passes on 2026-04-06 after the Node 24 override
+- the same run still verifies both the canonical apex domain and the `www` redirect path in a single GitHub-hosted production smoke job
 
 Current limitation:
 
-- until the next GitHub-hosted workflow reruns with the Node 24 override in place, the Node 20 deprecation warning from run `24048036435` remains the last observed warning state
+- `aws-actions/configure-aws-credentials@v5` still emits a transitional annotation that it targets Node 20 even while GitHub is forcing it onto Node 24, so the remaining follow-up is to adopt an upstream release that natively targets Node 24 when one becomes available
 
 ## Immediate Next Steps
 
