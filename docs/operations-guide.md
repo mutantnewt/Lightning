@@ -82,6 +82,7 @@ Hosted frontend deploy note:
 - the manual Amplify publish helper now also retains a local rollback artifact under `/Users/steve/Documents/GitHub/Lightning/.local/frontend-releases/<environment>/<releaseId>/`
 - the manual Amplify publish helper now also uploads the retained release zip plus `release-archive.json` into the environment-specific S3 archive bucket
 - the manual Amplify publish helper now runs under a repo-local deploy lock, so staging and production publishes must be executed serially rather than in parallel
+- the release-archive packaging step is now cross-platform: it uses `ditto` on macOS and falls back to `zip` on Linux runners
 - the hosted frontend release-archive buckets now also have a lifecycle baseline:
   - abort incomplete multipart uploads after `7` days
   - transition retained `releases/` objects to `INTELLIGENT_TIERING` after `30` days

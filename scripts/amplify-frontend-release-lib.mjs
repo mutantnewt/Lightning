@@ -2,6 +2,7 @@
 
 import { execFileSync } from "node:child_process";
 import {
+  accessSync,
   copyFileSync,
   mkdtempSync,
   mkdirSync,
@@ -30,6 +31,25 @@ export const releaseManifestFileName = "lightning-release.json";
 export const releaseArchiveMetadataFileName = "release-archive.json";
 export const releaseArchiveZipFileName = "frontend-dist.zip";
 export const releaseArchiveS3Prefix = "releases";
+
+function findExecutable(commandName) {
+  const pathEntries = (process.env.PATH ?? "")
+    .split(path.delimiter)
+    .filter(Boolean);
+
+  for (const entry of pathEntries) {
+    const candidate = path.join(entry, commandName);
+
+    try {
+      accessSync(candidate);
+      return candidate;
+    } catch {
+      // Keep searching PATH.
+    }
+  }
+
+  return null;
+}
 
 export function getFrontendStackNameForEnvironment(environmentName) {
   return environmentName === "production"
@@ -263,10 +283,22 @@ export function writeReleaseManifest(releaseMetadata) {
 export function createZipArchive(sourceDir) {
   const tempDir = mkdtempSync(path.join(tmpdir(), "lightning-amplify-"));
   const archivePath = path.join(tempDir, releaseArchiveZipFileName);
+  const dittoPath = findExecutable("ditto");
+  const zipPath = findExecutable("zip");
 
-  run("ditto", ["-c", "-k", "--sequesterRsrc", ".", archivePath], {
-    cwd: sourceDir,
-  });
+  if (dittoPath) {
+    run(dittoPath, ["-c", "-k", "--sequesterRsrc", ".", archivePath], {
+      cwd: sourceDir,
+    });
+  } else if (zipPath) {
+    run(zipPath, ["-q", "-r", archivePath, "."], {
+      cwd: sourceDir,
+    });
+  } else {
+    throw new Error(
+      "Unable to create the frontend release archive because neither ditto nor zip is available on PATH.",
+    );
+  }
 
   return {
     archivePath,

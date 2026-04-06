@@ -2112,6 +2112,23 @@ Current limitation:
 
 - a real confirmed alert destination is still not attached, so `npm run ops:status` remains the live operational gap until a real recipient confirms the SNS subscription email
 
+### Slice BK: Cross-platform frontend release archive packaging
+
+Completed:
+
+- updated `scripts/amplify-frontend-release-lib.mjs` so the frontend release archive step no longer assumes macOS-only `ditto`
+- kept the existing `ditto` path for macOS operators
+- added a Linux-friendly fallback to `zip`, which is the key prerequisite for running the same hosted-frontend release path on GitHub-hosted runners later
+
+Verification:
+
+- the updated archive helper now resolves the archiver from `PATH` instead of assuming a fixed local workstation tool path
+- the frontend release packaging path now has an explicit failure message if neither `ditto` nor `zip` is available
+
+Current limitation:
+
+- this slice makes the release packaging portable, but it does not yet add the GitHub-hosted frontend release workflow itself
+
 ## Immediate Next Steps
 
 ### Next slice: Post-Go-Live Hardening

@@ -188,6 +188,7 @@ Hosted frontend baseline:
 - the manual hosted-artifact publish helper now also emits a release manifest at `/lightning-release.json`
 - the repo now includes `scripts/print-hosted-frontend-release-status.mjs` plus `npm run frontend:release:status*` commands for live release verification
 - the repo now also retains local hosted frontend release archives under `.local/frontend-releases/`
+- the hosted frontend release archive step is now cross-platform, using `ditto` on macOS and `zip` on Linux runners
 - the repo now also includes `LightningGithubAutomationStack`, which provisions least-privilege GitHub OIDC hosted-smoke roles for staging and production
 - `LightningGithubAutomationStack` now also provisions a dedicated read-only GitHub OIDC operations role for cutover evidence capture and other read-only operator workflows
 - the staging GitHub secret-sync path is now live-verified through `npm run github:smoke:staging:sync-secrets`
