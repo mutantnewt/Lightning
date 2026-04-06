@@ -7,6 +7,8 @@ function parseArgs(argv) {
   const args = {
     releasePath: "",
     statusPath: "",
+    smokeCoverage: "",
+    smokeStatus: "",
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -20,6 +22,14 @@ function parseArgs(argv) {
         break;
       case "--status":
         args.statusPath = next;
+        index += 1;
+        break;
+      case "--smoke-coverage":
+        args.smokeCoverage = next;
+        index += 1;
+        break;
+      case "--smoke-status":
+        args.smokeStatus = next;
         index += 1;
         break;
       default:
@@ -64,7 +74,25 @@ function renderChecks(checks) {
   return `- manifest checks: mismatches on ${failed.join(", ")}`;
 }
 
-function buildSummary(release, status) {
+function renderSmokeStatus(smokeCoverage, smokeStatus) {
+  if (!smokeCoverage && !smokeStatus) {
+    return "- hosted smoke: not reported";
+  }
+
+  const coverage = smokeCoverage || "unknown coverage";
+
+  if (smokeStatus === "success") {
+    return `- hosted smoke: completed successfully (${coverage})`;
+  }
+
+  if (smokeStatus) {
+    return `- hosted smoke: ${smokeStatus} (${coverage})`;
+  }
+
+  return `- hosted smoke: reported without explicit status (${coverage})`;
+}
+
+function buildSummary(release, status, smokeCoverage, smokeStatus) {
   const releaseMetadata = release.releaseMetadata ?? {};
   const archivedRelease = release.archivedRelease ?? {};
   const statusRelease = status.release ?? {};
@@ -83,6 +111,7 @@ function buildSummary(release, status) {
     `- archive object: ${archivedRelease.remoteStorage?.archiveKey ?? "unknown"}`,
     `- selected verification target: ${status.selectedTarget ?? "unknown"}`,
     renderChecks(checks),
+    renderSmokeStatus(smokeCoverage, smokeStatus),
   ];
 
   if (status.fallbackReason) {
@@ -96,7 +125,7 @@ function main() {
   const args = parseArgs(process.argv.slice(2));
   const release = readJson(args.releasePath);
   const status = readJson(args.statusPath);
-  const summary = buildSummary(release, status);
+  const summary = buildSummary(release, status, args.smokeCoverage, args.smokeStatus);
 
   process.stdout.write(`${summary}\n`);
 

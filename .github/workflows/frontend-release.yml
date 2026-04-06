@@ -129,10 +129,6 @@ jobs:
           node ../scripts/print-hosted-frontend-release-status.mjs --environment "${{ github.event.inputs.environment }}" --require-match > frontend-release-status.json
           cat frontend-release-status.json
 
-      - name: Summarize hosted frontend release
-        run: |
-          node scripts/write-frontend-release-summary.mjs --release literary-light/frontend-release.json --status infra/frontend-release-status.json | tee frontend-release-summary.md
-
       - name: Configure AWS credentials for staging smoke
         if: github.event.inputs.environment == 'staging'
         uses: aws-actions/configure-aws-credentials@v5
@@ -141,6 +137,7 @@ jobs:
           aws-region: eu-west-2
 
       - name: Run hosted staging smoke after release
+        id: smoke_staging
         if: github.event.inputs.environment == 'staging'
         working-directory: literary-light
         env:
@@ -160,6 +157,7 @@ jobs:
           aws-region: eu-west-2
 
       - name: Run hosted production smoke after release
+        id: smoke_production
         if: github.event.inputs.environment == 'production'
         working-directory: literary-light
         env:
@@ -172,6 +170,29 @@ jobs:
         run: |
           npm run smoke:production:hosted
           npm run smoke:production:hosted:www
+
+      - name: Summarize hosted frontend release
+        env:
+          INPUT_ENVIRONMENT: ${{ github.event.inputs.environment }}
+          SMOKE_STAGING_OUTCOME: ${{ steps.smoke_staging.outcome }}
+          SMOKE_PRODUCTION_OUTCOME: ${{ steps.smoke_production.outcome }}
+        run: |
+          smoke_coverage="unknown"
+          smoke_status="not-run"
+
+          if [ "$INPUT_ENVIRONMENT" = "staging" ]; then
+            smoke_coverage="staging hosted frontend"
+            smoke_status="${SMOKE_STAGING_OUTCOME:-skipped}"
+          else
+            smoke_coverage="production hosted apex plus www redirect"
+            smoke_status="${SMOKE_PRODUCTION_OUTCOME:-skipped}"
+          fi
+
+          node scripts/write-frontend-release-summary.mjs \
+            --release literary-light/frontend-release.json \
+            --status infra/frontend-release-status.json \
+            --smoke-coverage "$smoke_coverage" \
+            --smoke-status "$smoke_status" | tee frontend-release-summary.md
 
       - name: Upload frontend release artifacts
         uses: actions/upload-artifact@v4
