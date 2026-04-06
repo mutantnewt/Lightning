@@ -1826,6 +1826,7 @@ The repo is now in a transition state:
 - the repo now also includes a matching hosted production smoke workflow plus a production secret-sync path, ready for live verification
 - the production smoke user plus GitHub repository secret sync path has now been live-verified against Cognito, CloudFormation, and GitHub Actions secrets
 - the GitHub-hosted production smoke workflow now passes end to end in GitHub Actions as of 2026-04-06
+- the repo now also includes a GitHub OIDC operations-status workflow for staging and production, ready for live verification
 
 ## Immediate Next Steps
 
@@ -1836,6 +1837,7 @@ Needed:
 - capture and archive a post-cutover operator snapshot with `npm run cutover:evidence`
 - attach real email, chat, PagerDuty, or Incident Manager subscriptions to the live SNS alarm topics
   - email can now be attached through `npm run ops:subscribe:emails`
+- run the new GitHub-hosted operations-status workflow and decide whether it should remain scheduled daily or become manual-only
 - decide whether staging and production should stay on manual Amplify artifact deploys or move to repository-connected Amplify CI/CD
 - decide whether to add `www.lightningclassics.com` as a redirect or secondary hostname
 - add replication or cross-account protection to the hosted frontend release-archive buckets if disaster-recovery duplication is required beyond the new lifecycle baseline

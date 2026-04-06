@@ -17,6 +17,7 @@ export interface LightningGithubAutomationStackProps extends StackProps {
 interface HostedSmokeRoleConfig {
   environmentName: "staging" | "production";
   resourceSuffix: string;
+  environmentStackName: string;
   frontendStackName: string;
   userStateTableName: string;
 }
@@ -52,6 +53,7 @@ export class LightningGithubAutomationStack extends Stack {
     const stagingRole = this.createHostedSmokeRole(githubOidcProvider, {
       environmentName: "staging",
       resourceSuffix: "staging",
+      environmentStackName: "LightningStagingStack",
       frontendStackName: "LightningStagingFrontendStack",
       userStateTableName: `${appPrefix}-user-state-staging`,
     }, repositoryFullName, regionName, appPrefix);
@@ -59,6 +61,7 @@ export class LightningGithubAutomationStack extends Stack {
     const productionRole = this.createHostedSmokeRole(githubOidcProvider, {
       environmentName: "production",
       resourceSuffix: "prod",
+      environmentStackName: "LightningProductionStack",
       frontendStackName: "LightningProductionFrontendStack",
       userStateTableName: `${appPrefix}-user-state-prod`,
     }, repositoryFullName, regionName, appPrefix);
@@ -114,6 +117,12 @@ export class LightningGithubAutomationStack extends Stack {
             service: "cloudformation",
             region: regionName,
             resource: "stack",
+            resourceName: `${config.environmentStackName}/*`,
+          }),
+          Stack.of(this).formatArn({
+            service: "cloudformation",
+            region: regionName,
+            resource: "stack",
             resourceName: `${config.frontendStackName}/*`,
           }),
         ],
@@ -124,6 +133,17 @@ export class LightningGithubAutomationStack extends Stack {
       new iam.PolicyStatement({
         sid: "ReadAmplifyDomainAssociation",
         actions: ["amplify:GetDomainAssociation"],
+        resources: ["*"],
+      }),
+    );
+
+    role.addToPolicy(
+      new iam.PolicyStatement({
+        sid: "ReadOperationalStatus",
+        actions: [
+          "cloudwatch:DescribeAlarms",
+          "sns:ListSubscriptionsByTopic",
+        ],
         resources: ["*"],
       }),
     );

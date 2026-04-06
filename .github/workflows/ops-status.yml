@@ -1,0 +1,104 @@
+name: Operations Status
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "15 7 * * *"
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: operations-status-${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  preflight:
+    name: Operations Status Preflight
+    runs-on: ubuntu-latest
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+      missing: ${{ steps.check.outputs.missing }}
+    steps:
+      - name: Check required secrets
+        id: check
+        env:
+          LIGHTNING_GITHUB_ACTIONS_ROLE_ARN: ${{ secrets.LIGHTNING_GITHUB_ACTIONS_ROLE_ARN }}
+          LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_PRODUCTION: ${{ secrets.LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_PRODUCTION }}
+        run: |
+          missing=()
+
+          if [ -z "$LIGHTNING_GITHUB_ACTIONS_ROLE_ARN" ]; then
+            missing+=("LIGHTNING_GITHUB_ACTIONS_ROLE_ARN")
+          fi
+
+          if [ -z "$LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_PRODUCTION" ]; then
+            missing+=("LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_PRODUCTION")
+          fi
+
+          if [ "${#missing[@]}" -eq 0 ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            echo "missing=none" >> "$GITHUB_OUTPUT"
+            echo "Operations status prerequisites are configured."
+            exit 0
+          fi
+
+          missing_csv=$(IFS=,; printf '%s' "${missing[*]}")
+          echo "ready=false" >> "$GITHUB_OUTPUT"
+          echo "missing=$missing_csv" >> "$GITHUB_OUTPUT"
+          echo "Operations status prerequisites are missing: $missing_csv"
+
+  status:
+    name: Operations Status (${{ matrix.environment }})
+    needs: preflight
+    if: needs.preflight.outputs.ready == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - environment: staging
+            roleSecret: LIGHTNING_GITHUB_ACTIONS_ROLE_ARN
+          - environment: production
+            roleSecret: LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_PRODUCTION
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets[matrix.roleSecret] }}
+          aws-region: eu-west-2
+
+      - name: Run operations status
+        working-directory: infra
+        env:
+          AWS_REGION: eu-west-2
+          AWS_DEFAULT_REGION: eu-west-2
+          AWS_CLI_BIN: aws
+        run: |
+          node ../scripts/print-operations-status.mjs --environment ${{ matrix.environment }} > ops-status-${{ matrix.environment }}.json
+          cat ops-status-${{ matrix.environment }}.json
+
+      - name: Upload operations status artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ops-status-${{ matrix.environment }}
+          path: infra/ops-status-${{ matrix.environment }}.json
+
+  missing-prerequisites:
+    name: Operations Status Skipped
+    needs: preflight
+    if: needs.preflight.outputs.ready != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report skipped status
+        run: |
+          echo "::warning::Operations status skipped because these required secrets are missing: ${{ needs.preflight.outputs.missing }}"
