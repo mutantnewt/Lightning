@@ -92,23 +92,47 @@ function renderSmokeStatus(smokeCoverage, smokeStatus) {
   return `- hosted smoke: reported without explicit status (${coverage})`;
 }
 
-function buildSummary(release, status, smokeCoverage, smokeStatus) {
+function normalizeStatus(statusPayload) {
+  if (Array.isArray(statusPayload?.results) && statusPayload.results.length > 0) {
+    return statusPayload.results[0];
+  }
+
+  return statusPayload ?? {};
+}
+
+function resolveCommit(releaseMetadata, statusRelease) {
+  return (
+    releaseMetadata.build?.sourceVersionShort ??
+    releaseMetadata.build?.sourceVersion ??
+    statusRelease?.build?.sourceVersionShort ??
+    statusRelease?.build?.sourceVersion ??
+    "unknown"
+  );
+}
+
+function resolveArchiveRemote(archivedRelease) {
+  return archivedRelease.remoteArchive ?? archivedRelease.remoteStorage ?? {};
+}
+
+function buildSummary(release, statusPayload, smokeCoverage, smokeStatus) {
   const releaseMetadata = release.releaseMetadata ?? {};
   const archivedRelease = release.archivedRelease ?? {};
+  const status = normalizeStatus(statusPayload);
   const statusRelease = status.release ?? {};
   const checks = status.checks ?? null;
+  const remoteArchive = resolveArchiveRemote(archivedRelease);
   const lines = [
     "## Frontend release",
     "",
     `- environment: ${release.environment ?? status.environmentName ?? "unknown"}`,
     `- release id: \`${releaseMetadata.releaseId ?? statusRelease.releaseId ?? "unknown"}\``,
-    `- commit: \`${releaseMetadata.gitCommitSha ?? statusRelease.gitCommitSha ?? "unknown"}\``,
+    `- commit: \`${resolveCommit(releaseMetadata, statusRelease)}\``,
     `- job id: \`${release.jobId ?? "unknown"}\``,
     `- deploy status: ${release.status ?? "unknown"}`,
     `- hosted URL: ${release.webUrl ?? "unknown"}`,
     `- release manifest URL: ${release.releaseManifestUrl ?? status.releaseUrl ?? "unknown"}`,
-    `- archive bucket: ${archivedRelease.remoteStorage?.bucketName ?? "unknown"}`,
-    `- archive object: ${archivedRelease.remoteStorage?.archiveKey ?? "unknown"}`,
+    `- archive bucket: ${remoteArchive.bucketName ?? "unknown"}`,
+    `- archive object: ${remoteArchive.zipObjectKey ?? remoteArchive.archiveKey ?? "unknown"}`,
     `- selected verification target: ${status.selectedTarget ?? "unknown"}`,
     renderChecks(checks),
     renderSmokeStatus(smokeCoverage, smokeStatus),
