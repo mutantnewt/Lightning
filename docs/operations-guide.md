@@ -364,10 +364,11 @@ Frontend release in GitHub Actions:
 - it now also assumes the existing hosted-smoke role for the target environment and runs the real browser smoke after publish:
   - staging uses `LIGHTNING_GITHUB_ACTIONS_ROLE_ARN`
   - production uses `LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_PRODUCTION`
+- the smoke-user bootstrap path now passes auto-generated passwords to the AWS CLI in `--flag=value` form so passwords that begin with `-` do not break production smoke-user resets on GitHub runners
 - `npm run github:frontend:release:sync-secrets` now publishes the live frontend-release role ARN from `LightningGithubAutomationStack`
 - the workflow has now been live-verified in both environments on 2026-04-06:
-  - staging run `24051996446`
-  - production run `24052047522`
+  - staging run `24052374191`
+  - production run `24052639174`
 
 Hosted frontend release archive inventory:
 
