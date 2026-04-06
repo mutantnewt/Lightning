@@ -409,3 +409,4 @@ This path now:
 - has now been live-verified in GitHub Actions on 2026-04-06 through:
   - staging run `24052374191`
   - production run `24052639174`
+- the added release-summary rendering path has also been live-verified through staging run `24053096652`

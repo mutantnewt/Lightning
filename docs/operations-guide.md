@@ -372,6 +372,7 @@ Frontend release in GitHub Actions:
 - the workflow has now been live-verified in both environments on 2026-04-06:
   - staging run `24052374191`
   - production run `24052639174`
+- the release-summary enhancement has also been live-verified on 2026-04-06 through staging run `24053096652`
 
 Hosted frontend release archive inventory:
 

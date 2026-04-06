@@ -2165,7 +2165,11 @@ Verification:
 
 - `node --check` passes for `scripts/write-frontend-release-summary.mjs`
 - the workflow YAML remains valid after the summary step was added
-- the next live proof should show publish, release-summary rendering, manifest verification, and hosted smoke in the same GitHub workflow run
+- GitHub Actions workflow run `24053096652` passes on 2026-04-06 for the staging frontend-release workflow with:
+  - publish
+  - release-status verification
+  - release-summary rendering
+  - hosted staging smoke
 
 ## Immediate Next Steps
 
