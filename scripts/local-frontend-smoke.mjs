@@ -1184,6 +1184,26 @@ async function main() {
       ),
     }))()`);
 
+    await waitFor(
+      async () =>
+        (await client.evaluate(`(() => {
+          const reviewCard = [...document.querySelectorAll('[data-testid^="review-item-"]')].find(
+            (node) => (node.textContent || '').includes(${JSON.stringify(reviewText)}),
+          );
+
+          if (!(reviewCard instanceof HTMLElement)) {
+            return false;
+          }
+
+          return reviewCard.querySelector('[data-testid^="delete-review-"]') instanceof HTMLElement;
+        })()`))
+          ? true
+          : null,
+      "review delete button ready",
+      10_000,
+      250,
+    );
+
     await clickReviewDeleteButton(client, reviewText);
 
     await waitFor(
