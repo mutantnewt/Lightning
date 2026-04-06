@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { once } from "node:events";
 import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
@@ -557,27 +558,67 @@ async function main() {
       stdio: "ignore",
     },
   );
+  let cleanedUp = false;
 
-  const cleanup = () => {
-    if (!chrome.killed) {
+  const cleanup = async () => {
+    if (cleanedUp) {
+      return;
+    }
+
+    cleanedUp = true;
+
+    if (!chrome.killed && chrome.exitCode === null && chrome.signalCode === null) {
       chrome.kill("SIGKILL");
     }
 
-    rmSync(userDataDir, {
-      recursive: true,
-      force: true,
-      maxRetries: 10,
-      retryDelay: 200,
-    });
+    if (chrome.exitCode === null && chrome.signalCode === null) {
+      await Promise.race([once(chrome, "close"), sleep(1_000)]);
+    }
+
+    try {
+      rmSync(userDataDir, {
+        recursive: true,
+        force: true,
+        maxRetries: 10,
+        retryDelay: 200,
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : String(error ?? "Unknown error");
+      console.warn(`Smoke cleanup warning: ${message}`);
+    }
   };
 
-  process.on("exit", cleanup);
+  const cleanupSync = () => {
+    if (cleanedUp) {
+      return;
+    }
+
+    cleanedUp = true;
+
+    if (!chrome.killed && chrome.exitCode === null && chrome.signalCode === null) {
+      chrome.kill("SIGKILL");
+    }
+
+    try {
+      rmSync(userDataDir, {
+        recursive: true,
+        force: true,
+        maxRetries: 10,
+        retryDelay: 200,
+      });
+    } catch {
+      // Best effort only during process teardown.
+    }
+  };
+
+  process.on("exit", cleanupSync);
   process.on("SIGINT", () => {
-    cleanup();
+    cleanupSync();
     process.exit(130);
   });
   process.on("SIGTERM", () => {
-    cleanup();
+    cleanupSync();
     process.exit(143);
   });
 
