@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+import { promises as fs } from "node:fs";
+import path from "node:path";
 import {
   archiveReleasePackage,
   createReleaseMetadata,
@@ -18,6 +20,67 @@ import {
   waitForJob,
   writeReleaseManifest,
 } from "./amplify-frontend-release-lib.mjs";
+
+const defaultDeployLockPath = path.resolve(
+  process.cwd(),
+  ".local",
+  "locks",
+  "manual-amplify-frontend-deploy.lock",
+);
+
+async function acquireDeployLock(environment) {
+  const lockPath =
+    process.env.LIGHTNING_MANUAL_DEPLOY_LOCK_PATH || defaultDeployLockPath;
+
+  await fs.mkdir(path.dirname(lockPath), { recursive: true });
+
+  let handle;
+
+  try {
+    handle = await fs.open(lockPath, "wx");
+  } catch (error) {
+    if (error && typeof error === "object" && "code" in error && error.code === "EEXIST") {
+      let details = "";
+
+      try {
+        details = await fs.readFile(lockPath, "utf8");
+      } catch {
+        // Ignore lock read failures and surface the main contention error.
+      }
+
+      throw new Error(
+        [
+          "Another manual Amplify frontend deployment is already running.",
+          "Retry after it finishes so staging and production do not race on the shared build output.",
+          details ? `Lock details: ${details.trim()}` : "",
+        ]
+          .filter(Boolean)
+          .join(" "),
+      );
+    }
+
+    throw error;
+  }
+
+  await handle.writeFile(
+    JSON.stringify(
+      {
+        environment,
+        pid: process.pid,
+        startedAt: new Date().toISOString(),
+        cwd: process.cwd(),
+      },
+      null,
+      2,
+    ),
+    "utf8",
+  );
+
+  return async () => {
+    await handle.close();
+    await fs.rm(lockPath, { force: true });
+  };
+}
 
 function parseArgs(argv) {
   const args = {
@@ -67,97 +130,103 @@ function parseArgs(argv) {
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
-  const stackOutputs = getStackOutputs(args.stackName, args.region);
-  const buildEnv = resolveFrontendBuildEnv(stackOutputs, args);
-  const appId = stackOutputs.AmplifyAppId;
-  const branchName = stackOutputs.AmplifyBranchName;
-  const defaultDomain = stackOutputs.AmplifyDefaultDomain;
-
-  if (!appId || !branchName) {
-    throw new Error(
-      `Stack ${args.stackName} does not expose AmplifyAppId and AmplifyBranchName. Deploy the frontend hosting stack first.`,
-    );
-  }
-
-  ensureFrontendBuild(buildEnv);
-  const deployment = createDeployment(appId, branchName, args.region);
-
-  if (!deployment.jobId || !deployment.zipUploadUrl) {
-    throw new Error("Amplify create-deployment did not return jobId and zipUploadUrl.");
-  }
-
-  const releaseMetadata = createReleaseMetadata({
-    args,
-    stackOutputs,
-    buildEnv,
-    appId,
-    branchName,
-    defaultDomain,
-    jobId: deployment.jobId,
-  });
-  const releaseManifestPath = writeReleaseManifest(releaseMetadata);
-  const archive = createZipArchive(frontendDistDir);
+  const releaseLock = await acquireDeployLock(args.environment);
 
   try {
-    await uploadZip(deployment.zipUploadUrl, archive.archivePath);
-    startDeployment(appId, branchName, deployment.jobId, args.region);
-    const deploymentResult = await waitForJob(
-      appId,
-      branchName,
-      deployment.jobId,
-      args.region,
-      args.waitTimeoutMs,
-      args.pollIntervalMs,
-    );
+    const stackOutputs = getStackOutputs(args.stackName, args.region);
+    const buildEnv = resolveFrontendBuildEnv(stackOutputs, args);
+    const appId = stackOutputs.AmplifyAppId;
+    const branchName = stackOutputs.AmplifyBranchName;
+    const defaultDomain = stackOutputs.AmplifyDefaultDomain;
 
-    if (deploymentResult.status !== "SUCCEED") {
+    if (!appId || !branchName) {
       throw new Error(
-        `Amplify deployment finished with status ${deploymentResult.status}. Job summary: ${JSON.stringify(
-          deploymentResult.summary,
-        )}`,
+        `Stack ${args.stackName} does not expose AmplifyAppId and AmplifyBranchName. Deploy the frontend hosting stack first.`,
       );
     }
 
-    const archivedRelease = archiveReleasePackage({
-      releaseMetadata,
-      archivePath: archive.archivePath,
-    });
-    const releaseArchiveStorage = getReleaseArchiveStorageFromOutputs(
-      stackOutputs,
-      args.stackName,
-    );
-    const archivedReleaseWithRemote = uploadArchivedReleaseToS3({
-      archivedRelease,
-      bucketName: releaseArchiveStorage.bucketName,
-      objectPrefix: releaseArchiveStorage.objectPrefix,
-      region: args.region,
-    });
+    ensureFrontendBuild(buildEnv);
+    const deployment = createDeployment(appId, branchName, args.region);
 
-    console.log(
-      JSON.stringify(
-        {
-          environment: args.environment,
-          stackName: args.stackName,
-          buildEnv,
-          releaseMetadata,
-          releaseManifestPath,
-          releaseManifestUrl: defaultDomain
-            ? `https://${branchName}.${defaultDomain}/${releaseManifestFileName}`
-            : null,
-          archivedRelease: archivedReleaseWithRemote,
-          appId,
-          branchName,
-          defaultDomain,
-          webUrl: defaultDomain ? `https://${branchName}.${defaultDomain}` : null,
-          jobId: deployment.jobId,
-          status: deploymentResult.status,
-        },
-        null,
-        2,
-      ),
-    );
+    if (!deployment.jobId || !deployment.zipUploadUrl) {
+      throw new Error("Amplify create-deployment did not return jobId and zipUploadUrl.");
+    }
+
+    const releaseMetadata = createReleaseMetadata({
+      args,
+      stackOutputs,
+      buildEnv,
+      appId,
+      branchName,
+      defaultDomain,
+      jobId: deployment.jobId,
+    });
+    const releaseManifestPath = writeReleaseManifest(releaseMetadata);
+    const archive = createZipArchive(frontendDistDir);
+
+    try {
+      await uploadZip(deployment.zipUploadUrl, archive.archivePath);
+      startDeployment(appId, branchName, deployment.jobId, args.region);
+      const deploymentResult = await waitForJob(
+        appId,
+        branchName,
+        deployment.jobId,
+        args.region,
+        args.waitTimeoutMs,
+        args.pollIntervalMs,
+      );
+ 
+      if (deploymentResult.status !== "SUCCEED") {
+        throw new Error(
+          `Amplify deployment finished with status ${deploymentResult.status}. Job summary: ${JSON.stringify(
+            deploymentResult.summary,
+          )}`,
+        );
+      }
+
+      const archivedRelease = archiveReleasePackage({
+        releaseMetadata,
+        archivePath: archive.archivePath,
+      });
+      const releaseArchiveStorage = getReleaseArchiveStorageFromOutputs(
+        stackOutputs,
+        args.stackName,
+      );
+      const archivedReleaseWithRemote = uploadArchivedReleaseToS3({
+        archivedRelease,
+        bucketName: releaseArchiveStorage.bucketName,
+        objectPrefix: releaseArchiveStorage.objectPrefix,
+        region: args.region,
+      });
+
+      console.log(
+        JSON.stringify(
+          {
+            environment: args.environment,
+            stackName: args.stackName,
+            buildEnv,
+            releaseMetadata,
+            releaseManifestPath,
+            releaseManifestUrl: defaultDomain
+              ? `https://${branchName}.${defaultDomain}/${releaseManifestFileName}`
+              : null,
+            archivedRelease: archivedReleaseWithRemote,
+            appId,
+            branchName,
+            defaultDomain,
+            webUrl: defaultDomain ? `https://${branchName}.${defaultDomain}` : null,
+            jobId: deployment.jobId,
+            status: deploymentResult.status,
+          },
+          null,
+          2,
+        ),
+      );
+    } finally {
+      archive.cleanup();
+    }
   } finally {
-    archive.cleanup();
+    await releaseLock();
   }
 }
 

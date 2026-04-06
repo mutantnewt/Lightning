@@ -231,6 +231,20 @@ Verification:
 - `npm run build` passes in `backend/`
 - `npm run build` passes in `literary-light/`
 
+### Slice W: Manual frontend release-path concurrency hardening
+
+Completed:
+
+- identified and corrected a real race where parallel manual Amplify publishes could reuse the same local frontend build output and cross-contaminate staging and production releases
+- added a repo-local lock around `scripts/deploy-manual-amplify-frontend.mjs` so only one manual hosted-frontend publish can run at a time
+- live-corrected production by republishing it serially after the race was detected
+
+Verification:
+
+- staging custom domain now serves release `staging-20260406T112511Z-465550b`
+- production custom domain now serves release `production-20260406T112555Z-465550b`
+- `npm run frontend:release:status` now reports `allMatch = true`
+
 ### Slice H: Public catalog boundary
 
 Completed:
