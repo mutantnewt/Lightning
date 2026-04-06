@@ -2146,11 +2146,14 @@ Verification:
   - frontend stack output reads
   - Amplify deployment actions
   - S3 writes to the retained frontend release archive buckets
-- the recommended first live proof is a staging workflow dispatch after syncing `LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_FRONTEND_RELEASE`
+- `npm run github:frontend:release:sync-secrets` successfully publishes `LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_FRONTEND_RELEASE`
+- GitHub Actions workflow run `24051996446` passes on 2026-04-06 for the staging frontend-release path
+- GitHub Actions workflow run `24052047522` passes on 2026-04-06 for the production frontend-release path
+- both live runs completed the publish and the post-release manifest verification successfully
 
 Current limitation:
 
-- the workflow baseline exists, but it still needs a first live proof run after the new role secret is synced and the workflow file is pushed
+- the GitHub release path is now live-verified, but the remaining live operational gap is still alert delivery because the SNS alarm topics still have no confirmed recipients
 
 ## Immediate Next Steps
 

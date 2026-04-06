@@ -362,7 +362,9 @@ Frontend release in GitHub Actions:
 - it runs the existing hosted frontend publish path in `scripts/deploy-manual-amplify-frontend.mjs`
 - it then runs `scripts/print-hosted-frontend-release-status.mjs --require-match` so the live release manifest is verified immediately after publish
 - `npm run github:frontend:release:sync-secrets` now publishes the live frontend-release role ARN from `LightningGithubAutomationStack`
-- the recommended first proof is a staging dispatch, because it validates the GitHub release path without touching the production frontend
+- the workflow has now been live-verified in both environments on 2026-04-06:
+  - staging run `24051996446`
+  - production run `24052047522`
 
 Hosted frontend release archive inventory:
 
