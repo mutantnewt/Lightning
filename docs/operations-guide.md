@@ -181,6 +181,7 @@ cd /Users/steve/Documents/GitHub/Lightning/literary-light
 
 The dedicated `www` production hosted smoke path now launches the browser at `https://www.lightningclassics.com`, asserts the redirect lands on `https://lightningclassics.com`, and then continues through the normal production hosted smoke flow on the canonical apex host.
 This path has now been live-verified on 2026-04-06.
+The local hosted smoke wrappers now also bootstrap dedicated local staging or production smoke users automatically when smoke credentials are absent, and they default to deterministic review cleanup between runs instead of inline review deletion.
 
 Hosted staging smoke in GitHub Actions:
 

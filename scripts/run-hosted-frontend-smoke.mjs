@@ -12,6 +12,10 @@ import {
   lightningRootDomainName,
   repoRoot,
 } from "./domain-cutover-lib.mjs";
+import {
+  ensureCloudSmokeCredentials,
+  requiresSmokeCredentialBootstrap,
+} from "./ensure-cloud-smoke-credentials.mjs";
 
 const nodeBin = process.env.NODE_BIN ?? process.execPath;
 const smokeScript = path.join(repoRoot, "scripts", "local-frontend-smoke.mjs");
@@ -288,7 +292,35 @@ function resolveSmokeCredentials(environmentName) {
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const resolution = resolveTargetUrl(args);
+  let resolvedSmokeCredentials = null;
+
+  if (requiresSmokeCredentialBootstrap(process.env)) {
+    console.log(
+      `Bootstrapping a dedicated local ${args.environmentName} hosted-smoke user because no local smoke credentials were supplied ...`,
+    );
+    resolvedSmokeCredentials = ensureCloudSmokeCredentials({
+      environmentName: args.environmentName,
+      identifier:
+        process.env[`LIGHTNING_${args.environmentName.toUpperCase()}_SMOKE_IDENTIFIER`] ??
+        process.env.LIGHTNING_SMOKE_IDENTIFIER,
+      displayName: process.env.LIGHTNING_SMOKE_EXPECTED_USER,
+      password:
+        process.env[`LIGHTNING_${args.environmentName.toUpperCase()}_SMOKE_PASSWORD`] ??
+        process.env.LIGHTNING_SMOKE_PASSWORD,
+    });
+  }
+
   const credentials = resolveSmokeCredentials(args.environmentName);
+  const finalCredentials = {
+    identifier:
+      credentials.identifier || resolvedSmokeCredentials?.smokeIdentifier || "",
+    password:
+      credentials.password || resolvedSmokeCredentials?.smokePassword || "",
+    expectedUser:
+      process.env.LIGHTNING_SMOKE_EXPECTED_USER ??
+      resolvedSmokeCredentials?.smokeDisplayName ??
+      "",
+  };
 
   console.log(
     JSON.stringify(
@@ -319,8 +351,11 @@ async function main() {
       LIGHTNING_SMOKE_URL: resolution.smokeUrl,
       LIGHTNING_SMOKE_INITIAL_URL: resolution.initialSmokeUrl,
       LIGHTNING_SMOKE_EXPECTED_URL_PREFIX: resolution.expectedUrlPrefix,
-      LIGHTNING_SMOKE_IDENTIFIER: credentials.identifier,
-      LIGHTNING_SMOKE_PASSWORD: credentials.password,
+      LIGHTNING_SMOKE_IDENTIFIER: finalCredentials.identifier,
+      LIGHTNING_SMOKE_PASSWORD: finalCredentials.password,
+      LIGHTNING_SMOKE_EXPECTED_USER: finalCredentials.expectedUser,
+      LIGHTNING_SMOKE_SKIP_REVIEW_DELETE:
+        process.env.LIGHTNING_SMOKE_SKIP_REVIEW_DELETE ?? "true",
     },
     echoStdout: true,
     echoStderr: true,

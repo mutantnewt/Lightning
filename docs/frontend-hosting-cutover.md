@@ -143,6 +143,9 @@ These commands collect a timestamped cutover snapshot for:
 - backend CORS allow-lists
 - optional hosted browser smoke results
 
+The local hosted smoke wrappers now also self-bootstrap dedicated environment-specific smoke users when `LIGHTNING_SMOKE_IDENTIFIER` and `LIGHTNING_SMOKE_PASSWORD` are absent.
+That keeps local hosted verification independent from the GitHub repository secret set.
+
 Current evidence status on 2026-04-02:
 
 - `npm run cutover:evidence` now passes against the live pre-cutover state

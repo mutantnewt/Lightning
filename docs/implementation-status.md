@@ -2035,6 +2035,32 @@ Current limitation:
 
 - the self-bootstrapping path is currently implemented for local staging smoke; production still relies on the hosted verification path as the preferred post-cutover operator check
 
+### Slice BH: Self-bootstrapping local hosted smoke credentials
+
+Completed:
+
+- extended `scripts/run-hosted-frontend-smoke.mjs` so local hosted smoke now bootstraps dedicated environment-specific smoke users automatically when local smoke credentials are absent
+- reused `scripts/ensure-cloud-smoke-credentials.mjs` so local hosted staging and production smoke stay independent from the GitHub repository secret set
+- aligned the local hosted smoke wrapper with the GitHub-hosted workflow policy by defaulting `LIGHTNING_SMOKE_SKIP_REVIEW_DELETE=true`
+
+Verification:
+
+- `/usr/local/bin/node --check scripts/run-hosted-frontend-smoke.mjs` passes
+- `npm run smoke:staging:hosted` succeeds on 2026-04-06 with no pre-set local smoke credentials
+- `npm run smoke:production:hosted` succeeds on 2026-04-06 with no pre-set local smoke credentials
+- the live staging hosted run proves:
+  - automatic bootstrap of `Staging Local Smoke`
+  - hosted verification on `https://staging.lightningclassics.com`
+  - deterministic stale-review cleanup through the probe-preparation path
+- the live production hosted run proves:
+  - automatic bootstrap of `Production Local Smoke`
+  - hosted verification on `https://lightningclassics.com`
+  - deterministic stale-review cleanup through the probe-preparation path
+
+Current limitation:
+
+- the dedicated `www` redirect-alias hosted smoke still assumes the main production hosted smoke path remains healthy; it was not rerun in this slice because the generic wrapper change already applies to that path too
+
 ## Immediate Next Steps
 
 ### Next slice: Post-Go-Live Hardening
