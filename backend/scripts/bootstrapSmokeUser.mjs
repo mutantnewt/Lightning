@@ -368,8 +368,7 @@ async function createOrUpdateSmokeUser(config, resolvedIdentity, password, desir
       config.userPoolId,
       "--username",
       resolvedIdentity.username,
-      "--temporary-password",
-      password,
+      `--temporary-password=${password}`,
       "--message-action",
       "SUPPRESS",
       "--user-attributes",
@@ -403,8 +402,7 @@ async function createOrUpdateSmokeUser(config, resolvedIdentity, password, desir
     config.userPoolId,
     "--username",
     resolvedIdentity.username,
-    "--password",
-    password,
+    `--password=${password}`,
     "--permanent",
   ]);
 
