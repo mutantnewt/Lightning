@@ -2194,6 +2194,20 @@ Verification:
   - summary rendering for both environments
   - summary and raw-artifact upload for both environments
 
+### Slice BO: Cutover-evidence workflow summaries
+
+Completed:
+
+- added `scripts/write-cutover-evidence-summary.mjs` so the GitHub cutover-evidence workflow now renders a human-readable summary from the captured JSON evidence
+- extended `.github/workflows/cutover-evidence.yml` so the workflow now writes that summary into the GitHub job summary and uploads it alongside the raw JSON artifact
+- kept the summary generation aligned with the existing operator path by deriving it from `cutover-evidence.json` instead of adding any new live AWS reads
+
+Verification:
+
+- `node --check` passes for `scripts/write-cutover-evidence-summary.mjs`
+- the workflow YAML remains valid after the summary step was added
+- the next live proof should show the summary step succeeding inside the GitHub cutover-evidence workflow
+
 ## Immediate Next Steps
 
 ### Next slice: Post-Go-Live Hardening

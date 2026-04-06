@@ -73,11 +73,18 @@ jobs:
           node ../scripts/capture-cutover-evidence.mjs --output cutover-evidence.json
           cat cutover-evidence.json
 
+      - name: Summarize cutover evidence
+        working-directory: infra
+        run: |
+          node ../scripts/write-cutover-evidence-summary.mjs --input cutover-evidence.json | tee cutover-evidence-summary.md
+
       - name: Upload cutover evidence artifact
         uses: actions/upload-artifact@v4
         with:
           name: cutover-evidence
-          path: infra/cutover-evidence.json
+          path: |
+            infra/cutover-evidence.json
+            infra/cutover-evidence-summary.md
 
   missing-prerequisites:
     name: Cutover Evidence Skipped
