@@ -1136,7 +1136,7 @@ async function main() {
           const buttonText = postButton.textContent || '';
           const inputValue = reviewInput.value || '';
 
-          return !postButton.disabled && buttonText.includes('Post Review') && inputValue.length === 0;
+          return buttonText.includes('Post Review') && inputValue.length === 0;
         })()`))
           ? true
           : null,
