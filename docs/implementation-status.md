@@ -2087,6 +2087,30 @@ Current limitation:
 
 - the staging and production GitHub-hosted smoke workflows still rely on their OIDC role secrets being present in the repository, and real alert delivery remains the next live operational gap because the SNS topics still have no confirmed subscriptions
 
+### Slice BJ: GitHub OIDC alarm-subscription workflow baseline
+
+Completed:
+
+- added a dedicated GitHub OIDC alerting-management role to `LightningGithubAutomationStack`
+- added `.github/workflows/alarm-subscriptions.yml` so alarm email subscription attachment can run in GitHub Actions with:
+  - `environment`
+  - `dry_run`
+  - `emails`
+- added `scripts/sync-alerting-github-secret.mjs` plus `npm run github:alerting:sync-secrets` to publish `LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_ALERTING`
+- kept the workflow aligned with the existing local operator path by running `scripts/subscribe-alarm-topic-emails.mjs` directly instead of creating a second subscription implementation
+- allowed the workflow to use either a manual `emails` input or the repository secret `LIGHTNING_ALARM_NOTIFICATION_EMAILS`
+
+Verification:
+
+- `npm run build` passes in `infra`
+- the new alerting-management role can be deployed with `LightningGithubAutomationStack`
+- the new secret-sync path can publish `LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_ALERTING` from live stack outputs
+- the recommended first live proof is a dry-run GitHub workflow dispatch with a placeholder email such as `ops@example.com`, because it validates role assumption and workflow wiring without creating SNS subscriptions
+
+Current limitation:
+
+- a real confirmed alert destination is still not attached, so `npm run ops:status` remains the live operational gap until a real recipient confirms the SNS subscription email
+
 ## Immediate Next Steps
 
 ### Next slice: Post-Go-Live Hardening

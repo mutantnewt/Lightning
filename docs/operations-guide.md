@@ -110,6 +110,7 @@ Repository validation baseline:
 - the repo now also includes a GitHub OIDC operations-status workflow for staging and production
 - the GitHub-hosted operations-status path has now been live-verified for both environments through GitHub Actions
 - the repo now also includes a GitHub OIDC cutover-evidence workflow plus `npm run github:ops:sync-secrets` for its read-only role secret
+- the repo now also includes a manual GitHub OIDC alarm-subscriptions workflow plus `npm run github:alerting:sync-secrets` for its dedicated alerting-management role secret
 - the repo now also includes `npm run ops:subscribe:emails` as a safe operator wrapper for attaching SNS email subscriptions and then checking live subscription readiness
 
 Custom-domain cutover:
@@ -322,6 +323,22 @@ This flow:
 - immediately re-runs `ops:status` so the live post-subscription state is visible
 - is the fastest path for closing the current live alert-delivery gap
 - does not change the stack output `OperationsAlarmNotificationEmailCount`, so deploy-time configuration remains the preferred fully codified path when desired
+
+Alarm subscriptions in GitHub Actions:
+
+- the workflow lives at `.github/workflows/alarm-subscriptions.yml`
+- it runs on manual dispatch only
+- it accepts:
+  - `environment`
+  - `dry_run`
+  - `emails`
+- it uses a dedicated GitHub OIDC role secret:
+  - `LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_ALERTING`
+- it can take a comma-separated `emails` workflow input or fall back to the repository secret:
+  - `LIGHTNING_ALARM_NOTIFICATION_EMAILS`
+- it runs the same `scripts/subscribe-alarm-topic-emails.mjs` operator path used locally, so dry-run and live behavior stay aligned
+- `npm run github:alerting:sync-secrets` now publishes the live alerting-management role ARN from `LightningGithubAutomationStack`
+- the recommended first use is a dry-run dispatch with a placeholder address such as `ops@example.com`, because that validates role assumption and workflow wiring without creating SNS subscriptions
 
 Hosted frontend release verification:
 

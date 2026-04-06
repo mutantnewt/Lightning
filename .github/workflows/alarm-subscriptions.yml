@@ -1,0 +1,125 @@
+name: Alarm Subscriptions
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - staging
+          - production
+      dry_run:
+        description: Run in dry-run mode without creating subscriptions
+        required: true
+        default: true
+        type: boolean
+      emails:
+        description: Comma-separated email destinations; falls back to LIGHTNING_ALARM_NOTIFICATION_EMAILS secret when empty
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+concurrency:
+  group: alarm-subscriptions-${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  preflight:
+    name: Alarm Subscriptions Preflight
+    runs-on: ubuntu-latest
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+      missing: ${{ steps.check.outputs.missing }}
+    steps:
+      - name: Check required secrets and inputs
+        id: check
+        env:
+          LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_ALERTING: ${{ secrets.LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_ALERTING }}
+          LIGHTNING_ALARM_NOTIFICATION_EMAILS: ${{ secrets.LIGHTNING_ALARM_NOTIFICATION_EMAILS }}
+          INPUT_EMAILS: ${{ inputs.emails }}
+        run: |
+          missing=()
+          resolved_emails="${INPUT_EMAILS:-$LIGHTNING_ALARM_NOTIFICATION_EMAILS}"
+
+          if [ -z "$LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_ALERTING" ]; then
+            missing+=("LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_ALERTING")
+          fi
+
+          if [ -z "$resolved_emails" ]; then
+            missing+=("emails-or-LIGHTNING_ALARM_NOTIFICATION_EMAILS")
+          fi
+
+          if [ "${#missing[@]}" -eq 0 ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            echo "missing=none" >> "$GITHUB_OUTPUT"
+            echo "Alarm subscription prerequisites are configured."
+            exit 0
+          fi
+
+          missing_csv=$(IFS=,; printf '%s' "${missing[*]}")
+          echo "ready=false" >> "$GITHUB_OUTPUT"
+          echo "missing=$missing_csv" >> "$GITHUB_OUTPUT"
+          echo "Alarm subscription prerequisites are missing: $missing_csv"
+
+  subscribe:
+    name: Apply Alarm Subscriptions
+    needs: preflight
+    if: needs.preflight.outputs.ready == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ secrets.LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_ALERTING }}
+          aws-region: eu-west-2
+
+      - name: Apply alarm subscriptions
+        working-directory: infra
+        env:
+          LIGHTNING_ALARM_NOTIFICATION_EMAILS: ${{ secrets.LIGHTNING_ALARM_NOTIFICATION_EMAILS }}
+          INPUT_EMAILS: ${{ inputs.emails }}
+          INPUT_ENVIRONMENT: ${{ inputs.environment }}
+          INPUT_DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          resolved_emails="${INPUT_EMAILS:-$LIGHTNING_ALARM_NOTIFICATION_EMAILS}"
+          args=(../scripts/subscribe-alarm-topic-emails.mjs --environment "$INPUT_ENVIRONMENT" --emails "$resolved_emails")
+
+          if [ "$INPUT_DRY_RUN" = "true" ]; then
+            args+=(--dry-run)
+          fi
+
+          node "${args[@]}" | tee alarm-subscriptions.json
+
+      - name: Upload alarm subscription artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: alarm-subscriptions
+          path: infra/alarm-subscriptions.json
+
+  missing-prerequisites:
+    name: Alarm Subscriptions Skipped
+    needs: preflight
+    if: needs.preflight.outputs.ready != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report skipped alarm subscription run
+        run: |
+          echo "::warning::Alarm subscription workflow skipped because these required values are missing: ${{ needs.preflight.outputs.missing }}"

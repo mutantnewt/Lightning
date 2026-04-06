@@ -300,6 +300,7 @@ Note:
 - alarm email destinations can now be injected at deploy time with `LIGHTNING_ALARM_NOTIFICATION_EMAILS` or `--context alarmNotificationEmails=...`
 - the repo now also includes `npm run ops:subscribe:emails` to apply alarm email destinations and then report the live SNS subscription state
 - the repo now also includes `npm run ops:subscribe:emails:direct` to attach email subscriptions directly to the live SNS topics without a CDK deploy
+- the repo now also includes `npm run github:alerting:sync-secrets` plus `.github/workflows/alarm-subscriptions.yml` so the direct live-topic alarm path can also run from GitHub Actions through a dedicated alerting-management OIDC role
 - current access-log groups are:
   - `/aws/apigateway/lightning-http-api-access-staging`
   - `/aws/apigateway/lightning-http-api-access-prod`
@@ -357,3 +358,22 @@ LIGHTNING_ALARM_NOTIFICATION_EMAILS=ops@example.com /usr/local/bin/npm run ops:s
 ```
 
 This path attaches email subscriptions directly to the live staging and production SNS topics, skips existing subscriptions, and immediately reruns `ops:status` so the confirmed or pending state is visible without a stack deploy.
+
+GitHub Actions alert-subscription path:
+
+```sh
+cd /Users/steve/Documents/GitHub/Lightning/infra
+/usr/local/bin/npm run github:alerting:sync-secrets -- --dry-run
+```
+
+```sh
+cd /Users/steve/Documents/GitHub/Lightning/infra
+/usr/local/bin/npm run github:alerting:sync-secrets
+```
+
+This path now:
+
+- publishes `LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_ALERTING` from `LightningGithubAutomationStack`
+- enables the manual `.github/workflows/alarm-subscriptions.yml` workflow
+- lets the workflow use either a manual `emails` input or the repository secret `LIGHTNING_ALARM_NOTIFICATION_EMAILS`
+- supports a dry-run first pass so the AWS/GitHub wiring can be verified without creating SNS subscriptions

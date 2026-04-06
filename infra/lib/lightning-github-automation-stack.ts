@@ -85,6 +85,12 @@ export class LightningGithubAutomationStack extends Stack {
       regionName,
       appPrefix,
     );
+    const alertingManageRole = this.createAlertingManageRole(
+      githubOidcProvider,
+      repositoryFullName,
+      regionName,
+      appPrefix,
+    );
 
     new CfnOutput(this, "GitHubOidcProviderArn", {
       value: githubOidcProvider.openIdConnectProviderArn,
@@ -104,6 +110,10 @@ export class LightningGithubAutomationStack extends Stack {
 
     new CfnOutput(this, "GitHubOperationsReadRoleArn", {
       value: operationsReadRole.roleArn,
+    });
+
+    new CfnOutput(this, "GitHubAlertingManageRoleArn", {
+      value: alertingManageRole.roleArn,
     });
   }
 
@@ -285,6 +295,63 @@ export class LightningGithubAutomationStack extends Stack {
           "amplify:GetDomainAssociation",
           "cloudwatch:DescribeAlarms",
           "sns:ListSubscriptionsByTopic",
+        ],
+        resources: ["*"],
+      }),
+    );
+
+    return role;
+  }
+
+  private createAlertingManageRole(
+    githubOidcProvider: iam.OpenIdConnectProvider,
+    repositoryFullName: string,
+    regionName: string,
+    appPrefix: string,
+  ): iam.Role {
+    const role = new iam.Role(this, "AlertingManageRole", {
+      roleName: `${appPrefix}-github-actions-alerting-manage`,
+      description:
+        "GitHub Actions alerting-management role for Lightning Classics SNS alarm subscription automation.",
+      assumedBy: new iam.WebIdentityPrincipal(
+        githubOidcProvider.openIdConnectProviderArn,
+        {
+          StringEquals: {
+            "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
+            "token.actions.githubusercontent.com:sub": `repo:${repositoryFullName}:ref:refs/heads/main`,
+          },
+        },
+      ),
+    });
+
+    role.addToPolicy(
+      new iam.PolicyStatement({
+        sid: "ReadAlertingStacks",
+        actions: ["cloudformation:DescribeStacks"],
+        resources: [
+          Stack.of(this).formatArn({
+            service: "cloudformation",
+            region: regionName,
+            resource: "stack",
+            resourceName: "LightningStagingStack/*",
+          }),
+          Stack.of(this).formatArn({
+            service: "cloudformation",
+            region: regionName,
+            resource: "stack",
+            resourceName: "LightningProductionStack/*",
+          }),
+        ],
+      }),
+    );
+
+    role.addToPolicy(
+      new iam.PolicyStatement({
+        sid: "ReadAndAttachAlarmSubscriptions",
+        actions: [
+          "cloudwatch:DescribeAlarms",
+          "sns:ListSubscriptionsByTopic",
+          "sns:Subscribe",
         ],
         resources: ["*"],
       }),
