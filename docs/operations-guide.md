@@ -371,18 +371,20 @@ Frontend release in GitHub Actions:
   - `LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_FRONTEND_RELEASE`
 - it runs the existing hosted frontend publish path in `scripts/deploy-manual-amplify-frontend.mjs`
 - it then runs `scripts/print-hosted-frontend-release-status.mjs --require-match` so the live release manifest is verified immediately after publish
-- it now also writes a human-readable release summary into the GitHub job summary and uploads that rendered summary alongside the raw JSON artifacts
 - it now also assumes the existing hosted-smoke role for the target environment and runs the real browser smoke after publish:
   - staging uses `LIGHTNING_GITHUB_ACTIONS_ROLE_ARN`
   - production uses `LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_PRODUCTION`
+- it now writes `frontend-release.json` directly through `--json-output` instead of piping noisy stdout into the raw artifact
+- it now writes a human-readable release summary after hosted smoke completes, and uploads that rendered summary alongside the raw JSON artifacts
 - the smoke-user bootstrap path now passes auto-generated passwords to the AWS CLI in `--flag=value` form so passwords that begin with `-` do not break production smoke-user resets on GitHub runners
 - `npm run github:frontend:release:sync-secrets` now publishes the live frontend-release role ARN from `LightningGithubAutomationStack`
 - the workflow has now been live-verified in both environments on 2026-04-06:
   - staging run `24052374191`
   - production run `24052639174`
-- the release-summary enhancement has also been live-verified on 2026-04-06 through:
-  - staging run `24053096652`
-  - production run `24053203654`
+- the original release-summary baseline was later hardened after a live proof exposed a `tee`-masked parse failure in the summary path
+- the corrected end-to-end release-summary path has now been live-verified on 2026-04-06 through:
+  - staging run `24054062010`
+  - production run `24054137731`
 
 Hosted frontend release archive inventory:
 

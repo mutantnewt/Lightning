@@ -2160,21 +2160,30 @@ Completed:
 - added `scripts/write-frontend-release-summary.mjs` so the GitHub frontend-release workflow now renders a human-readable summary from the publish output and the release-status verification output
 - extended `.github/workflows/frontend-release.yml` so each run now writes that summary into the GitHub job summary and uploads it as an artifact alongside the raw JSON files
 - kept the summary generation aligned with the existing release path by deriving it from the already-produced `frontend-release.json` and `frontend-release-status.json` files instead of introducing new live AWS reads
+- later hardened the same workflow after a live proof exposed a real `tee`-masked parse failure:
+  - the release workflow now writes `frontend-release.json` directly through `--json-output` instead of capturing noisy stdout
+  - the summary step now runs after hosted smoke completes, not before it
+  - the summary now includes explicit hosted-smoke completion coverage for the selected environment
+  - the workflow no longer relies on pipe-to-`tee` behavior that can hide summary-generation failures
 
 Verification:
 
 - `node --check` passes for `scripts/write-frontend-release-summary.mjs`
+- `node --check` passes for `scripts/deploy-manual-amplify-frontend.mjs`
 - the workflow YAML remains valid after the summary step was added
-- GitHub Actions workflow run `24053096652` passes on 2026-04-06 for the staging frontend-release workflow with:
+- GitHub Actions workflow run `24053853464` exposed a real summary-path correctness issue on 2026-04-06:
+  - the summary step appeared green because `tee` masked a JSON parse failure
+  - the publish step had captured build log noise into `frontend-release.json`
+- GitHub Actions workflow run `24054062010` passes on 2026-04-06 for the corrected staging frontend-release workflow with:
   - publish
   - release-status verification
-  - release-summary rendering
   - hosted staging smoke
-- GitHub Actions workflow run `24053203654` passes on 2026-04-06 for the production frontend-release workflow with:
+  - post-smoke release-summary rendering with `hosted smoke: completed successfully (staging hosted frontend)`
+- GitHub Actions workflow run `24054137731` passes on 2026-04-06 for the corrected production frontend-release workflow with:
   - publish
   - release-status verification
-  - release-summary rendering
   - hosted production smoke
+  - post-smoke release-summary rendering with `hosted smoke: completed successfully (production hosted apex plus www redirect)`
 
 ### Slice BN: Operations-status workflow summaries
 
