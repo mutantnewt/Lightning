@@ -1123,6 +1123,28 @@ async function main() {
       500,
     );
 
+    await waitFor(
+      async () =>
+        (await client.evaluate(`(() => {
+          const reviewInput = document.querySelector('[data-testid^="review-input-"]');
+          const postButton = document.querySelector('[data-testid^="post-review-"]');
+
+          if (!reviewInput || !postButton) {
+            return false;
+          }
+
+          const buttonText = postButton.textContent || '';
+          const inputValue = reviewInput.value || '';
+
+          return !postButton.disabled && buttonText.includes('Post Review') && inputValue.length === 0;
+        })()`))
+          ? true
+          : null,
+      "review form ready for duplicate attempt",
+      10_000,
+      250,
+    );
+
     const duplicateReviewText = `${reviewText} duplicate attempt`;
 
     await setElementValue(
