@@ -7,7 +7,12 @@ import type { CommunityClient } from "./client";
 import { HttpCommunityClient } from "./httpCommunityClient";
 import { LocalStorageCommunityClient } from "./localStorageCommunityClient";
 
-export type { CommunityClient, RatingSummary } from "./client";
+export type {
+  CommunityClient,
+  CommunityPage,
+  CommunityPageRequest,
+  RatingSummary,
+} from "./client";
 
 class DisabledCommunityClient implements CommunityClient {
   readonly mode = "disabled" as const;

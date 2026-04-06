@@ -274,6 +274,29 @@ Verification:
 - backend and frontend builds pass
 - staging and production stacks now deploy with HTTP API default-route throttling enabled
 
+### Slice X4: Community pagination UX alignment
+
+Completed:
+
+- extended the frontend community client contract to support paginated comment and review reads instead of first-page-only reads
+- changed the comments and reviews hooks to track `nextCursor`, `hasMore`, and explicit load-more state
+- added load-more controls to the comments and reviews UI so server-side bounded reads do not quietly hide older records
+- changed book-card comment and review count badges to show `50+` style labels when more paged records are available
+- preserved local fallback behavior with the same paginated contract so local verification stays aligned with the HTTP path
+
+Verification:
+
+- `npm run build` passes in `literary-light/`
+- targeted eslint passes for:
+  - `src/api/community/client.ts`
+  - `src/api/community/httpCommunityClient.ts`
+  - `src/api/community/localStorageCommunityClient.ts`
+  - `src/hooks/useComments.ts`
+  - `src/hooks/useRatings.ts`
+  - `src/components/CommentsSection.tsx`
+  - `src/components/ReviewsSection.tsx`
+  - `src/components/BookCard.tsx`
+
 ### Slice H: Public catalog boundary
 
 Completed:

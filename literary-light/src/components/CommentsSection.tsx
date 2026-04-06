@@ -13,7 +13,15 @@ interface CommentsSectionProps {
 
 export function CommentsSection({ bookId }: CommentsSectionProps) {
   const { user, isAuthenticated } = useAuth();
-  const { comments, error, addComment, deleteComment } = useComments(bookId);
+  const {
+    comments,
+    error,
+    hasMore,
+    isLoadingMore,
+    addComment,
+    deleteComment,
+    loadMore,
+  } = useComments(bookId);
   const { toast } = useToast();
   const [newComment, setNewComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -100,15 +108,15 @@ export function CommentsSection({ bookId }: CommentsSectionProps) {
     return date.toLocaleDateString();
   };
 
+  const visibleCommentCountLabel = hasMore
+    ? `${comments.length}+ comments`
+    : `${comments.length} comment${comments.length !== 1 ? "s" : ""}`;
+
   return (
     <div className="space-y-4" data-testid={`comments-section-${bookId}`}>
       <div className="flex items-center gap-2 text-sm font-medium text-foreground">
         <MessageSquare className="h-4 w-4" />
-        <span>
-          {error
-            ? "Comments temporarily unavailable"
-            : `${comments.length} comment${comments.length !== 1 ? "s" : ""}`}
-        </span>
+        <span>{error ? "Comments temporarily unavailable" : visibleCommentCountLabel}</span>
       </div>
 
       {error ? (
@@ -117,83 +125,95 @@ export function CommentsSection({ bookId }: CommentsSectionProps) {
         </div>
       ) : (
         <>
-          {/* Add comment form */}
-      {isAuthenticated ? (
-        <form onSubmit={handleSubmit} className="space-y-3">
-          <Textarea
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            placeholder="Share your thoughts about this book..."
-            className="min-h-[80px] resize-none"
-            maxLength={communityPolicy.maxCommentLength}
-            disabled={isSubmitting}
-            data-testid={`comment-input-${bookId}`}
-          />
-          <p className="text-xs text-muted-foreground text-right">
-            Up to {communityPolicy.maxCommentLength.toLocaleString()} characters
-          </p>
-          <div className="flex justify-end">
-            <Button
-              type="submit"
-              size="sm"
-              disabled={!newComment.trim() || isSubmitting}
-              className="btn-accent"
-              data-testid={`post-comment-${bookId}`}
-            >
-              <Send className="mr-2 h-3.5 w-3.5" />
-              {isSubmitting ? "Posting..." : "Post comment"}
-            </Button>
-          </div>
-        </form>
-      ) : (
-        <div className="rounded-md bg-secondary/30 p-4 text-center text-sm text-muted-foreground">
-          Sign in to add your thoughts and join the conversation
-        </div>
-      )}
-
-          {/* Comments list */}
-      {comments.length > 0 ? (
-        <div className="space-y-3">
-          {comments.map((comment) => (
-            <div
-              key={comment.id}
-              className="rounded-md bg-secondary/30 p-4 space-y-2"
-              data-testid={`comment-item-${bookId}`}
-              data-comment-id={comment.id}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <UserIcon className="h-4 w-4 text-accent" />
-                  <span className="font-medium text-sm text-foreground">
-                    {comment.userName}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {formatDate(comment.createdAt)}
-                  </span>
-                </div>
-                {user && comment.userId === user.id && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => void handleDelete(comment.id)}
-                    className="h-auto p-1 text-muted-foreground hover:text-destructive"
-                    data-testid={`delete-comment-${bookId}`}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                )}
-              </div>
-              <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap">
-                {comment.text}
+          {isAuthenticated ? (
+            <form onSubmit={handleSubmit} className="space-y-3">
+              <Textarea
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                placeholder="Share your thoughts about this book..."
+                className="min-h-[80px] resize-none"
+                maxLength={communityPolicy.maxCommentLength}
+                disabled={isSubmitting}
+                data-testid={`comment-input-${bookId}`}
+              />
+              <p className="text-xs text-muted-foreground text-right">
+                Up to {communityPolicy.maxCommentLength.toLocaleString()} characters
               </p>
+              <div className="flex justify-end">
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={!newComment.trim() || isSubmitting}
+                  className="btn-accent"
+                  data-testid={`post-comment-${bookId}`}
+                >
+                  <Send className="mr-2 h-3.5 w-3.5" />
+                  {isSubmitting ? "Posting..." : "Post comment"}
+                </Button>
+              </div>
+            </form>
+          ) : (
+            <div className="rounded-md bg-secondary/30 p-4 text-center text-sm text-muted-foreground">
+              Sign in to add your thoughts and join the conversation
             </div>
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-6 text-sm text-muted-foreground">
-          No comments yet. Be the first to share your thoughts!
-        </div>
-      )}
+          )}
+
+          {comments.length > 0 ? (
+            <div className="space-y-3">
+              {comments.map((comment) => (
+                <div
+                  key={comment.id}
+                  className="rounded-md bg-secondary/30 p-4 space-y-2"
+                  data-testid={`comment-item-${bookId}`}
+                  data-comment-id={comment.id}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <UserIcon className="h-4 w-4 text-accent" />
+                      <span className="font-medium text-sm text-foreground">
+                        {comment.userName}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {formatDate(comment.createdAt)}
+                      </span>
+                    </div>
+                    {user && comment.userId === user.id && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => void handleDelete(comment.id)}
+                        className="h-auto p-1 text-muted-foreground hover:text-destructive"
+                        data-testid={`delete-comment-${bookId}`}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
+                  </div>
+                  <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap">
+                    {comment.text}
+                  </p>
+                </div>
+              ))}
+
+              {hasMore ? (
+                <div className="flex justify-center pt-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => void loadMore()}
+                    disabled={isLoadingMore}
+                    data-testid={`load-more-comments-${bookId}`}
+                  >
+                    {isLoadingMore ? "Loading..." : "Load more comments"}
+                  </Button>
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            <div className="text-center py-6 text-sm text-muted-foreground">
+              No comments yet. Be the first to share your thoughts!
+            </div>
+          )}
         </>
       )}
     </div>

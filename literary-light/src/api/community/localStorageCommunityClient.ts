@@ -3,7 +3,13 @@ import type {
   RatingRecord,
   ReviewRecord,
 } from "@contracts/domain";
-import type { CommunityClient, RatingSummary } from "./client";
+import { communityPolicy } from "@contracts/user-state";
+import type {
+  CommunityClient,
+  CommunityPage,
+  CommunityPageRequest,
+  RatingSummary,
+} from "./client";
 
 const COMMENTS_STORAGE_KEY = "literary-light-comments";
 const RATINGS_STORAGE_KEY = "literary-light-ratings";
@@ -26,6 +32,34 @@ function createId(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
 }
 
+function getCursorToken(item: { id: string; createdAt: string }): string {
+  return `${item.createdAt}::${item.id}`;
+}
+
+function paginateItems<TItem extends { id: string; createdAt: string }>(
+  items: TItem[],
+  request: CommunityPageRequest = {},
+): CommunityPage<TItem> {
+  const sortedItems = [...items].sort((left, right) =>
+    right.createdAt.localeCompare(left.createdAt),
+  );
+  const pageSize = request.limit ?? communityPolicy.defaultPageSize;
+  const startIndex = request.cursor
+    ? sortedItems.findIndex((item) => getCursorToken(item) === request.cursor) + 1
+    : 0;
+  const safeStartIndex = startIndex > 0 ? startIndex : 0;
+  const pagedItems = sortedItems.slice(safeStartIndex, safeStartIndex + pageSize);
+  const hasMore = safeStartIndex + pagedItems.length < sortedItems.length;
+  const lastItem = pagedItems[pagedItems.length - 1];
+
+  return {
+    items: pagedItems,
+    nextCursor: hasMore && lastItem ? getCursorToken(lastItem) : null,
+    hasMore,
+    pageSize,
+  };
+}
+
 export class LocalStorageCommunityClient implements CommunityClient {
   readonly mode = "local" as const;
 
@@ -45,10 +79,16 @@ export class LocalStorageCommunityClient implements CommunityClient {
     }
   }
 
-  async listComments(bookId: string): Promise<CommentRecord[]> {
-    return getStoredItems<CommentRecord>(COMMENTS_STORAGE_KEY)
-      .filter((comment) => comment.bookId === bookId)
-      .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+  async listComments(
+    bookId: string,
+    request?: CommunityPageRequest,
+  ): Promise<CommunityPage<CommentRecord>> {
+    return paginateItems(
+      getStoredItems<CommentRecord>(COMMENTS_STORAGE_KEY).filter(
+        (comment) => comment.bookId === bookId,
+      ),
+      request,
+    );
   }
 
   async addComment(
@@ -138,10 +178,16 @@ export class LocalStorageCommunityClient implements CommunityClient {
     this.notify();
   }
 
-  async listReviews(bookId: string): Promise<ReviewRecord[]> {
-    return getStoredItems<ReviewRecord>(REVIEWS_STORAGE_KEY)
-      .filter((review) => review.bookId === bookId)
-      .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+  async listReviews(
+    bookId: string,
+    request?: CommunityPageRequest,
+  ): Promise<CommunityPage<ReviewRecord>> {
+    return paginateItems(
+      getStoredItems<ReviewRecord>(REVIEWS_STORAGE_KEY).filter(
+        (review) => review.bookId === bookId,
+      ),
+      request,
+    );
   }
 
   async addReview(

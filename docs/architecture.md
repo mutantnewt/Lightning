@@ -396,7 +396,8 @@ Transitional implementation status:
 - favorites and reading lists now sit behind an explicit frontend user-state client boundary
 - backend route shapes and DynamoDB-backed handler code now exist for those features
 - comments, reviews, and ratings now sit behind a dedicated community client boundary with public-read and authenticated-write local/API paths
-- community reads for comments and reviews are now bounded server-side and return pagination metadata even though the current UX still renders only the first page
+- community reads for comments and reviews are now bounded server-side and return pagination metadata
+- the frontend comments and reviews UX now consumes that pagination contract with explicit load-more controls instead of silently capping visibility at the first page
 - comment and review writes now have explicit server-side length limits with matching frontend input constraints
 - review writes are now constrained to one active review per user per book
 - staging and production HTTP API stages now apply default-route throttling as a baseline API-edge abuse control

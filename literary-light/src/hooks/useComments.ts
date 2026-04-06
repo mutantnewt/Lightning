@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { CommentRecord } from "@contracts/domain";
+import { communityPolicy } from "@contracts/user-state";
 import { createCommunityClient } from "@/api/community";
 
 const communityClient = createCommunityClient();
@@ -9,6 +10,9 @@ export type Comment = CommentRecord;
 export function useComments(bookId?: string) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -16,15 +20,23 @@ export function useComments(bookId?: string) {
     if (!bookId) {
       setComments([]);
       setError(null);
+      setNextCursor(null);
+      setHasMore(false);
+      setIsLoadingMore(false);
       return;
     }
 
     const loadComments = async () => {
       try {
-        const nextComments = await communityClient.listComments(bookId);
+        const response = await communityClient.listComments(bookId, {
+          limit: communityPolicy.defaultPageSize,
+        });
         if (isMounted) {
-          setComments(nextComments);
+          setComments(response.items);
           setError(null);
+          setNextCursor(response.nextCursor);
+          setHasMore(response.hasMore);
+          setIsLoadingMore(false);
         }
       } catch (error) {
         console.error("Error loading comments:", error);
@@ -35,6 +47,9 @@ export function useComments(bookId?: string) {
               ? error.message
               : "Unable to load comments right now.",
           );
+          setNextCursor(null);
+          setHasMore(false);
+          setIsLoadingMore(false);
         }
       }
     };
@@ -67,9 +82,13 @@ export function useComments(bookId?: string) {
         userName,
         text,
       );
-      const nextComments = await communityClient.listComments(bookId);
-      setComments(nextComments);
+      const response = await communityClient.listComments(bookId, {
+        limit: communityPolicy.defaultPageSize,
+      });
+      setComments(response.items);
       setError(null);
+      setNextCursor(response.nextCursor);
+      setHasMore(response.hasMore);
       return createdComment;
     } catch (error) {
       setError(
@@ -93,9 +112,13 @@ export function useComments(bookId?: string) {
       const deleted = await communityClient.deleteComment(bookId, commentId, userId);
 
       if (deleted) {
-        const nextComments = await communityClient.listComments(bookId);
-        setComments(nextComments);
+        const response = await communityClient.listComments(bookId, {
+          limit: communityPolicy.defaultPageSize,
+        });
+        setComments(response.items);
         setError(null);
+        setNextCursor(response.nextCursor);
+        setHasMore(response.hasMore);
       }
 
       return deleted;
@@ -109,10 +132,41 @@ export function useComments(bookId?: string) {
     }
   };
 
+  const loadMore = async (): Promise<void> => {
+    if (!bookId || !hasMore || !nextCursor || isLoadingMore) {
+      return;
+    }
+
+    setIsLoadingMore(true);
+
+    try {
+      const response = await communityClient.listComments(bookId, {
+        cursor: nextCursor,
+        limit: communityPolicy.defaultPageSize,
+      });
+
+      setComments((currentComments) => [...currentComments, ...response.items]);
+      setNextCursor(response.nextCursor);
+      setHasMore(response.hasMore);
+      setError(null);
+    } catch (error) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Unable to load more comments right now.",
+      );
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
+
   return {
     comments,
     error,
+    hasMore,
+    isLoadingMore,
     addComment,
     deleteComment,
+    loadMore,
   };
 }

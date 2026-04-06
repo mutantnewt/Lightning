@@ -25,8 +25,12 @@ export function BookCard({ book, showFavoriteHeart = false, onSearch }: BookCard
   const [showSummary, setShowSummary] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [showReviews, setShowReviews] = useState(false);
-  const { comments, error: commentsError } = useComments(book.id);
-  const commentCount = comments.length;
+  const { comments, error: commentsError, hasMore: hasMoreComments } = useComments(book.id);
+  const commentCountLabel = hasMoreComments
+    ? `${comments.length}+`
+    : comments.length > 0
+      ? String(comments.length)
+      : null;
 
   const { user, isAuthenticated } = useAuth();
   const { isFavorite, toggleFavorite, error: favoritesError } = useFavorites(user?.id);
@@ -37,7 +41,12 @@ export function BookCard({ book, showFavoriteHeart = false, onSearch }: BookCard
     book.id,
     user?.id,
   );
-  const { reviews, error: reviewsError } = useReviews(book.id);
+  const { reviews, error: reviewsError, hasMore: hasMoreReviews } = useReviews(book.id);
+  const reviewCountLabel = hasMoreReviews
+    ? `${reviews.length}+`
+    : reviews.length > 0
+      ? String(reviews.length)
+      : null;
   const { amazonDomain } = useCountry();
 
   // Affiliate links - replace YOUR_AFFILIATE_ID with your actual tags
@@ -323,7 +332,7 @@ export function BookCard({ book, showFavoriteHeart = false, onSearch }: BookCard
               data-testid={`book-comments-toggle-${book.id}`}
             >
               <MessageSquare className="mr-1.5 h-3.5 w-3.5" />
-              Comments {!commentsError && commentCount > 0 && `(${commentCount})`}
+              Comments {!commentsError && commentCountLabel && `(${commentCountLabel})`}
               {showComments ? (
                 <ChevronUp className="ml-1.5 h-3.5 w-3.5" />
               ) : (
@@ -339,7 +348,7 @@ export function BookCard({ book, showFavoriteHeart = false, onSearch }: BookCard
               data-testid={`book-reviews-toggle-${book.id}`}
             >
               <Star className="mr-1.5 h-3.5 w-3.5" />
-              Reviews {!reviewsError && reviews.length > 0 && `(${reviews.length})`}
+              Reviews {!reviewsError && reviewCountLabel && `(${reviewCountLabel})`}
               {showReviews ? (
                 <ChevronUp className="ml-1.5 h-3.5 w-3.5" />
               ) : (

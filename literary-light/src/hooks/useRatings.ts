@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { RatingRecord, ReviewRecord } from "@contracts/domain";
+import { communityPolicy } from "@contracts/user-state";
 import { createCommunityClient } from "@/api/community";
 
 const communityClient = createCommunityClient();
@@ -101,6 +102,9 @@ export function useRatings(bookId?: string, userId?: string) {
 export function useReviews(bookId?: string) {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -108,15 +112,23 @@ export function useReviews(bookId?: string) {
     if (!bookId) {
       setReviews([]);
       setError(null);
+      setNextCursor(null);
+      setHasMore(false);
+      setIsLoadingMore(false);
       return;
     }
 
     const loadReviews = async () => {
       try {
-        const nextReviews = await communityClient.listReviews(bookId);
+        const response = await communityClient.listReviews(bookId, {
+          limit: communityPolicy.defaultPageSize,
+        });
         if (isMounted) {
-          setReviews(nextReviews);
+          setReviews(response.items);
           setError(null);
+          setNextCursor(response.nextCursor);
+          setHasMore(response.hasMore);
+          setIsLoadingMore(false);
         }
       } catch (error) {
         console.error("Error loading reviews:", error);
@@ -127,6 +139,9 @@ export function useReviews(bookId?: string) {
               ? error.message
               : "Unable to load reviews right now.",
           );
+          setNextCursor(null);
+          setHasMore(false);
+          setIsLoadingMore(false);
         }
       }
     };
@@ -161,9 +176,13 @@ export function useReviews(bookId?: string) {
         rating,
         review,
       );
-      const nextReviews = await communityClient.listReviews(bookId);
-      setReviews(nextReviews);
+      const response = await communityClient.listReviews(bookId, {
+        limit: communityPolicy.defaultPageSize,
+      });
+      setReviews(response.items);
       setError(null);
+      setNextCursor(response.nextCursor);
+      setHasMore(response.hasMore);
       return createdReview;
     } catch (error) {
       setError(
@@ -187,9 +206,13 @@ export function useReviews(bookId?: string) {
       const deleted = await communityClient.deleteReview(bookId, reviewId, userId);
 
       if (deleted) {
-        const nextReviews = await communityClient.listReviews(bookId);
-        setReviews(nextReviews);
+        const response = await communityClient.listReviews(bookId, {
+          limit: communityPolicy.defaultPageSize,
+        });
+        setReviews(response.items);
         setError(null);
+        setNextCursor(response.nextCursor);
+        setHasMore(response.hasMore);
       }
 
       return deleted;
@@ -203,10 +226,41 @@ export function useReviews(bookId?: string) {
     }
   };
 
+  const loadMore = async (): Promise<void> => {
+    if (!bookId || !hasMore || !nextCursor || isLoadingMore) {
+      return;
+    }
+
+    setIsLoadingMore(true);
+
+    try {
+      const response = await communityClient.listReviews(bookId, {
+        cursor: nextCursor,
+        limit: communityPolicy.defaultPageSize,
+      });
+
+      setReviews((currentReviews) => [...currentReviews, ...response.items]);
+      setNextCursor(response.nextCursor);
+      setHasMore(response.hasMore);
+      setError(null);
+    } catch (error) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Unable to load more reviews right now.",
+      );
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
+
   return {
     reviews,
     error,
+    hasMore,
+    isLoadingMore,
     addReview,
     deleteReview,
+    loadMore,
   };
 }

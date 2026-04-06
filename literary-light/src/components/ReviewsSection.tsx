@@ -14,11 +14,22 @@ interface ReviewsSectionProps {
 
 export function ReviewsSection({ bookId }: ReviewsSectionProps) {
   const { user, isAuthenticated } = useAuth();
-  const { reviews, error, addReview, deleteReview } = useReviews(bookId);
+  const {
+    reviews,
+    error,
+    hasMore,
+    isLoadingMore,
+    addReview,
+    deleteReview,
+    loadMore,
+  } = useReviews(bookId);
   const { toast } = useToast();
   const [newReview, setNewReview] = useState("");
   const [newRating, setNewRating] = useState(5);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const visibleReviewCountLabel = hasMore
+    ? `${reviews.length}+ reviews`
+    : `${reviews.length} review${reviews.length !== 1 ? "s" : ""}`;
 
   const handleSubmit = async () => {
     if (!user || !newReview.trim()) return;
@@ -122,39 +133,58 @@ export function ReviewsSection({ bookId }: ReviewsSectionProps) {
             No reviews yet. Be the first to review this book!
           </p>
         ) : (
-          reviews.map((review) => (
-            <div
-              key={review.id}
-              className="p-4 rounded-md bg-background border border-border"
-              data-testid={`review-item-${bookId}`}
-              data-review-id={review.id}
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-medium text-sm">{review.userName}</span>
-                    <StarRating rating={review.rating} readonly size="sm" />
+          <>
+            <p className="text-xs text-muted-foreground text-right">
+              Showing {visibleReviewCountLabel}
+            </p>
+            {reviews.map((review) => (
+              <div
+                key={review.id}
+                className="p-4 rounded-md bg-background border border-border"
+                data-testid={`review-item-${bookId}`}
+                data-review-id={review.id}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-medium text-sm">{review.userName}</span>
+                      <StarRating rating={review.rating} readonly size="sm" />
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      {new Date(review.createdAt).toLocaleDateString()}
+                    </p>
+                    <p className="text-sm leading-relaxed">{review.review}</p>
                   </div>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    {new Date(review.createdAt).toLocaleDateString()}
-                  </p>
-                  <p className="text-sm leading-relaxed">{review.review}</p>
+                  {user && user.id === review.userId && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => void handleDelete(review.id)}
+                      className="text-destructive hover:text-destructive"
+                      aria-label={`Delete review by ${review.userName}`}
+                      data-testid={`delete-review-${bookId}`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
-                {user && user.id === review.userId && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => void handleDelete(review.id)}
-                    className="text-destructive hover:text-destructive"
-                    aria-label={`Delete review by ${review.userName}`}
-                    data-testid={`delete-review-${bookId}`}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                )}
               </div>
-            </div>
-          ))
+            ))}
+
+            {hasMore ? (
+              <div className="flex justify-center pt-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => void loadMore()}
+                  disabled={isLoadingMore}
+                  data-testid={`load-more-reviews-${bookId}`}
+                >
+                  {isLoadingMore ? "Loading..." : "Load more reviews"}
+                </Button>
+              </div>
+            ) : null}
+          </>
         )}
       </div>
     </div>

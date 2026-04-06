@@ -29,7 +29,12 @@ import {
   createFailClosedError,
   runtimeConfig,
 } from "@/config/runtime";
-import type { CommunityClient, RatingSummary } from "./client";
+import type {
+  CommunityClient,
+  CommunityPage,
+  CommunityPageRequest,
+  RatingSummary,
+} from "./client";
 
 class HttpError extends Error {
   readonly statusCode: number;
@@ -126,6 +131,24 @@ async function requestJson<T>(
   return (await response.json()) as T;
 }
 
+function buildCommunityPagePath(
+  path: string,
+  request?: CommunityPageRequest,
+): string {
+  const params = new URLSearchParams();
+
+  if (request?.cursor) {
+    params.set("cursor", request.cursor);
+  }
+
+  if (typeof request?.limit === "number") {
+    params.set("limit", String(request.limit));
+  }
+
+  const query = params.toString();
+  return query ? `${path}?${query}` : path;
+}
+
 export class HttpCommunityClient implements CommunityClient {
   readonly mode = "http" as const;
 
@@ -145,14 +168,22 @@ export class HttpCommunityClient implements CommunityClient {
     }
   }
 
-  async listComments(bookId: string): Promise<CommentRecord[]> {
+  async listComments(
+    bookId: string,
+    request?: CommunityPageRequest,
+  ): Promise<CommunityPage<CommentRecord>> {
     const response = await requestJson<CommentsResponse>(
       getPublicBaseUrl(),
-      buildPublicBookCommentsRoute(bookId),
+      buildCommunityPagePath(buildPublicBookCommentsRoute(bookId), request),
       { method: "GET" },
     );
 
-    return response.comments;
+    return {
+      items: response.comments,
+      nextCursor: response.nextCursor,
+      hasMore: response.hasMore,
+      pageSize: response.pageSize,
+    };
   }
 
   async addComment(
@@ -235,14 +266,22 @@ export class HttpCommunityClient implements CommunityClient {
     this.notify();
   }
 
-  async listReviews(bookId: string): Promise<ReviewRecord[]> {
+  async listReviews(
+    bookId: string,
+    request?: CommunityPageRequest,
+  ): Promise<CommunityPage<ReviewRecord>> {
     const response = await requestJson<ReviewsResponse>(
       getPublicBaseUrl(),
-      buildPublicBookReviewsRoute(bookId),
+      buildCommunityPagePath(buildPublicBookReviewsRoute(bookId), request),
       { method: "GET" },
     );
 
-    return response.reviews;
+    return {
+      items: response.reviews,
+      nextCursor: response.nextCursor,
+      hasMore: response.hasMore,
+      pageSize: response.pageSize,
+    };
   }
 
   async addReview(
