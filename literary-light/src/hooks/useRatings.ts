@@ -168,30 +168,21 @@ export function useReviews(bookId?: string) {
       throw new Error("Book ID is required to add a review.");
     }
 
-    try {
-      const createdReview = await communityClient.addReview(
-        bookId,
-        userId,
-        userName,
-        rating,
-        review,
-      );
-      const response = await communityClient.listReviews(bookId, {
-        limit: communityPolicy.defaultPageSize,
-      });
-      setReviews(response.items);
-      setError(null);
-      setNextCursor(response.nextCursor);
-      setHasMore(response.hasMore);
-      return createdReview;
-    } catch (error) {
-      setError(
-        error instanceof Error
-          ? error.message
-          : "Unable to add your review right now.",
-      );
-      throw error;
-    }
+    const createdReview = await communityClient.addReview(
+      bookId,
+      userId,
+      userName,
+      rating,
+      review,
+    );
+    const response = await communityClient.listReviews(bookId, {
+      limit: communityPolicy.defaultPageSize,
+    });
+    setReviews(response.items);
+    setError(null);
+    setNextCursor(response.nextCursor);
+    setHasMore(response.hasMore);
+    return createdReview;
   };
 
   const deleteReview = async (
@@ -202,28 +193,19 @@ export function useReviews(bookId?: string) {
       return false;
     }
 
-    try {
-      const deleted = await communityClient.deleteReview(bookId, reviewId, userId);
+    const deleted = await communityClient.deleteReview(bookId, reviewId, userId);
 
-      if (deleted) {
-        const response = await communityClient.listReviews(bookId, {
-          limit: communityPolicy.defaultPageSize,
-        });
-        setReviews(response.items);
-        setError(null);
-        setNextCursor(response.nextCursor);
-        setHasMore(response.hasMore);
-      }
-
-      return deleted;
-    } catch (error) {
-      setError(
-        error instanceof Error
-          ? error.message
-          : "Unable to update reviews right now.",
-      );
-      throw error;
+    if (deleted) {
+      const response = await communityClient.listReviews(bookId, {
+        limit: communityPolicy.defaultPageSize,
+      });
+      setReviews(response.items);
+      setError(null);
+      setNextCursor(response.nextCursor);
+      setHasMore(response.hasMore);
     }
+
+    return deleted;
   };
 
   const loadMore = async (): Promise<void> => {
