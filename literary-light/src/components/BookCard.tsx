@@ -25,19 +25,19 @@ export function BookCard({ book, showFavoriteHeart = false, onSearch }: BookCard
   const [showSummary, setShowSummary] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [showReviews, setShowReviews] = useState(false);
-  const { comments } = useComments(book.id);
+  const { comments, error: commentsError } = useComments(book.id);
   const commentCount = comments.length;
 
   const { user, isAuthenticated } = useAuth();
-  const { isFavorite, toggleFavorite } = useFavorites(user?.id);
+  const { isFavorite, toggleFavorite, error: favoritesError } = useFavorites(user?.id);
   const { toast } = useToast();
-  const favorite = isFavorite(book.id);
+  const favorite = !favoritesError && isFavorite(book.id);
 
-  const { averageRating, ratingCount, userRating, setRating } = useRatings(
+  const { averageRating, ratingCount, userRating, error: ratingsError, setRating } = useRatings(
     book.id,
     user?.id,
   );
-  const { reviews } = useReviews(book.id);
+  const { reviews, error: reviewsError } = useReviews(book.id);
   const { amazonDomain } = useCountry();
 
   // Affiliate links - replace YOUR_AFFILIATE_ID with your actual tags
@@ -117,8 +117,20 @@ export function BookCard({ book, showFavoriteHeart = false, onSearch }: BookCard
               {isAuthenticated && (
                 <button
                   onClick={handleFavoriteToggle}
-                  className="text-2xl hover:scale-110 transition-transform cursor-pointer flex-shrink-0"
-                  title={favorite ? "Remove from favorites" : "Add to favorites"}
+                  className={cn(
+                    "text-2xl transition-transform flex-shrink-0",
+                    favoritesError
+                      ? "cursor-not-allowed opacity-50"
+                      : "hover:scale-110 cursor-pointer",
+                  )}
+                  title={
+                    favoritesError
+                      ? favoritesError
+                      : favorite
+                        ? "Remove from favorites"
+                        : "Add to favorites"
+                  }
+                  disabled={Boolean(favoritesError)}
                 >
                   {favorite || showFavoriteHeart ? "❤️" : "🤍"}
                 </button>
@@ -183,14 +195,18 @@ export function BookCard({ book, showFavoriteHeart = false, onSearch }: BookCard
 
         <div className="flex items-center gap-4 flex-wrap">
           <div className="flex items-center gap-2">
-            <StarRating
-              rating={userRating || averageRating}
-              onRate={(rating) => void handleRating(rating)}
-              readonly={!isAuthenticated}
-              showCount={true}
-              count={ratingCount}
-              testIdPrefix={`book-rating-${book.id}`}
-            />
+            {ratingsError ? (
+              <p className="text-sm text-muted-foreground">{ratingsError}</p>
+            ) : (
+              <StarRating
+                rating={userRating || averageRating}
+                onRate={(rating) => void handleRating(rating)}
+                readonly={!isAuthenticated}
+                showCount={true}
+                count={ratingCount}
+                testIdPrefix={`book-rating-${book.id}`}
+              />
+            )}
           </div>
           {isAuthenticated && (
             <ReadingListDropdown bookId={book.id} bookTitle={book.title} />
@@ -307,7 +323,7 @@ export function BookCard({ book, showFavoriteHeart = false, onSearch }: BookCard
               data-testid={`book-comments-toggle-${book.id}`}
             >
               <MessageSquare className="mr-1.5 h-3.5 w-3.5" />
-              Comments {commentCount > 0 && `(${commentCount})`}
+              Comments {!commentsError && commentCount > 0 && `(${commentCount})`}
               {showComments ? (
                 <ChevronUp className="ml-1.5 h-3.5 w-3.5" />
               ) : (
@@ -323,7 +339,7 @@ export function BookCard({ book, showFavoriteHeart = false, onSearch }: BookCard
               data-testid={`book-reviews-toggle-${book.id}`}
             >
               <Star className="mr-1.5 h-3.5 w-3.5" />
-              Reviews {reviews.length > 0 && `(${reviews.length})`}
+              Reviews {!reviewsError && reviews.length > 0 && `(${reviews.length})`}
               {showReviews ? (
                 <ChevronUp className="ml-1.5 h-3.5 w-3.5" />
               ) : (

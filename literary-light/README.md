@@ -217,6 +217,7 @@ Local auth behavior:
 - when the API base URLs are present, the app uses the configured backend over HTTP for catalog, user-state, community, and Add Book suggestion flows
 - when API base URLs are missing in `local`, the app can still use the local fallback clients
 - when API base URLs are missing in `staging` or `production`, the app now fails closed instead of dropping into seed or local persistence paths
+- in non-local environments, comments, reviews, ratings, favorites, and reading-list controls now surface service unavailability instead of pretending the state is simply empty
 - the backend accepts local auth headers only when `ALLOW_LOCAL_AUTH_HEADERS=true`
 - the Add Book privileged flow works without a backend secret by falling back to deterministic offline suggestions
 - Add Book suggestions now persist through the backend-owned moderation queue in full-stack mode

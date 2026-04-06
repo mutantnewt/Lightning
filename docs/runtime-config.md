@@ -60,6 +60,7 @@ Implementation status:
 - the local auth fallback mirrors those flows so local verification remains behaviorally close to Cognito mode
 - runtime fallback policy is now fail-closed outside `local`
 - if Cognito or required API base URLs are missing in `staging` or `production`, the frontend now surfaces a configuration/runtime error instead of switching to local auth or seed/local persistence
+- community and book-level user-state surfaces now also fail closed in non-local environments instead of quietly rendering zero ratings, zero comments, zero reviews, or inactive reading-list state
 
 ### `VITE_APP_ENV`
 
@@ -184,6 +185,7 @@ Implementation status:
 - if this value is absent in `staging` or `production`, the frontend now fails closed and surfaces a runtime/configuration error
 - in local mode without Cognito, the frontend now uses a local-only auth-header bridge for backend testing
 - authenticated community writes now also use this base URL when configured
+- comments, reviews, ratings, favorites, and reading-list affordances now surface service errors instead of quietly collapsing to empty state when this base URL or its backend becomes unavailable
 - the current workspace default still points this at the local Node backend for fast feedback
 - this value can also point at the deployed `AuthApiBaseUrl` output from `LightningLocalStack` for AWS-backed verification
 - the staging smoke path now uses the live `LightningStagingStack` auth API URL

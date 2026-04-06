@@ -31,7 +31,7 @@ export function ReadingListDropdown({
   bookTitle,
 }: ReadingListDropdownProps) {
   const { user, isAuthenticated } = useAuth();
-  const { getBookList, addToList, removeFromList } = useReadingLists(user?.id);
+  const { getBookList, addToList, removeFromList, error } = useReadingLists(user?.id);
   const { toast } = useToast();
   const currentList = getBookList(bookId);
 
@@ -85,6 +85,21 @@ export function ReadingListDropdown({
   };
 
   const currentOption = listOptions.find((opt) => opt.type === currentList);
+
+  if (error) {
+    return (
+      <Button
+        variant="outline"
+        size="sm"
+        className="flex items-center gap-2"
+        disabled
+        title={error}
+      >
+        <BookOpen className="h-4 w-4" />
+        Lists unavailable
+      </Button>
+    );
+  }
 
   return (
     <DropdownMenu>

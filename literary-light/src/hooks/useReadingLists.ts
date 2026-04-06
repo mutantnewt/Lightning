@@ -9,12 +9,14 @@ export type ReadingListItem = ReadingListRecord;
 
 export function useReadingLists(userId?: string) {
   const [lists, setLists] = useState<ReadingListItem[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
 
     if (!userId) {
       setLists([]);
+      setError(null);
       return;
     }
 
@@ -23,11 +25,17 @@ export function useReadingLists(userId?: string) {
         const nextLists = await userStateClient.listReadingLists(userId);
         if (isMounted) {
           setLists(nextLists);
+          setError(null);
         }
       } catch (error) {
         console.error("Error loading reading lists:", error);
         if (isMounted) {
           setLists([]);
+          setError(
+            error instanceof Error
+              ? error.message
+              : "Unable to load reading lists right now.",
+          );
         }
       }
     };
@@ -61,14 +69,24 @@ export function useReadingLists(userId?: string) {
       return false;
     }
 
-    await userStateClient.upsertReadingList(userId, {
-      bookId,
-      listType,
-    });
+    try {
+      await userStateClient.upsertReadingList(userId, {
+        bookId,
+        listType,
+      });
 
-    const nextLists = await userStateClient.listReadingLists(userId);
-    setLists(nextLists);
-    return true;
+      const nextLists = await userStateClient.listReadingLists(userId);
+      setLists(nextLists);
+      setError(null);
+      return true;
+    } catch (error) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Unable to update reading lists right now.",
+      );
+      throw error;
+    }
   };
 
   const removeFromList = async (bookId: string): Promise<boolean> => {
@@ -76,11 +94,21 @@ export function useReadingLists(userId?: string) {
       return false;
     }
 
-    await userStateClient.removeReadingList(userId, bookId);
+    try {
+      await userStateClient.removeReadingList(userId, bookId);
 
-    const nextLists = await userStateClient.listReadingLists(userId);
-    setLists(nextLists);
-    return true;
+      const nextLists = await userStateClient.listReadingLists(userId);
+      setLists(nextLists);
+      setError(null);
+      return true;
+    } catch (error) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Unable to update reading lists right now.",
+      );
+      throw error;
+    }
   };
 
   const updateProgress = async (
@@ -96,16 +124,26 @@ export function useReadingLists(userId?: string) {
       return false;
     }
 
-    await userStateClient.upsertReadingList(userId, {
-      bookId,
-      listType: existingItem.listType,
-      progress: Math.max(0, Math.min(100, progress)),
-      finishedAt: existingItem.finishedAt ?? null,
-    });
+    try {
+      await userStateClient.upsertReadingList(userId, {
+        bookId,
+        listType: existingItem.listType,
+        progress: Math.max(0, Math.min(100, progress)),
+        finishedAt: existingItem.finishedAt ?? null,
+      });
 
-    const nextLists = await userStateClient.listReadingLists(userId);
-    setLists(nextLists);
-    return true;
+      const nextLists = await userStateClient.listReadingLists(userId);
+      setLists(nextLists);
+      setError(null);
+      return true;
+    } catch (error) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Unable to update reading lists right now.",
+      );
+      throw error;
+    }
   };
 
   const markAsFinished = async (bookId: string): Promise<boolean> => {
@@ -113,20 +151,31 @@ export function useReadingLists(userId?: string) {
       return false;
     }
 
-    await userStateClient.upsertReadingList(userId, {
-      bookId,
-      listType: "finished",
-      progress: 100,
-      finishedAt: new Date().toISOString(),
-    });
+    try {
+      await userStateClient.upsertReadingList(userId, {
+        bookId,
+        listType: "finished",
+        progress: 100,
+        finishedAt: new Date().toISOString(),
+      });
 
-    const nextLists = await userStateClient.listReadingLists(userId);
-    setLists(nextLists);
-    return true;
+      const nextLists = await userStateClient.listReadingLists(userId);
+      setLists(nextLists);
+      setError(null);
+      return true;
+    } catch (error) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Unable to update reading lists right now.",
+      );
+      throw error;
+    }
   };
 
   return {
     lists,
+    error,
     getBookList,
     addToList,
     removeFromList,

@@ -85,6 +85,9 @@ Completed:
 - changed non-local user-state, community, catalog, moderation, and Add Book client factories to fail closed when their API base URLs are missing
 - removed the production/staging first-paint seed-data flash by initializing catalog and FAQ hooks from empty state outside local mode
 - changed the catalog, FAQ, author, and favorites pages to surface backend or configuration errors instead of silently presenting fallback content
+- changed comments, reviews, ratings, reading-list controls, and book-card affordances to distinguish service unavailability from genuinely empty state
+- disabled favorites and reading-list affordances when their backing service is unavailable instead of implying the state is simply empty
+- changed comment and review sections to surface unavailability instead of rendering healthy-looking empty-state messaging
 
 Verification:
 
@@ -105,6 +108,13 @@ Verification:
   - `src/hooks/useFaqEntries.ts`
   - `src/hooks/useAuthorBooks.ts`
   - `src/hooks/useFavorites.ts`
+  - `src/hooks/useComments.ts`
+  - `src/hooks/useRatings.ts`
+  - `src/hooks/useReadingLists.ts`
+  - `src/components/CommentsSection.tsx`
+  - `src/components/ReviewsSection.tsx`
+  - `src/components/ReadingListDropdown.tsx`
+  - `src/components/BookCard.tsx`
   - `src/pages/Index.tsx`
   - `src/pages/FAQ.tsx`
   - `src/pages/Author.tsx`

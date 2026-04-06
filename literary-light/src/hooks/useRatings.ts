@@ -11,6 +11,7 @@ export function useRatings(bookId?: string, userId?: string) {
   const [averageRating, setAverageRating] = useState(0);
   const [ratingCount, setRatingCount] = useState(0);
   const [userRating, setUserRating] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -19,6 +20,7 @@ export function useRatings(bookId?: string, userId?: string) {
       setAverageRating(0);
       setRatingCount(0);
       setUserRating(0);
+      setError(null);
       return;
     }
 
@@ -26,15 +28,14 @@ export function useRatings(bookId?: string, userId?: string) {
       try {
         const [summary, nextUserRating] = await Promise.all([
           communityClient.getRatingSummary(bookId),
-          userId
-            ? communityClient.getUserRating(bookId, userId).catch(() => 0)
-            : Promise.resolve(0),
+          userId ? communityClient.getUserRating(bookId, userId) : Promise.resolve(0),
         ]);
 
         if (isMounted) {
           setAverageRating(summary.averageRating);
           setRatingCount(summary.ratingCount);
           setUserRating(nextUserRating);
+          setError(null);
         }
       } catch (error) {
         console.error("Error loading ratings:", error);
@@ -42,6 +43,11 @@ export function useRatings(bookId?: string, userId?: string) {
           setAverageRating(0);
           setRatingCount(0);
           setUserRating(0);
+          setError(
+            error instanceof Error
+              ? error.message
+              : "Unable to load ratings right now.",
+          );
         }
       }
     };
@@ -63,32 +69,45 @@ export function useRatings(bookId?: string, userId?: string) {
       throw new Error("Authentication required.");
     }
 
-    await communityClient.setRating(bookId, userId, rating);
-    const [summary, nextUserRating] = await Promise.all([
-      communityClient.getRatingSummary(bookId),
-      communityClient.getUserRating(bookId, userId),
-    ]);
-    setAverageRating(summary.averageRating);
-    setRatingCount(summary.ratingCount);
-    setUserRating(nextUserRating);
+    try {
+      await communityClient.setRating(bookId, userId, rating);
+      const [summary, nextUserRating] = await Promise.all([
+        communityClient.getRatingSummary(bookId),
+        communityClient.getUserRating(bookId, userId),
+      ]);
+      setAverageRating(summary.averageRating);
+      setRatingCount(summary.ratingCount);
+      setUserRating(nextUserRating);
+      setError(null);
+    } catch (error) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Unable to save your rating right now.",
+      );
+      throw error;
+    }
   };
 
   return {
     averageRating,
     ratingCount,
     userRating,
+    error,
     setRating,
   };
 }
 
 export function useReviews(bookId?: string) {
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
 
     if (!bookId) {
       setReviews([]);
+      setError(null);
       return;
     }
 
@@ -97,11 +116,17 @@ export function useReviews(bookId?: string) {
         const nextReviews = await communityClient.listReviews(bookId);
         if (isMounted) {
           setReviews(nextReviews);
+          setError(null);
         }
       } catch (error) {
         console.error("Error loading reviews:", error);
         if (isMounted) {
           setReviews([]);
+          setError(
+            error instanceof Error
+              ? error.message
+              : "Unable to load reviews right now.",
+          );
         }
       }
     };
@@ -128,16 +153,26 @@ export function useReviews(bookId?: string) {
       throw new Error("Book ID is required to add a review.");
     }
 
-    const createdReview = await communityClient.addReview(
-      bookId,
-      userId,
-      userName,
-      rating,
-      review,
-    );
-    const nextReviews = await communityClient.listReviews(bookId);
-    setReviews(nextReviews);
-    return createdReview;
+    try {
+      const createdReview = await communityClient.addReview(
+        bookId,
+        userId,
+        userName,
+        rating,
+        review,
+      );
+      const nextReviews = await communityClient.listReviews(bookId);
+      setReviews(nextReviews);
+      setError(null);
+      return createdReview;
+    } catch (error) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Unable to add your review right now.",
+      );
+      throw error;
+    }
   };
 
   const deleteReview = async (
@@ -148,18 +183,29 @@ export function useReviews(bookId?: string) {
       return false;
     }
 
-    const deleted = await communityClient.deleteReview(bookId, reviewId, userId);
+    try {
+      const deleted = await communityClient.deleteReview(bookId, reviewId, userId);
 
-    if (deleted) {
-      const nextReviews = await communityClient.listReviews(bookId);
-      setReviews(nextReviews);
+      if (deleted) {
+        const nextReviews = await communityClient.listReviews(bookId);
+        setReviews(nextReviews);
+        setError(null);
+      }
+
+      return deleted;
+    } catch (error) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Unable to update reviews right now.",
+      );
+      throw error;
     }
-
-    return deleted;
   };
 
   return {
     reviews,
+    error,
     addReview,
     deleteReview,
   };

@@ -13,7 +13,7 @@ interface ReviewsSectionProps {
 
 export function ReviewsSection({ bookId }: ReviewsSectionProps) {
   const { user, isAuthenticated } = useAuth();
-  const { reviews, addReview, deleteReview } = useReviews(bookId);
+  const { reviews, error, addReview, deleteReview } = useReviews(bookId);
   const { toast } = useToast();
   const [newReview, setNewReview] = useState("");
   const [newRating, setNewRating] = useState(5);
@@ -45,26 +45,41 @@ export function ReviewsSection({ bookId }: ReviewsSectionProps) {
 
   const handleDelete = async (reviewId: string) => {
     if (!user) return;
-    const deleted = await deleteReview(reviewId, user.id);
 
-    if (deleted) {
+    try {
+      const deleted = await deleteReview(reviewId, user.id);
+
+      if (deleted) {
+        toast({
+          title: "Review deleted",
+          description: "Your review has been removed",
+        });
+        return;
+      }
+
       toast({
-        title: "Review deleted",
-        description: "Your review has been removed",
+        title: "Unable to delete review",
+        description: "Only your own reviews can be deleted.",
+        variant: "destructive",
       });
-      return;
+    } catch {
+      toast({
+        title: "Reviews unavailable",
+        description: "Reviews are temporarily unavailable.",
+        variant: "destructive",
+      });
     }
-
-    toast({
-      title: "Unable to delete review",
-      description: "Only your own reviews can be deleted.",
-      variant: "destructive",
-    });
   };
 
   return (
     <div className="space-y-4" data-testid={`reviews-section-${bookId}`}>
-      {isAuthenticated && (
+      {error ? (
+        <div className="rounded-md border border-destructive/30 bg-destructive/5 p-4 text-sm text-muted-foreground">
+          {error}
+        </div>
+      ) : null}
+
+      {!error && isAuthenticated && (
         <div className="space-y-3 p-4 rounded-md bg-background border border-border">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium">Your rating:</span>
@@ -90,7 +105,11 @@ export function ReviewsSection({ bookId }: ReviewsSectionProps) {
       )}
 
       <div className="space-y-3">
-        {reviews.length === 0 ? (
+        {error ? (
+          <p className="text-sm text-muted-foreground text-center py-4">
+            Reviews are temporarily unavailable.
+          </p>
+        ) : reviews.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-4">
             No reviews yet. Be the first to review this book!
           </p>

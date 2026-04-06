@@ -15,6 +15,7 @@ export function useFavorites(userId?: string) {
 
     if (!userId) {
       setFavorites([]);
+      setError(null);
       return;
     }
 

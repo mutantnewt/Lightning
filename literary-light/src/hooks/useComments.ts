@@ -8,12 +8,14 @@ export type Comment = CommentRecord;
 
 export function useComments(bookId?: string) {
   const [comments, setComments] = useState<Comment[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
 
     if (!bookId) {
       setComments([]);
+      setError(null);
       return;
     }
 
@@ -22,11 +24,17 @@ export function useComments(bookId?: string) {
         const nextComments = await communityClient.listComments(bookId);
         if (isMounted) {
           setComments(nextComments);
+          setError(null);
         }
       } catch (error) {
         console.error("Error loading comments:", error);
         if (isMounted) {
           setComments([]);
+          setError(
+            error instanceof Error
+              ? error.message
+              : "Unable to load comments right now.",
+          );
         }
       }
     };
@@ -52,15 +60,25 @@ export function useComments(bookId?: string) {
       throw new Error("Book ID is required to add a comment.");
     }
 
-    const createdComment = await communityClient.addComment(
-      bookId,
-      userId,
-      userName,
-      text,
-    );
-    const nextComments = await communityClient.listComments(bookId);
-    setComments(nextComments);
-    return createdComment;
+    try {
+      const createdComment = await communityClient.addComment(
+        bookId,
+        userId,
+        userName,
+        text,
+      );
+      const nextComments = await communityClient.listComments(bookId);
+      setComments(nextComments);
+      setError(null);
+      return createdComment;
+    } catch (error) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Unable to add your comment right now.",
+      );
+      throw error;
+    }
   };
 
   const deleteComment = async (
@@ -71,18 +89,29 @@ export function useComments(bookId?: string) {
       return false;
     }
 
-    const deleted = await communityClient.deleteComment(bookId, commentId, userId);
+    try {
+      const deleted = await communityClient.deleteComment(bookId, commentId, userId);
 
-    if (deleted) {
-      const nextComments = await communityClient.listComments(bookId);
-      setComments(nextComments);
+      if (deleted) {
+        const nextComments = await communityClient.listComments(bookId);
+        setComments(nextComments);
+        setError(null);
+      }
+
+      return deleted;
+    } catch (error) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Unable to update comments right now.",
+      );
+      throw error;
     }
-
-    return deleted;
   };
 
   return {
     comments,
+    error,
     addComment,
     deleteComment,
   };

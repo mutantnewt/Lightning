@@ -12,7 +12,7 @@ interface CommentsSectionProps {
 
 export function CommentsSection({ bookId }: CommentsSectionProps) {
   const { user, isAuthenticated } = useAuth();
-  const { comments, addComment, deleteComment } = useComments(bookId);
+  const { comments, error, addComment, deleteComment } = useComments(bookId);
   const { toast } = useToast();
   const [newComment, setNewComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -56,17 +56,25 @@ export function CommentsSection({ bookId }: CommentsSectionProps) {
   const handleDelete = async (commentId: string) => {
     if (!user) return;
 
-    const success = await deleteComment(commentId, user.id);
+    try {
+      const success = await deleteComment(commentId, user.id);
 
-    if (success) {
+      if (success) {
+        toast({
+          title: "Comment deleted",
+          description: "Your comment has been removed",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to delete comment",
+          variant: "destructive",
+        });
+      }
+    } catch {
       toast({
-        title: "Comment deleted",
-        description: "Your comment has been removed",
-      });
-    } else {
-      toast({
-        title: "Error",
-        description: "Failed to delete comment",
+        title: "Unable to delete comment",
+        description: "Comments are temporarily unavailable.",
         variant: "destructive",
       });
     }
@@ -92,10 +100,20 @@ export function CommentsSection({ bookId }: CommentsSectionProps) {
     <div className="space-y-4" data-testid={`comments-section-${bookId}`}>
       <div className="flex items-center gap-2 text-sm font-medium text-foreground">
         <MessageSquare className="h-4 w-4" />
-        <span>{comments.length} comment{comments.length !== 1 ? "s" : ""}</span>
+        <span>
+          {error
+            ? "Comments temporarily unavailable"
+            : `${comments.length} comment${comments.length !== 1 ? "s" : ""}`}
+        </span>
       </div>
 
-      {/* Add comment form */}
+      {error ? (
+        <div className="rounded-md border border-destructive/30 bg-destructive/5 p-4 text-sm text-muted-foreground">
+          {error}
+        </div>
+      ) : (
+        <>
+          {/* Add comment form */}
       {isAuthenticated ? (
         <form onSubmit={handleSubmit} className="space-y-3">
           <Textarea
@@ -125,7 +143,7 @@ export function CommentsSection({ bookId }: CommentsSectionProps) {
         </div>
       )}
 
-      {/* Comments list */}
+          {/* Comments list */}
       {comments.length > 0 ? (
         <div className="space-y-3">
           {comments.map((comment) => (
@@ -167,6 +185,8 @@ export function CommentsSection({ bookId }: CommentsSectionProps) {
         <div className="text-center py-6 text-sm text-muted-foreground">
           No comments yet. Be the first to share your thoughts!
         </div>
+      )}
+        </>
       )}
     </div>
   );
