@@ -2170,6 +2170,11 @@ Verification:
   - release-status verification
   - release-summary rendering
   - hosted staging smoke
+- GitHub Actions workflow run `24053203654` passes on 2026-04-06 for the production frontend-release workflow with:
+  - publish
+  - release-status verification
+  - release-summary rendering
+  - hosted production smoke
 
 ## Immediate Next Steps
 
