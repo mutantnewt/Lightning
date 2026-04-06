@@ -1134,9 +1134,13 @@ async function main() {
 
     await waitFor(
       async () =>
-        (await client.evaluate(
-          `document.body?.innerText?.includes(${JSON.stringify(duplicateReviewMessage)})`,
-        ))
+        (await client.evaluate(`(() => {
+          const inlineError = document.querySelector('[data-testid^="review-submit-error-"]');
+          return (
+            (inlineError?.textContent || '').includes(${JSON.stringify(duplicateReviewMessage)}) ||
+            (document.body?.innerText?.includes(${JSON.stringify(duplicateReviewMessage)}) ?? false)
+          );
+        })()`))
           ? true
           : null,
       "duplicate review conflict feedback",
@@ -1145,7 +1149,11 @@ async function main() {
     );
 
     const duplicateReviewSnapshot = await client.evaluate(`(() => ({
-      duplicateMessageVisible: document.body?.innerText?.includes(${JSON.stringify(duplicateReviewMessage)}) ?? false,
+      duplicateMessageVisible: (
+        (document.querySelector('[data-testid^="review-submit-error-"]')?.textContent || '').includes(${JSON.stringify(duplicateReviewMessage)}) ||
+        document.body?.innerText?.includes(${JSON.stringify(duplicateReviewMessage)}) ||
+        false
+      ),
       duplicateAttemptRendered: [...document.querySelectorAll('[data-testid^="review-item-"]')].some(
         (node) => (node.textContent || '').includes(${JSON.stringify(duplicateReviewText)}),
       ),

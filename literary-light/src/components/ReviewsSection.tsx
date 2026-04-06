@@ -27,6 +27,7 @@ export function ReviewsSection({ bookId }: ReviewsSectionProps) {
   const [newReview, setNewReview] = useState("");
   const [newRating, setNewRating] = useState(5);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const visibleReviewCountLabel = hasMore
     ? `${reviews.length}+ reviews`
     : `${reviews.length} review${reviews.length !== 1 ? "s" : ""}`;
@@ -35,22 +36,27 @@ export function ReviewsSection({ bookId }: ReviewsSectionProps) {
     if (!user || !newReview.trim()) return;
 
     setIsSubmitting(true);
+    setSubmitError(null);
 
     try {
       await addReview(user.id, user.name, newRating, newReview);
       setNewReview("");
       setNewRating(5);
+      setSubmitError(null);
       toast({
         title: "Review posted",
         description: "Your review has been added successfully",
       });
     } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Something went wrong while saving your review.";
+
+      setSubmitError(message);
       toast({
         title: "Unable to post review",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Something went wrong while saving your review.",
+        description: message,
         variant: "destructive",
       });
     } finally {
@@ -102,13 +108,26 @@ export function ReviewsSection({ bookId }: ReviewsSectionProps) {
           </div>
           <Textarea
             value={newReview}
-            onChange={(e) => setNewReview(e.target.value)}
+            onChange={(e) => {
+              setNewReview(e.target.value);
+              if (submitError) {
+                setSubmitError(null);
+              }
+            }}
             placeholder="Write your review..."
             className="min-h-[100px]"
             maxLength={communityPolicy.maxReviewLength}
             disabled={isSubmitting}
             data-testid={`review-input-${bookId}`}
           />
+          {submitError ? (
+            <p
+              className="text-sm text-destructive"
+              data-testid={`review-submit-error-${bookId}`}
+            >
+              {submitError}
+            </p>
+          ) : null}
           <p className="text-xs text-muted-foreground text-right">
             Up to {communityPolicy.maxReviewLength.toLocaleString()} characters
           </p>
