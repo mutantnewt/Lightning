@@ -8,9 +8,9 @@ import { DynamoDBDocumentClient, GetCommand, UpdateCommand } from "@aws-sdk/lib-
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const backendRoot = join(__dirname, "..");
 const repoRoot = join(backendRoot, "..");
-const awsBin = process.env.AWS_BIN ?? "/opt/homebrew/bin/aws";
+const awsBin = process.env.AWS_BIN ?? process.env.AWS_CLI_BIN ?? "aws";
 const runtimePath = [
-  dirname(awsBin),
+  awsBin.includes("/") ? dirname(awsBin) : "",
   "/usr/local/bin",
   "/opt/homebrew/bin",
   process.env.PATH ?? "",
