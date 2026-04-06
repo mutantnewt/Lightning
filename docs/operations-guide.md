@@ -82,6 +82,11 @@ Hosted frontend deploy note:
 - the manual Amplify publish helper now also retains a local rollback artifact under `/Users/steve/Documents/GitHub/Lightning/.local/frontend-releases/<environment>/<releaseId>/`
 - the manual Amplify publish helper now also uploads the retained release zip plus `release-archive.json` into the environment-specific S3 archive bucket
 - the manual Amplify publish helper now runs under a repo-local deploy lock, so staging and production publishes must be executed serially rather than in parallel
+- the hosted frontend release-archive buckets now also have a lifecycle baseline:
+  - abort incomplete multipart uploads after `7` days
+  - transition retained `releases/` objects to `INTELLIGENT_TIERING` after `30` days
+  - expire noncurrent object versions after `90` days
+  - keep current retained release archives available for rollback
 
 Repository validation baseline:
 
@@ -225,6 +230,7 @@ Frontend rollback baseline:
 
 - use the retained frontend release archives plus `frontend:release:redeploy:<environment>` for the first recovery step on a hosted frontend-only incident
 - the redeploy path now falls back to the environment-specific S3 archive bucket if the local archive copy is missing
+- the S3 lifecycle baseline does not delete current retained release archives, so rollback still works after release objects age into `INTELLIGENT_TIERING`
 - if `frontend:release:archives` shows a retained local archive without remote presence, run `frontend:release:sync` to backfill it into the S3 archive bucket before the next incident
 - run `frontend:release:verify` after backfill or before rollback if you want to confirm the retained S3 zip still matches the recorded SHA-256 metadata
 - the remote-restore rehearsal is now live-verified in both staging and production
@@ -271,6 +277,7 @@ The current codified CloudWatch baseline for `staging` and `production` is:
   - context `alarmNotificationEmails=email1@example.com,email2@example.com`
   - env var `LIGHTNING_ALARM_NOTIFICATION_EMAILS=email1@example.com,email2@example.com`
 - `npm run ops:subscribe:emails` now wraps that same capability with a safer operator flow and immediate post-deploy readiness reporting
+- the hosted frontend release-archive buckets now also have cost/governance lifecycle rules without deleting current retained archives
 
 Operator check:
 

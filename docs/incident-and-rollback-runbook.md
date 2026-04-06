@@ -131,6 +131,7 @@ Current retained-artifact baseline:
 - the newest retained releases are also stored remotely in the environment-specific S3 archive buckets:
   - staging `lightning-frontend-releases-staging-310505389001-eu-west-2`
   - production `lightning-frontend-releases-prod-310505389001-eu-west-2`
+- the archive buckets now transition retained `releases/` objects to `INTELLIGENT_TIERING` after `30` days, but they do not automatically delete current retained release archives
 - each retained release includes:
   - the original uploaded frontend zip
   - `release-archive.json`

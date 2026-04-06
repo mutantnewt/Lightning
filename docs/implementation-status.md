@@ -1817,6 +1817,7 @@ The repo is now in a transition state:
   - `LIGHTNING_STAGING_SMOKE_PASSWORD`
 - the repo now also includes a safe operator wrapper for SNS alarm email attachment via `npm run ops:subscribe:emails`
 - the new alert-subscription wrapper deploys the target environment stack and immediately reports live SNS subscription readiness so pending email confirmations are visible straight away
+- the hosted frontend release-archive buckets now also have a codified lifecycle baseline for multipart cleanup, warm-to-cool storage transition, and noncurrent-version expiry without deleting current retained releases
 
 ## Immediate Next Steps
 
@@ -1830,7 +1831,7 @@ Needed:
 - configure the GitHub repository secrets needed for `.github/workflows/hosted-staging-smoke.yml` so the scheduled hosted staging smoke can run for real
 - decide whether staging and production should stay on manual Amplify artifact deploys or move to repository-connected Amplify CI/CD
 - decide whether to add `www.lightningclassics.com` as a redirect or secondary hostname
-- add lifecycle or replication rules to the hosted frontend release-archive buckets if longer retention or disaster-recovery duplication is required
+- add replication or cross-account protection to the hosted frontend release-archive buckets if disaster-recovery duplication is required beyond the new lifecycle baseline
 - decide later whether to keep manual Amplify deploys or switch staging and production to repository-connected CI/CD
 - keep review environments ephemeral and separate from the long-lived stack set
 - keep the current privileged API gate and queue model as the only allowed shared-catalog write path

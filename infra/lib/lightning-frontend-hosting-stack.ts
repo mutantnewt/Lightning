@@ -3,6 +3,7 @@ import {
   CfnCondition,
   CfnOutput,
   CfnParameter,
+  Duration,
   Fn,
   RemovalPolicy,
   Stack,
@@ -230,6 +231,20 @@ export class LightningFrontendHostingStack extends Stack {
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
       enforceSSL: true,
       versioned: true,
+      lifecycleRules: [
+        {
+          id: "release-archive-governance",
+          prefix: "releases/",
+          abortIncompleteMultipartUploadAfter: Duration.days(7),
+          transitions: [
+            {
+              storageClass: s3.StorageClass.INTELLIGENT_TIERING,
+              transitionAfter: Duration.days(30),
+            },
+          ],
+          noncurrentVersionExpiration: Duration.days(90),
+        },
+      ],
       removalPolicy: RemovalPolicy.RETAIN,
     });
 

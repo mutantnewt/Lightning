@@ -568,6 +568,11 @@ Current archive buckets:
 
 - staging `lightning-frontend-releases-staging-310505389001-eu-west-2`
 - production `lightning-frontend-releases-prod-310505389001-eu-west-2`
+- both buckets now also share the same lifecycle baseline:
+  - abort incomplete multipart uploads after `7` days
+  - transition retained `releases/` objects to `INTELLIGENT_TIERING` after `30` days
+  - expire noncurrent object versions after `90` days
+  - keep current retained release archives available for rollback
 
 Current verification status:
 
