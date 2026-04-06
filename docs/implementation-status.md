@@ -1882,7 +1882,28 @@ Verification:
 
 Current limitation:
 
-- the production hosted browser smoke still targets the canonical apex host rather than asserting the `www` redirect path in-browser, so the redirect itself is currently verified by HTTPS and operator scripts rather than by the browser smoke suite
+- the production `www` redirect now has dedicated browser-smoke coverage in Slice BA, but the proof still depends on access to the dedicated production smoke-user credentials
+
+### Slice BA: Production www browser-smoke coverage
+
+Completed:
+
+- extended `scripts/run-hosted-frontend-smoke.mjs` to support a dedicated `redirect-alias` target mode
+- extended `scripts/local-frontend-smoke.mjs` to separate the browser launch URL from the expected canonical post-redirect URL
+- added `npm run smoke:production:hosted:www` in `literary-light/package.json`
+- updated the operations guide so the production `www` redirect has a first-class browser-smoke entrypoint
+
+Verification:
+
+- `/usr/local/bin/node --check scripts/run-hosted-frontend-smoke.mjs` passes
+- `/usr/local/bin/node --check scripts/local-frontend-smoke.mjs` passes
+- `npm run smoke:production:hosted:www` now passes live against production
+- the live run starts on `https://www.lightningclassics.com`, redirects to `https://lightningclassics.com/`, and completes the hosted production smoke flow successfully
+- the production smoke-user password was resynchronized through `sync-hosted-production-smoke-github-secrets.mjs` after the live run so the GitHub-hosted production smoke workflow remains aligned
+
+Current limitation:
+
+- the local live-proof path currently depends on resetting or otherwise supplying the production smoke-user password in the operator environment before the run
 
 ## Immediate Next Steps
 

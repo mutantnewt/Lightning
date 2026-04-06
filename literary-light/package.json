@@ -15,7 +15,8 @@
     "smoke:staging": "node ../scripts/run-staging-frontend-smoke.mjs",
     "smoke:production": "node ../scripts/run-production-frontend-smoke.mjs",
     "smoke:staging:hosted": "node ../scripts/run-hosted-frontend-smoke.mjs --environment staging",
-    "smoke:production:hosted": "node ../scripts/run-hosted-frontend-smoke.mjs --environment production"
+    "smoke:production:hosted": "node ../scripts/run-hosted-frontend-smoke.mjs --environment production",
+    "smoke:production:hosted:www": "node ../scripts/run-hosted-frontend-smoke.mjs --environment production --target redirect-alias"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

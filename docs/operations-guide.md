@@ -159,6 +159,14 @@ cd /Users/steve/Documents/GitHub/Lightning/literary-light
 /usr/local/bin/npm run smoke:production:hosted
 ```
 
+```sh
+cd /Users/steve/Documents/GitHub/Lightning/literary-light
+/usr/local/bin/npm run smoke:production:hosted:www
+```
+
+The dedicated `www` production hosted smoke path now launches the browser at `https://www.lightningclassics.com`, asserts the redirect lands on `https://lightningclassics.com`, and then continues through the normal production hosted smoke flow on the canonical apex host.
+This path has now been live-verified on 2026-04-06.
+
 Hosted staging smoke in GitHub Actions:
 
 - the workflow lives at `.github/workflows/hosted-staging-smoke.yml`

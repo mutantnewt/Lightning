@@ -6,6 +6,7 @@ import {
   buildHostedFrontendUrlFromOutputs,
   defaultRegion,
   getAmplifyDomainAssociation,
+  getHostedFrontendRedirectAliases,
   getHostedFrontendTargets,
   getStackOutputs,
   lightningRootDomainName,
@@ -58,9 +59,9 @@ function parseArgs(argv) {
     throw new Error("--environment must be either staging or production.");
   }
 
-  if (!["auto", "default-amplify", "custom-domain", "url"].includes(args.targetMode)) {
+  if (!["auto", "default-amplify", "custom-domain", "redirect-alias", "url"].includes(args.targetMode)) {
     throw new Error(
-      "--target must be one of: auto, default-amplify, custom-domain, url.",
+      "--target must be one of: auto, default-amplify, custom-domain, redirect-alias, url.",
     );
   }
 
@@ -152,10 +153,13 @@ function resolveTargetUrl(args) {
   if (args.targetMode === "url") {
     return {
       smokeUrl: args.explicitUrl,
+      initialSmokeUrl: args.explicitUrl,
+      expectedUrlPrefix: args.explicitUrl,
       selectedTarget: "url",
       fallbackReason: null,
       stackOutputs: null,
       customDomainState: null,
+      redirectAliasDomainName: null,
     };
   }
 
@@ -180,6 +184,12 @@ function resolveTargetUrl(args) {
     customDomainState.domainStatus === "AVAILABLE" &&
     customDomainState.verificationSatisfied === true;
   const customDomainUrl = `https://${target.customDomainName}`;
+  const redirectAliasDomainName =
+    getHostedFrontendRedirectAliases(args.domainName)[args.environmentName]?.[0] ??
+    null;
+  const redirectAliasUrl = redirectAliasDomainName
+    ? `https://${redirectAliasDomainName}`
+    : null;
 
   if (args.targetMode === "custom-domain") {
     if (!customDomainReady) {
@@ -194,31 +204,69 @@ function resolveTargetUrl(args) {
 
     return {
       smokeUrl: customDomainUrl,
+      initialSmokeUrl: customDomainUrl,
+      expectedUrlPrefix: customDomainUrl,
       selectedTarget: "custom-domain",
       fallbackReason: null,
       stackOutputs,
       customDomainState,
+      redirectAliasDomainName,
+    };
+  }
+
+  if (args.targetMode === "redirect-alias") {
+    if (!redirectAliasUrl) {
+      throw new Error(
+        `No redirect alias is configured for ${args.environmentName}.`,
+      );
+    }
+
+    if (!customDomainReady) {
+      throw new Error(
+        [
+          `Custom domain is not ready for ${args.environmentName}, so the redirect alias cannot be verified yet.`,
+          `domainStatus=${customDomainState.domainStatus ?? "null"}`,
+          `verified=${String(customDomainState.verified)}`,
+        ].join(" "),
+      );
+    }
+
+    return {
+      smokeUrl: customDomainUrl,
+      initialSmokeUrl: redirectAliasUrl,
+      expectedUrlPrefix: customDomainUrl,
+      selectedTarget: "redirect-alias",
+      fallbackReason: null,
+      stackOutputs,
+      customDomainState,
+      redirectAliasDomainName,
     };
   }
 
   if (args.targetMode === "default-amplify") {
     return {
       smokeUrl: amplifyUrl,
+      initialSmokeUrl: amplifyUrl,
+      expectedUrlPrefix: amplifyUrl,
       selectedTarget: "default-amplify",
       fallbackReason: null,
       stackOutputs,
       customDomainState,
+      redirectAliasDomainName,
     };
   }
 
   return {
     smokeUrl: customDomainReady ? customDomainUrl : amplifyUrl,
+    initialSmokeUrl: customDomainReady ? customDomainUrl : amplifyUrl,
+    expectedUrlPrefix: customDomainReady ? customDomainUrl : amplifyUrl,
     selectedTarget: customDomainReady ? "custom-domain" : "default-amplify",
     fallbackReason: customDomainReady
       ? null
       : "Custom domain is not ready yet, so the smoke uses the default Amplify domain.",
     stackOutputs,
     customDomainState,
+    redirectAliasDomainName,
   };
 }
 
@@ -251,6 +299,9 @@ async function main() {
         selectedTarget: resolution.selectedTarget,
         fallbackReason: resolution.fallbackReason,
         smokeUrl: resolution.smokeUrl,
+        initialSmokeUrl: resolution.initialSmokeUrl,
+        expectedUrlPrefix: resolution.expectedUrlPrefix,
+        redirectAliasDomainName: resolution.redirectAliasDomainName,
         amplifyAppId: resolution.stackOutputs?.AmplifyAppId ?? null,
         amplifyBranchName: resolution.stackOutputs?.AmplifyBranchName ?? null,
         amplifyDefaultDomain: resolution.stackOutputs?.AmplifyDefaultDomain ?? null,
@@ -266,6 +317,8 @@ async function main() {
     env: {
       LIGHTNING_SMOKE_ENV: args.environmentName,
       LIGHTNING_SMOKE_URL: resolution.smokeUrl,
+      LIGHTNING_SMOKE_INITIAL_URL: resolution.initialSmokeUrl,
+      LIGHTNING_SMOKE_EXPECTED_URL_PREFIX: resolution.expectedUrlPrefix,
       LIGHTNING_SMOKE_IDENTIFIER: credentials.identifier,
       LIGHTNING_SMOKE_PASSWORD: credentials.password,
     },

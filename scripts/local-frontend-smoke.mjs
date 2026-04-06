@@ -38,6 +38,10 @@ function resolveChromeBinary() {
 const chromeBinary = resolveChromeBinary();
 
 const targetUrl = process.env.LIGHTNING_SMOKE_URL ?? "http://127.0.0.1:5175/";
+const initialTargetUrl =
+  process.env.LIGHTNING_SMOKE_INITIAL_URL ?? targetUrl;
+const expectedUrlPrefix =
+  process.env.LIGHTNING_SMOKE_EXPECTED_URL_PREFIX ?? targetUrl;
 const signInIdentifier = process.env.LIGHTNING_SMOKE_IDENTIFIER;
 const signInPassword = process.env.LIGHTNING_SMOKE_PASSWORD;
 const expectedUserName = process.env.LIGHTNING_SMOKE_EXPECTED_USER ?? "Local Smoke";
@@ -553,7 +557,7 @@ async function main() {
       "--disable-sync",
       `--remote-debugging-port=${debugPort}`,
       `--user-data-dir=${userDataDir}`,
-      targetUrl,
+      initialTargetUrl,
     ],
     {
       stdio: "ignore",
@@ -641,7 +645,8 @@ async function main() {
           targets.find(
             (candidate) =>
               candidate.type === "page" &&
-              String(candidate.url).startsWith(targetUrl),
+              (String(candidate.url).startsWith(initialTargetUrl) ||
+                String(candidate.url).startsWith(expectedUrlPrefix)),
           ) ?? null
         );
       },
@@ -669,6 +674,18 @@ async function main() {
           ? true
           : null,
       "frontend home page render",
+      20_000,
+      500,
+    );
+
+    await waitFor(
+      async () =>
+        (await client.evaluate(
+          `location.href.startsWith(${JSON.stringify(expectedUrlPrefix)})`,
+        ))
+          ? true
+          : null,
+      `frontend canonical URL ${expectedUrlPrefix}`,
       20_000,
       500,
     );

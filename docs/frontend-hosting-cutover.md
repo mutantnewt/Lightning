@@ -338,7 +338,14 @@ LIGHTNING_SMOKE_PASSWORD='your-production-smoke-password' \
 /usr/local/bin/npm run smoke:production:hosted
 ```
 
+```sh
+LIGHTNING_SMOKE_IDENTIFIER=lightning-production-smoke@example.com \
+LIGHTNING_SMOKE_PASSWORD='your-production-smoke-password' \
+/usr/local/bin/npm run smoke:production:hosted:www
+```
+
 These commands use the default Amplify domain until the custom domain is attached and verified, then prefer the custom domain automatically.
+The dedicated production `www` variant starts on `https://www.lightningclassics.com`, verifies the redirect lands on `https://lightningclassics.com`, and then continues the normal hosted smoke on the canonical apex host.
 
 ### 5c. Finalize the cutover
 
@@ -433,6 +440,7 @@ Current verification status:
   - `https://lightningclassics.com`
 - the production hosted-frontend stack now also outputs `FrontendRedirectAliasDomainName = www.lightningclassics.com`
 - `https://www.lightningclassics.com` now returns `301` to `https://lightningclassics.com/` with the same hosted security-header baseline
+- `npm run smoke:production:hosted:www` now also passes live on 2026-04-06
 
 Repository-connected mode remains available later:
 
