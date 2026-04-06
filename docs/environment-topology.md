@@ -183,9 +183,11 @@ Current staging implementation:
 - configured alarm-notification email count `0`
 - current confirmed live alarm-destination count `0`
 - route-level API throttling now further tightens authenticated and privileged writes on top of the stage default throttle
-- staging API CORS now explicitly allows both:
+- staging API CORS now defaults to the canonical staging custom domain only:
   - `https://staging.lightningclassics.com`
+- local browser-led staging smoke now uses an explicit temporary operator override for:
   - `http://127.0.0.1:5175`
+- hosted default-Amplify staging smoke continues to use its own explicit preparation path for:
   - `https://staging.dy2grocxp5fe9.amplifyapp.com`
 
 Verification status:
@@ -193,6 +195,7 @@ Verification status:
 - staging catalog was seeded from the repo
 - a dedicated staging smoke user was bootstrapped successfully
 - browser-led staging verification now passes against the live API Gateway runtime from the local Vite dev server
+- the local staging smoke path now temporarily enables `http://127.0.0.1:5175` in staging CORS and restores the canonical staging-only baseline after the run
 - browser-led hosted staging verification now also passes against the live Amplify frontend on `https://staging.dy2grocxp5fe9.amplifyapp.com`
 - the codified staging default-Amplify CORS refresh path was revalidated on 2026-04-02 with `prepare:staging:hosted-smoke:force`
 - the staging manual Amplify artifact path now builds from `LightningStagingFrontendStack` outputs instead of developer-local `.env.local`

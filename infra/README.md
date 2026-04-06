@@ -131,10 +131,12 @@ Current staging stack target:
   - `lightning-public-api-staging`
   - `lightning-auth-api-staging`
   - `lightning-privileged-api-staging`
-- staging CORS allow-list:
+- staging canonical CORS allow-list:
   - `https://staging.lightningclassics.com`
-  - `http://127.0.0.1:5175`
-  - `https://staging.dy2grocxp5fe9.amplifyapp.com`
+- explicit operator-only temporary staging CORS broadening paths:
+  - local smoke: `npm run prepare:staging:local-smoke`
+  - local smoke restore: `npm run restore:staging:canonical-cors`
+  - hosted default-Amplify smoke: `npm run prepare:staging:hosted-smoke`
 - staging operations dashboard:
   - `lightning-operations-staging`
 

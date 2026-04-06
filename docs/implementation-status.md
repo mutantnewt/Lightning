@@ -1766,7 +1766,8 @@ The repo is now in a transition state:
   - app client ID `54fkqa4iernu1lh2bs8ddcrp4d`
 - staging catalog seeding and smoke-user bootstrap now pass against the live stack
 - browser-led staging verification now passes through `npm run smoke:staging`
-- staging API CORS now allows both the real staging site and the local Vite smoke origin `http://127.0.0.1:5175`
+- staging API CORS now defaults to `https://staging.lightningclassics.com` only
+- the local staging smoke path now temporarily enables `http://127.0.0.1:5175` and restores the canonical staging-only baseline afterward
 - the repo now also includes a dedicated Route 53 DNS stack for `lightningclassics.com`
 - the Route 53 hosted zone is now live with authoritative nameservers ready for registrar cutover
 - the repo now also includes dedicated Amplify-hosting stacks for staging and production
@@ -1975,6 +1976,39 @@ Verification:
 Current limitation:
 
 - the GitHub-hosted cutover-evidence workflow still emits a transitional Node 20-target annotation for `aws-actions/configure-aws-credentials@v5` and `actions/upload-artifact@v4` even while GitHub is forcing those actions onto Node 24
+
+### Slice BF: Canonical staging CORS baseline with explicit local smoke override
+
+Completed:
+
+- removed the permanent localhost staging-origin default from `infra/lib/environment-config.ts`
+- added `scripts/manage-staging-local-smoke-cors.mjs` as the explicit operator helper for temporary staging local-smoke CORS enable and canonical restore
+- added operator commands in `infra/package.json`:
+  - `npm run prepare:staging:local-smoke`
+  - `npm run prepare:staging:local-smoke:force`
+  - `npm run restore:staging:canonical-cors`
+  - `npm run restore:staging:canonical-cors:force`
+- updated `scripts/run-staging-frontend-smoke.mjs` so `npm run smoke:staging` now:
+  - temporarily enables `http://127.0.0.1:5175` in staging CORS
+  - runs the delegated staging browser smoke
+  - restores the canonical staging-only baseline in a `finally`
+- corrected the new helper to deploy through `deploy:frontend:staging` so the staging backend and frontend stay in the same CDK graph and avoid the known cross-stack export rollback
+
+Verification:
+
+- `/usr/local/bin/node --check scripts/manage-staging-local-smoke-cors.mjs` passes
+- `/usr/local/bin/node --check scripts/run-staging-frontend-smoke.mjs` passes
+- `npm run synth:staging` passes with `CorsAllowedOrigins = https://staging.lightningclassics.com`
+- `npm run deploy:frontend:staging` succeeds on 2026-04-06 with the canonical staging-only CORS baseline
+- `/usr/local/bin/node scripts/manage-staging-local-smoke-cors.mjs --action enable` succeeds on 2026-04-06 and verifies:
+  - `CorsAllowedOrigins = http://127.0.0.1:5175,https://staging.lightningclassics.com`
+- `/usr/local/bin/node scripts/manage-staging-local-smoke-cors.mjs --action restore` succeeds on 2026-04-06 and verifies:
+  - `CorsAllowedOrigins = https://staging.lightningclassics.com`
+- `npm run ops:status:staging` then returns staging public health `200`, all alarms `OK`, and the expected `allClear = false` only because no confirmed SNS destination exists yet
+
+Current limitation:
+
+- the local staging smoke wrapper is now operator-safe, but a full browser-led rerun still requires smoke credentials in the local environment
 
 ## Immediate Next Steps
 

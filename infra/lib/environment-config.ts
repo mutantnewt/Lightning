@@ -40,10 +40,7 @@ const environmentDefaults: Record<
     environmentName: "staging",
     resourceSuffix: "staging",
     stackName: "LightningStagingStack",
-    corsAllowedOrigins: [
-      "https://staging.lightningclassics.com",
-      "http://127.0.0.1:5175",
-    ],
+    corsAllowedOrigins: ["https://staging.lightningclassics.com"],
     siteUrl: "https://staging.lightningclassics.com",
     appPrefix: defaultAppPrefix,
     removalPolicy: RemovalPolicy.RETAIN,

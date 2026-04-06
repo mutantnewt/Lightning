@@ -167,6 +167,7 @@ Implementation status:
 - the current workspace default still points this at the local Node backend for fast feedback
 - this value can also point at the deployed `PublicApiBaseUrl` output from `LightningLocalStack` for AWS-backed verification
 - the new `npm run smoke:staging` path now temporarily points it at the deployed staging API Gateway URL while still serving the frontend from `http://127.0.0.1:5175`
+- the staging browser-smoke wrapper now temporarily enables `http://127.0.0.1:5175` in staging CORS before the run and restores the canonical staging-only CORS baseline afterward
 
 ### `VITE_API_AUTH_BASE_URL`
 
@@ -240,7 +241,7 @@ Expected baseline values:
 
 Implementation note:
 
-- during browser-led staging verification, the local Vite dev server still runs at `http://127.0.0.1:5175`, but `VITE_SITE_URL` is temporarily set to the staging site URL and the staging API allows that local origin for smoke testing
+- during browser-led staging verification, the local Vite dev server still runs at `http://127.0.0.1:5175`, but `VITE_SITE_URL` is temporarily set to the staging site URL and the staging API only allows that local origin during the explicit `prepare:staging:local-smoke` window
 - the live hosted staging frontend now serves from both `https://staging.dy2grocxp5fe9.amplifyapp.com` and `https://staging.lightningclassics.com`, with `https://staging.lightningclassics.com` as the canonical URL
 - during browser-led production pre-cutover verification, the local Vite dev server still runs at `http://127.0.0.1:5175`, but `VITE_SITE_URL` is temporarily set to `https://lightningclassics.com`
 - the live hosted production frontend now serves from both `https://main.d1te9vk2z7t41u.amplifyapp.com` and `https://lightningclassics.com`, with `https://lightningclassics.com` as the canonical URL

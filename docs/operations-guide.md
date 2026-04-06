@@ -143,6 +143,19 @@ cd /Users/steve/Documents/GitHub/Lightning/literary-light
 /usr/local/bin/npm run smoke:staging
 ```
 
+The staging browser-smoke wrapper now temporarily enables `http://127.0.0.1:5175` in staging CORS and restores the canonical staging-only baseline afterward.
+The underlying operator commands are:
+
+```sh
+cd /Users/steve/Documents/GitHub/Lightning/infra
+/usr/local/bin/npm run prepare:staging:local-smoke
+```
+
+```sh
+cd /Users/steve/Documents/GitHub/Lightning/infra
+/usr/local/bin/npm run restore:staging:canonical-cors
+```
+
 ```sh
 cd /Users/steve/Documents/GitHub/Lightning/literary-light
 /usr/local/bin/npm run smoke:production
