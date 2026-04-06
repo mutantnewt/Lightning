@@ -480,19 +480,21 @@ Important pre-cutover note:
 - the repo now also includes `/Users/steve/Documents/GitHub/Lightning/scripts/wait-for-domain-cutover.mjs` so the registrar propagation window can be polled and handed off into the guarded finalizer automatically
 - the repo now also includes `/Users/steve/Documents/GitHub/Lightning/scripts/complete-domain-cutover.mjs` so the full watcher, finalizer, and post-cutover evidence capture can run as one operator command
 
-Post-cutover live status on 2026-04-03:
+Post-cutover live status on 2026-04-06:
 
 - registrar delegation now matches the Route 53 hosted zone
 - `staging.lightningclassics.com` is attached and serving over HTTPS
 - `lightningclassics.com` is attached and serving over HTTPS
 - `www.lightningclassics.com` now redirects over HTTPS to `https://lightningclassics.com/`
 - `npm run cutover:finalize:with-hosted-smoke` completed successfully
-- a post-cutover evidence snapshot is archived at `/Users/steve/Documents/GitHub/Lightning/docs/archive/cutover-evidence/cutover-evidence-2026-04-03T08-41-30Z.json`
+- the original post-cutover evidence snapshot remains archived at `/Users/steve/Documents/GitHub/Lightning/docs/archive/cutover-evidence/cutover-evidence-2026-04-03T08-41-30Z.json`
+- a refreshed post-cutover evidence snapshot is now archived at `/Users/steve/Documents/GitHub/Lightning/docs/archive/cutover-evidence/cutover-evidence-2026-04-06T19-54-10Z.json`
 - production CORS is now locked to `https://lightningclassics.com` only
 - the hosted cutover run exposed and fixed two real-world issues:
   - domain attachment parameters had to be stack-scoped to the frontend stacks
   - the post-cutover production cleanup deploy had to use `deploy:frontend:production`, not `deploy:production`, to avoid cross-stack export rollback
 - the apex-domain verifier now treats `domainStatus=AVAILABLE` plus successful HTTPS as authoritative readiness, because Amplify keeps the root subdomain `verified` flag false even while the live host is healthy
+- the refreshed evidence snapshot confirms `goLiveReady = true` and that the final production CORS allow-list contains only `https://lightningclassics.com`
 - the hosted-domain verifier now also treats the production `www` alias as part of the healthy final state by requiring it to redirect to the canonical apex host
 
 ## Certificate Rule

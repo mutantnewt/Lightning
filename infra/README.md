@@ -187,6 +187,7 @@ Hosted frontend baseline:
 - the repo now includes `scripts/print-hosted-frontend-release-status.mjs` plus `npm run frontend:release:status*` commands for live release verification
 - the repo now also retains local hosted frontend release archives under `.local/frontend-releases/`
 - the repo now also includes `LightningGithubAutomationStack`, which provisions least-privilege GitHub OIDC hosted-smoke roles for staging and production
+- `LightningGithubAutomationStack` now also provisions a dedicated read-only GitHub OIDC operations role for cutover evidence capture and other read-only operator workflows
 - the staging GitHub secret-sync path is now live-verified through `npm run github:smoke:staging:sync-secrets`
 - the hosted staging smoke workflow is now live-verified in GitHub Actions against `https://staging.lightningclassics.com`
 - the repo now also includes a matching hosted production smoke workflow plus a production secret-sync path
@@ -194,6 +195,7 @@ Hosted frontend baseline:
 - the hosted production smoke workflow is now live-verified in GitHub Actions against `https://lightningclassics.com`
 - the repo now also includes a GitHub OIDC operations-status workflow for staging and production
 - the GitHub-hosted operations-status workflow is now live-verified for both staging and production
+- the repo now also includes a GitHub OIDC cutover-evidence workflow plus `npm run github:ops:sync-secrets` to publish the required repository secret
 - the hosted frontend stacks now also provision durable S3 archive buckets for retained releases:
   - `lightning-frontend-releases-staging-310505389001-eu-west-2`
   - `lightning-frontend-releases-prod-310505389001-eu-west-2`
@@ -283,6 +285,7 @@ Note:
 - the repo now also includes a one-command operator cutover status report that combines delegation, hosted frontend, and CORS readiness
 - the repo now also includes a wait-and-run cutover watcher that can poll DNS delegation and then hand off into the guarded finalizer automatically
 - the repo now also includes a cutover evidence capture command for timestamped delegation, Amplify, HTTPS, CORS, and optional hosted-smoke proof snapshots
+- the repo now also includes a GitHub-hosted cutover-evidence workflow that uploads the same JSON proof as an Actions artifact
 - the repo now also includes a one-command completion wrapper that waits for delegation, finalizes the cutover, and captures post-cutover evidence automatically
 - the repo now also includes an operations status report for staging and production plus a codified CloudWatch alarm and dashboard baseline
 - the repo now also includes API Gateway access logs and active Lambda tracing in staging and production

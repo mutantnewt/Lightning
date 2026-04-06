@@ -1808,7 +1808,8 @@ The repo is now in a transition state:
   - post-cutover production cleanup must deploy through `deploy:frontend:production` so the frontend stack stays in the same CDK graph as the backend exports
 - the hosted-domain verification and hosted-smoke helpers now treat the apex production domain as ready when Amplify reports `domainStatus=AVAILABLE` and HTTPS succeeds, even though the apex `verified` flag remains `false`
 - environment-specific hosted smoke credentials are now bridged into the inner browser smoke runner automatically
-- a post-cutover evidence snapshot is now archived at `docs/archive/cutover-evidence/cutover-evidence-2026-04-03T08-41-30Z.json`
+- the original post-cutover evidence snapshot is archived at `docs/archive/cutover-evidence/cutover-evidence-2026-04-03T08-41-30Z.json`
+- a refreshed post-cutover evidence snapshot is now archived at `docs/archive/cutover-evidence/cutover-evidence-2026-04-06T19-54-10Z.json`
 - the hosted smoke and release helper libraries no longer assume a single developer workstation path or Homebrew-only CLI locations
 - the repo now also includes a dedicated GitHub Actions hosted staging smoke workflow with OIDC-ready AWS credentials and Linux Chrome resolution
 - the hosted staging smoke workflow is intentionally conditional on three GitHub secrets so it can be enabled safely without breaking the default validation baseline:
@@ -1938,13 +1939,48 @@ Current limitation:
 
 - `aws-actions/configure-aws-credentials@v5` still emits a transitional annotation that it targets Node 20 even while GitHub is forcing it onto Node 24, so the remaining follow-up is to adopt an upstream release that natively targets Node 24 when one becomes available
 
+### Slice BD: Refreshed post-cutover evidence archive
+
+Completed:
+
+- captured a fresh operator evidence snapshot with `npm run cutover:evidence -- --output /Users/steve/Documents/GitHub/Lightning/docs/archive/cutover-evidence/cutover-evidence-2026-04-06T19-54-10Z.json`
+- updated the cutover runbook so the current archived evidence set includes both the original cutover proof and the refreshed April 6 operational handoff snapshot
+
+Verification:
+
+- the refreshed evidence snapshot reports `goLiveReady = true`
+- staging and production custom domains both return `200` for root and `favicon.svg`
+- production `www.lightningclassics.com` still redirects to `https://lightningclassics.com/`
+- production CORS remains locked to `https://lightningclassics.com` only
+
+Current limitation:
+
+- the refreshed evidence snapshot also confirms that the only remaining live operational gap is still alert delivery, because both SNS alarm topics have zero confirmed subscriptions and `npm run ops:status` remains `allClear = false`
+
+### Slice BE: GitHub cutover-evidence workflow baseline
+
+Completed:
+
+- added a dedicated read-only GitHub OIDC operations role to `LightningGithubAutomationStack`
+- added `.github/workflows/cutover-evidence.yml` so cutover evidence can run on manual dispatch and a weekly schedule in GitHub Actions
+- added `scripts/sync-operations-github-secret.mjs` plus `npm run github:ops:sync-secrets` to publish `LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_OPERATIONS`
+
+Verification:
+
+- the automation stack now outputs `GitHubOperationsReadRoleArn = arn:aws:iam::310505389001:role/lightning-github-actions-operations-read`
+- the GitHub repository secret `LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_OPERATIONS` has been synchronized from the live automation stack
+- live GitHub-hosted verification of the new cutover-evidence workflow is the next proof point to record
+
+Current limitation:
+
+- until the new GitHub workflow is run, the archived cutover evidence is still only live-proven through the local operator path rather than through GitHub-hosted automation
+
 ## Immediate Next Steps
 
 ### Next slice: Post-Go-Live Hardening
 
 Needed:
 
-- capture and archive a post-cutover operator snapshot with `npm run cutover:evidence`
 - attach real email, chat, PagerDuty, or Incident Manager subscriptions to the live SNS alarm topics
   - email can now be attached through `npm run ops:subscribe:emails`
   - email can now also be attached without a stack deploy through `npm run ops:subscribe:emails:direct`

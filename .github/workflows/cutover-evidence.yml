@@ -1,0 +1,90 @@
+name: Cutover Evidence
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "45 7 * * 1"
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+concurrency:
+  group: cutover-evidence-${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  preflight:
+    name: Cutover Evidence Preflight
+    runs-on: ubuntu-latest
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+      missing: ${{ steps.check.outputs.missing }}
+    steps:
+      - name: Check required secrets
+        id: check
+        env:
+          LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_OPERATIONS: ${{ secrets.LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_OPERATIONS }}
+        run: |
+          missing=()
+
+          if [ -z "$LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_OPERATIONS" ]; then
+            missing+=("LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_OPERATIONS")
+          fi
+
+          if [ "${#missing[@]}" -eq 0 ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            echo "missing=none" >> "$GITHUB_OUTPUT"
+            echo "Cutover evidence prerequisites are configured."
+            exit 0
+          fi
+
+          missing_csv=$(IFS=,; printf '%s' "${missing[*]}")
+          echo "ready=false" >> "$GITHUB_OUTPUT"
+          echo "missing=$missing_csv" >> "$GITHUB_OUTPUT"
+          echo "Cutover evidence prerequisites are missing: $missing_csv"
+
+  evidence:
+    name: Capture Cutover Evidence
+    needs: preflight
+    if: needs.preflight.outputs.ready == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ secrets.LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_OPERATIONS }}
+          aws-region: eu-west-2
+
+      - name: Capture cutover evidence
+        working-directory: infra
+        run: |
+          node ../scripts/capture-cutover-evidence.mjs --output cutover-evidence.json
+          cat cutover-evidence.json
+
+      - name: Upload cutover evidence artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cutover-evidence
+          path: infra/cutover-evidence.json
+
+  missing-prerequisites:
+    name: Cutover Evidence Skipped
+    needs: preflight
+    if: needs.preflight.outputs.ready != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report skipped evidence capture
+        run: |
+          echo "::warning::Cutover evidence capture skipped because these required secrets are missing: ${{ needs.preflight.outputs.missing }}"

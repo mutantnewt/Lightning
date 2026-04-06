@@ -110,6 +110,7 @@ Repository validation baseline:
 - the GitHub-hosted production smoke path has now also been live-verified end to end, including OIDC role assumption, Cognito sign-in, and hosted browser smoke against `https://lightningclassics.com`
 - the repo now also includes a GitHub OIDC operations-status workflow for staging and production
 - the GitHub-hosted operations-status path has now been live-verified for both environments through GitHub Actions
+- the repo now also includes a GitHub OIDC cutover-evidence workflow plus `npm run github:ops:sync-secrets` for its read-only role secret
 - the repo now also includes `npm run ops:subscribe:emails` as a safe operator wrapper for attaching SNS email subscriptions and then checking live subscription readiness
 
 Custom-domain cutover:
@@ -241,6 +242,32 @@ Operations status in GitHub Actions:
 - it runs the same `print-operations-status.mjs` check used by local operators
 - it uploads per-environment JSON artifacts for staging and production
 - the current live proof point is workflow run `24046418678`, which passed on 2026-04-06
+
+Cutover evidence in GitHub Actions:
+
+- the workflow lives at `.github/workflows/cutover-evidence.yml`
+- it runs on manual dispatch and on a weekly schedule
+- it uses a dedicated GitHub OIDC read-only role from `LightningGithubAutomationStack`
+- it runs the same `capture-cutover-evidence.mjs` operator command used locally
+- it uploads a `cutover-evidence.json` artifact for handoff and audit use
+
+Cutover evidence secret sync:
+
+```sh
+cd /Users/steve/Documents/GitHub/Lightning/infra
+/usr/local/bin/npm run github:ops:sync-secrets -- --dry-run
+```
+
+```sh
+cd /Users/steve/Documents/GitHub/Lightning/infra
+/usr/local/bin/npm run github:ops:sync-secrets
+```
+
+This flow now:
+
+- reads the live operations-read OIDC role ARN from `LightningGithubAutomationStack`
+- writes `LIGHTNING_GITHUB_ACTIONS_ROLE_ARN_OPERATIONS`
+- leaves the GitHub cutover-evidence workflow ready to run
 
 Alarm email subscription workflow:
 

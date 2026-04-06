@@ -66,6 +66,13 @@ export class LightningGithubAutomationStack extends Stack {
       userStateTableName: `${appPrefix}-user-state-prod`,
     }, repositoryFullName, regionName, appPrefix);
 
+    const operationsReadRole = this.createOperationsReadRole(
+      githubOidcProvider,
+      repositoryFullName,
+      regionName,
+      appPrefix,
+    );
+
     new CfnOutput(this, "GitHubOidcProviderArn", {
       value: githubOidcProvider.openIdConnectProviderArn,
     });
@@ -80,6 +87,10 @@ export class LightningGithubAutomationStack extends Stack {
 
     new CfnOutput(this, "GitHubHostedSmokeRoleArnProduction", {
       value: productionRole.roleArn,
+    });
+
+    new CfnOutput(this, "GitHubOperationsReadRoleArn", {
+      value: operationsReadRole.roleArn,
     });
   }
 
@@ -165,6 +176,87 @@ export class LightningGithubAutomationStack extends Stack {
             resourceName: config.userStateTableName,
           }),
         ],
+      }),
+    );
+
+    return role;
+  }
+
+  private createOperationsReadRole(
+    githubOidcProvider: iam.OpenIdConnectProvider,
+    repositoryFullName: string,
+    regionName: string,
+    appPrefix: string,
+  ): iam.Role {
+    const role = new iam.Role(this, "OperationsReadRole", {
+      roleName: `${appPrefix}-github-actions-operations-read`,
+      description:
+        "Read-only GitHub Actions operations role for Lightning Classics evidence and status workflows.",
+      assumedBy: new iam.WebIdentityPrincipal(
+        githubOidcProvider.openIdConnectProviderArn,
+        {
+          StringEquals: {
+            "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
+            "token.actions.githubusercontent.com:sub": `repo:${repositoryFullName}:ref:refs/heads/main`,
+          },
+        },
+      ),
+    });
+
+    role.addToPolicy(
+      new iam.PolicyStatement({
+        sid: "ReadOperationsAndCutoverStacks",
+        actions: ["cloudformation:DescribeStacks"],
+        resources: [
+          Stack.of(this).formatArn({
+            service: "cloudformation",
+            region: regionName,
+            resource: "stack",
+            resourceName: "LightningDnsStack/*",
+          }),
+          Stack.of(this).formatArn({
+            service: "cloudformation",
+            region: regionName,
+            resource: "stack",
+            resourceName: "LightningStagingStack/*",
+          }),
+          Stack.of(this).formatArn({
+            service: "cloudformation",
+            region: regionName,
+            resource: "stack",
+            resourceName: "LightningProductionStack/*",
+          }),
+          Stack.of(this).formatArn({
+            service: "cloudformation",
+            region: regionName,
+            resource: "stack",
+            resourceName: "LightningStagingFrontendStack/*",
+          }),
+          Stack.of(this).formatArn({
+            service: "cloudformation",
+            region: regionName,
+            resource: "stack",
+            resourceName: "LightningProductionFrontendStack/*",
+          }),
+          Stack.of(this).formatArn({
+            service: "cloudformation",
+            region: regionName,
+            resource: "stack",
+            resourceName: "LightningGithubAutomationStack/*",
+          }),
+        ],
+      }),
+    );
+
+    role.addToPolicy(
+      new iam.PolicyStatement({
+        sid: "ReadAmplifyAndAlarmState",
+        actions: [
+          "amplify:GetDomainAssociation",
+          "cloudwatch:DescribeAlarms",
+          "sns:ListSubscriptionsByTopic",
+        ],
+        resources: ["*"],
       }),
     );
 

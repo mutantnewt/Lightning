@@ -1,0 +1,172 @@
+{
+  "observedAt": "2026-04-06T19:54:30.260Z",
+  "domainName": "lightningclassics.com",
+  "region": "eu-west-2",
+  "delegationStatus": {
+    "observedAt": "2026-04-06T19:54:26.199Z",
+    "domainName": "lightningclassics.com",
+    "dnsStackName": "LightningDnsStack",
+    "region": "eu-west-2",
+    "hostedZoneId": "Z016489723I788PVTRF68",
+    "expectedNameServers": [
+      "ns-1042.awsdns-02.org",
+      "ns-1755.awsdns-27.co.uk",
+      "ns-269.awsdns-33.com",
+      "ns-999.awsdns-60.net"
+    ],
+    "currentNameServers": [
+      "ns-1042.awsdns-02.org",
+      "ns-1755.awsdns-27.co.uk",
+      "ns-269.awsdns-33.com",
+      "ns-999.awsdns-60.net"
+    ],
+    "delegationMatches": true,
+    "resolutionError": null
+  },
+  "environments": [
+    {
+      "environmentName": "staging",
+      "backendStackName": "LightningStagingStack",
+      "frontendStackName": "LightningStagingFrontendStack",
+      "apiBaseUrl": "https://pbs76ug4gc.execute-api.eu-west-2.amazonaws.com",
+      "hostedAmplifyUrl": "https://staging.dy2grocxp5fe9.amplifyapp.com",
+      "customDomainName": "staging.lightningclassics.com",
+      "customDomainUrl": "https://staging.lightningclassics.com",
+      "corsAllowedOrigins": [
+        "https://staging.lightningclassics.com",
+        "http://127.0.0.1:5175"
+      ],
+      "temporaryOrigins": {
+        "localhost5175Present": true,
+        "hostedAmplifyOriginPresent": false
+      },
+      "amplify": {
+        "appId": "dy2grocxp5fe9",
+        "branchName": "staging",
+        "defaultDomain": "dy2grocxp5fe9.amplifyapp.com",
+        "deploymentMode": null,
+        "domainAssociation": {
+          "domainStatus": "AVAILABLE",
+          "updateStatus": null,
+          "isApexTarget": false,
+          "verified": true,
+          "verificationSatisfied": true,
+          "dnsRecord": "staging CNAME d2acz5nq7fa8g7.cloudfront.net",
+          "certificateVerificationDnsRecord": "_fc4cb21d409b3b0abb29137bd223e5ac.lightningclassics.com. CNAME _abbd424d63ee0405282732513b20d487.jkddzztszm.acm-validations.aws."
+        },
+        "associationError": null
+      },
+      "https": {
+        "hostedAmplifyRoot": {
+          "ok": true,
+          "status": 200,
+          "statusText": null,
+          "finalUrl": "https://staging.dy2grocxp5fe9.amplifyapp.com/"
+        },
+        "hostedAmplifyFavicon": {
+          "ok": true,
+          "status": 200,
+          "statusText": null,
+          "finalUrl": "https://staging.dy2grocxp5fe9.amplifyapp.com/favicon.svg"
+        },
+        "customDomainRoot": {
+          "ok": true,
+          "status": 200,
+          "statusText": null,
+          "finalUrl": "https://staging.lightningclassics.com/"
+        },
+        "customDomainFavicon": {
+          "ok": true,
+          "status": 200,
+          "statusText": null,
+          "finalUrl": "https://staging.lightningclassics.com/favicon.svg"
+        },
+        "redirectAliases": []
+      },
+      "customDomainReady": true,
+      "hostedSmoke": {
+        "status": "skipped"
+      }
+    },
+    {
+      "environmentName": "production",
+      "backendStackName": "LightningProductionStack",
+      "frontendStackName": "LightningProductionFrontendStack",
+      "apiBaseUrl": "https://ejyo5np488.execute-api.eu-west-2.amazonaws.com",
+      "hostedAmplifyUrl": "https://main.d1te9vk2z7t41u.amplifyapp.com",
+      "customDomainName": "lightningclassics.com",
+      "customDomainUrl": "https://lightningclassics.com",
+      "corsAllowedOrigins": [
+        "https://lightningclassics.com"
+      ],
+      "temporaryOrigins": {
+        "localhost5175Present": false,
+        "hostedAmplifyOriginPresent": false
+      },
+      "amplify": {
+        "appId": "d1te9vk2z7t41u",
+        "branchName": "main",
+        "defaultDomain": "d1te9vk2z7t41u.amplifyapp.com",
+        "deploymentMode": null,
+        "domainAssociation": {
+          "domainStatus": "AVAILABLE",
+          "updateStatus": "UPDATE_COMPLETE",
+          "isApexTarget": true,
+          "verified": false,
+          "verificationSatisfied": true,
+          "dnsRecord": "* CNAME dcjp23eiw0aa5.cloudfront.net",
+          "certificateVerificationDnsRecord": "_fc4cb21d409b3b0abb29137bd223e5ac.lightningclassics.com. CNAME _abbd424d63ee0405282732513b20d487.jkddzztszm.acm-validations.aws."
+        },
+        "associationError": null
+      },
+      "https": {
+        "hostedAmplifyRoot": {
+          "ok": true,
+          "status": 200,
+          "statusText": null,
+          "finalUrl": "https://main.d1te9vk2z7t41u.amplifyapp.com/"
+        },
+        "hostedAmplifyFavicon": {
+          "ok": true,
+          "status": 200,
+          "statusText": null,
+          "finalUrl": "https://main.d1te9vk2z7t41u.amplifyapp.com/favicon.svg"
+        },
+        "customDomainRoot": {
+          "ok": true,
+          "status": 200,
+          "statusText": null,
+          "finalUrl": "https://lightningclassics.com/"
+        },
+        "customDomainFavicon": {
+          "ok": true,
+          "status": 200,
+          "statusText": null,
+          "finalUrl": "https://lightningclassics.com/favicon.svg"
+        },
+        "redirectAliases": [
+          {
+            "domainName": "www.lightningclassics.com",
+            "expectedFinalUrlPrefix": "https://lightningclassics.com",
+            "httpsRoot": {
+              "ok": true,
+              "status": 200,
+              "statusText": null,
+              "finalUrl": "https://lightningclassics.com/"
+            },
+            "redirectsToCanonical": true
+          }
+        ]
+      },
+      "customDomainReady": true,
+      "hostedSmoke": {
+        "status": "skipped"
+      }
+    }
+  ],
+  "goLiveReady": true,
+  "nextSteps": [
+    "Custom domains, HTTPS, and production CORS lock-down are all in the expected final state.",
+    "Record this evidence artifact with the release notes or operational handoff."
+  ]
+}
