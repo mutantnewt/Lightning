@@ -2211,6 +2211,20 @@ Verification:
   - summary rendering
   - summary and raw-artifact upload
 
+### Slice BP: Hosted-smoke workflow summaries
+
+Completed:
+
+- added `scripts/write-hosted-smoke-summary.mjs` so the GitHub hosted staging and hosted production smoke workflows now render human-readable summaries when the smoke steps succeed
+- extended `.github/workflows/hosted-staging-smoke.yml` and `.github/workflows/hosted-production-smoke.yml` so they now write those summaries into the GitHub job summary and upload them as artifacts
+- kept the summary generation aligned with the existing workflow configuration by deriving it from the selected environment and known hosted-smoke targets instead of adding new AWS reads
+
+Verification:
+
+- `node --check` passes for `scripts/write-hosted-smoke-summary.mjs`
+- both workflow YAML files remain valid after the summary step was added
+- the next live proof should show the summary step succeeding inside the GitHub hosted-smoke workflows
+
 ## Immediate Next Steps
 
 ### Next slice: Post-Go-Live Hardening

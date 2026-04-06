@@ -97,6 +97,16 @@ jobs:
           LIGHTNING_SMOKE_SKIP_REVIEW_DELETE: "true"
         run: npm run smoke:staging:hosted
 
+      - name: Summarize hosted staging smoke
+        run: |
+          node scripts/write-hosted-smoke-summary.mjs --environment staging | tee hosted-staging-smoke-summary.md
+
+      - name: Upload hosted staging smoke artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hosted-staging-smoke-summary
+          path: hosted-staging-smoke-summary.md
+
   missing-prerequisites:
     name: Hosted Staging Smoke Skipped
     needs: preflight

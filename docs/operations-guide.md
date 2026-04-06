@@ -108,6 +108,7 @@ Repository validation baseline:
 - the GitHub-hosted staging smoke path has now been live-verified end to end, including OIDC role assumption, Cognito sign-in, and hosted browser smoke against `https://staging.lightningclassics.com`
 - the repo now also includes a matching hosted production smoke workflow plus `npm run github:smoke:production:sync-secrets`
 - the GitHub-hosted production smoke path has now also been live-verified end to end, including OIDC role assumption, Cognito sign-in, and hosted browser smoke against `https://lightningclassics.com`
+- the hosted staging and production smoke workflows now also write human-readable summaries into the GitHub job summary and upload them as artifacts
 - the repo now also includes a GitHub OIDC operations-status workflow for staging and production
 - the GitHub-hosted operations-status path has now been live-verified for both environments through GitHub Actions
 - the GitHub-hosted operations-status workflow now also writes a human-readable summary into the GitHub job summary and uploads it alongside the raw JSON artifact

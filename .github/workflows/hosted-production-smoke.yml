@@ -106,6 +106,16 @@ jobs:
           LIGHTNING_SMOKE_SKIP_REVIEW_DELETE: "true"
         run: npm run smoke:production:hosted:www
 
+      - name: Summarize hosted production smoke
+        run: |
+          node scripts/write-hosted-smoke-summary.mjs --environment production | tee hosted-production-smoke-summary.md
+
+      - name: Upload hosted production smoke artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hosted-production-smoke-summary
+          path: hosted-production-smoke-summary.md
+
   missing-prerequisites:
     name: Hosted Production Smoke Skipped
     needs: preflight

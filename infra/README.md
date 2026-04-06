@@ -199,6 +199,7 @@ Hosted frontend baseline:
 - the repo now also includes a matching hosted production smoke workflow plus a production secret-sync path
 - the production GitHub secret-sync path is now live-verified through `npm run github:smoke:production:sync-secrets`
 - the hosted production smoke workflow is now live-verified in GitHub Actions against `https://lightningclassics.com`
+- the hosted staging and production smoke workflows now also render human-readable summaries alongside their normal workflow output
 - the GitHub-hosted staging and production smoke workflows now self-bootstrap their dedicated smoke users at runtime, so the repository no longer needs stored smoke identifier or password secrets for those workflows
 - the repo now also includes a GitHub OIDC operations-status workflow for staging and production
 - the GitHub-hosted operations-status workflow is now live-verified for both staging and production
