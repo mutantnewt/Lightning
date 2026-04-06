@@ -2188,7 +2188,11 @@ Verification:
 
 - `node --check` passes for `scripts/write-operations-status-summary.mjs`
 - the workflow YAML remains valid after the summary step was added
-- the next live proof should show the summary step succeeding inside the GitHub operations-status workflow
+- GitHub Actions workflow run `24053402068` passes on 2026-04-06 for the GitHub operations-status workflow with:
+  - staging status collection
+  - production status collection
+  - summary rendering for both environments
+  - summary and raw-artifact upload for both environments
 
 ## Immediate Next Steps
 

@@ -203,6 +203,7 @@ Hosted frontend baseline:
 - the repo now also includes a GitHub OIDC operations-status workflow for staging and production
 - the GitHub-hosted operations-status workflow is now live-verified for both staging and production
 - the operations-status workflow now also renders a human-readable summary alongside the raw JSON artifact
+- the operations-status summary enhancement has now been live-verified through workflow run `24053402068`
 - the repo now also includes a GitHub OIDC cutover-evidence workflow plus `npm run github:ops:sync-secrets` to publish the required repository secret
 - the cutover-evidence workflow is now live-verified in GitHub Actions and uploads a `cutover-evidence` artifact
 - the hosted frontend stacks now also provision durable S3 archive buckets for retained releases:
