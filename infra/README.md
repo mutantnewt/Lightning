@@ -270,6 +270,7 @@ Note:
 - the repo now also includes one SNS alarm topic per long-lived cloud environment, with the codified alarms wired to those topics
 - the guarded cutover finalizer now passes end to end with hosted browser smoke on both custom domains
 - alarm email destinations can now be injected at deploy time with `LIGHTNING_ALARM_NOTIFICATION_EMAILS` or `--context alarmNotificationEmails=...`
+- the repo now also includes `npm run ops:subscribe:emails` to apply alarm email destinations and then report the live SNS subscription state
 - current access-log groups are:
   - `/aws/apigateway/lightning-http-api-access-staging`
   - `/aws/apigateway/lightning-http-api-access-prod`
@@ -299,3 +300,17 @@ LIGHTNING_ALARM_NOTIFICATION_EMAILS=ops@example.com /usr/local/bin/npm run deplo
 cd /Users/steve/Documents/GitHub/Lightning/infra
 LIGHTNING_ALARM_NOTIFICATION_EMAILS=ops@example.com /usr/local/bin/npm run deploy:production:precutover
 ```
+
+Preferred operator path:
+
+```sh
+cd /Users/steve/Documents/GitHub/Lightning/infra
+LIGHTNING_ALARM_NOTIFICATION_EMAILS=ops@example.com /usr/local/bin/npm run ops:subscribe:emails -- --dry-run
+```
+
+```sh
+cd /Users/steve/Documents/GitHub/Lightning/infra
+LIGHTNING_ALARM_NOTIFICATION_EMAILS=ops@example.com /usr/local/bin/npm run ops:subscribe:emails
+```
+
+This wrapper now deploys the alarm-email change for both long-lived cloud environments and prints the post-deploy SNS readiness state so `PendingConfirmation` is obvious.

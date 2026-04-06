@@ -98,6 +98,7 @@ Repository validation baseline:
   - `LIGHTNING_STAGING_SMOKE_IDENTIFIER`
   - `LIGHTNING_STAGING_SMOKE_PASSWORD`
 - the hosted staging smoke workflow runs on manual dispatch and on a daily schedule, using the hosted staging frontend rather than a local Vite server
+- the repo now also includes `npm run ops:subscribe:emails` as a safe operator wrapper for attaching SNS email subscriptions and then checking live subscription readiness
 
 Custom-domain cutover:
 
@@ -153,6 +154,25 @@ Hosted staging smoke in GitHub Actions:
 - it uses GitHub OIDC plus `aws-actions/configure-aws-credentials@v4`
 - it resolves a Linux Chrome or Chromium binary on the runner and passes that path into `CHROME_BIN`
 - it intentionally skips the smoke job with a warning when the required secrets are not configured yet
+
+Alarm email subscription workflow:
+
+```sh
+cd /Users/steve/Documents/GitHub/Lightning/infra
+LIGHTNING_ALARM_NOTIFICATION_EMAILS=ops@example.com /usr/local/bin/npm run ops:subscribe:emails -- --dry-run
+```
+
+```sh
+cd /Users/steve/Documents/GitHub/Lightning/infra
+LIGHTNING_ALARM_NOTIFICATION_EMAILS=ops@example.com /usr/local/bin/npm run ops:subscribe:emails
+```
+
+This flow:
+
+- deploys the matching backend stack change for `staging` and `production`
+- keeps the configured email list in one place via `LIGHTNING_ALARM_NOTIFICATION_EMAILS`
+- immediately runs `ops:status` per environment after deploy
+- makes the post-deploy state explicit when SNS subscriptions are still `PendingConfirmation`
 
 Hosted frontend release verification:
 
@@ -250,6 +270,7 @@ The current codified CloudWatch baseline for `staging` and `production` is:
 - optional email subscriptions can be attached at deploy time with:
   - context `alarmNotificationEmails=email1@example.com,email2@example.com`
   - env var `LIGHTNING_ALARM_NOTIFICATION_EMAILS=email1@example.com,email2@example.com`
+- `npm run ops:subscribe:emails` now wraps that same capability with a safer operator flow and immediate post-deploy readiness reporting
 
 Operator check:
 

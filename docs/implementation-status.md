@@ -1815,6 +1815,8 @@ The repo is now in a transition state:
   - `LIGHTNING_GITHUB_ACTIONS_ROLE_ARN`
   - `LIGHTNING_STAGING_SMOKE_IDENTIFIER`
   - `LIGHTNING_STAGING_SMOKE_PASSWORD`
+- the repo now also includes a safe operator wrapper for SNS alarm email attachment via `npm run ops:subscribe:emails`
+- the new alert-subscription wrapper deploys the target environment stack and immediately reports live SNS subscription readiness so pending email confirmations are visible straight away
 
 ## Immediate Next Steps
 
@@ -1824,6 +1826,7 @@ Needed:
 
 - capture and archive a post-cutover operator snapshot with `npm run cutover:evidence`
 - attach real email, chat, PagerDuty, or Incident Manager subscriptions to the live SNS alarm topics
+  - email can now be attached through `npm run ops:subscribe:emails`
 - configure the GitHub repository secrets needed for `.github/workflows/hosted-staging-smoke.yml` so the scheduled hosted staging smoke can run for real
 - decide whether staging and production should stay on manual Amplify artifact deploys or move to repository-connected Amplify CI/CD
 - decide whether to add `www.lightningclassics.com` as a redirect or secondary hostname
