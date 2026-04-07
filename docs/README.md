@@ -33,6 +33,8 @@ Durable product and UX guidance from one-off briefs or historical prompts must b
   Production and staging operating guide, verification path, and monitoring baseline
 - `docs/incident-and-rollback-runbook.md`
   Short response path for production or staging incidents, rollback, and evidence capture
+- `docs/aws-diagram-blueprint.md`
+  Draw.io-ready blueprint for Lightning Classics AWS diagrams using standard AWS icons
 
 ## Update Rule
 

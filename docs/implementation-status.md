@@ -2375,6 +2375,40 @@ Current limitation:
 - the importer intentionally favors compact trusted metadata over richer automated enrichment
 - source-specific upstream transforms are still expected to happen outside the runtime when using large third-party metadata dumps
 
+### Slice BU: AWS diagram blueprint
+
+Completed:
+
+- added `docs/aws-diagram-blueprint.md` as a draw.io-ready diagram specification for Lightning Classics
+- split the recommended visualization into:
+  - a system overview diagram
+  - an operations and delivery diagram
+- documented:
+  - lane layout
+  - AWS icon choices
+  - box list
+  - connector list
+  - current-state accuracy notes
+- updated `docs/README.md` so the blueprint is discoverable alongside the canonical docs
+
+Verification:
+
+- the blueprint reflects the current live architecture:
+  - Route 53
+  - Amplify / CloudFront
+  - Cognito
+  - API Gateway
+  - public / auth / privileged Lambdas
+  - DynamoDB tables
+  - CloudWatch
+  - SNS alert topics
+  - confirmed alert delivery
+
+Current limitation:
+
+- this slice provides the diagram blueprint and structure, not the final exported `.drawio` or `.svg` artwork
+- the next operator step for visuals is to build the actual diagram files from this blueprint in draw.io
+
 ## Immediate Next Steps
 
 ### Next slice: Post-Go-Live Hardening
