@@ -495,6 +495,9 @@ The current codified CloudWatch baseline for `staging` and `production` is:
 - `npm run ops:subscribe:emails:direct` now also supports attaching SNS email subscriptions directly to the live alarm topics without a stack deploy
 - `ops:status` now treats staging and production as not fully clear until at least one confirmed live alarm destination exists, even when the stack-level configured email count is still `0`
 - the hosted frontend release-archive buckets now also have cost/governance lifecycle rules without deleting current retained archives
+- as of 2026-04-07, a real alert inbox has been attached to both live SNS alarm topics and the GitHub repository secret `LIGHTNING_ALARM_NOTIFICATION_EMAILS` is configured for the same destination
+- as of 2026-04-07, `ops:status` still reports `alarmSubscriptionReadiness.ready = false` because the email subscription is still `PendingConfirmation`
+- a stale unconfirmed test inbox may also remain visible in `ops:status`; AWS SNS does not allow API unsubscribe for email subscriptions that are still pending confirmation, so this is an operator-cleanup limitation rather than an active delivery risk
 
 Operator check:
 
@@ -510,6 +513,12 @@ Healthy operator expectation now includes:
 - `alarmActionCoverage.complete` is `true` for the environment under review
 - `alarmSubscriptionReadiness.ready` is `true` for the environment under review
 - `alarmSubscriptionReadiness.confirmedCount` is at least `1` in staging and production unless a higher configured-email target is in use
+
+Current live gap:
+
+- confirm the SNS subscription email for the chosen alert inbox
+- rerun `npm run ops:status`
+- expect `alarmSubscriptionReadiness.confirmedCount >= 1` and `allClear = true` for both staging and production once confirmation has propagated
 
 Current alarm scope intentionally favors low-noise platform failure indicators over feature-specific business alarms.
 

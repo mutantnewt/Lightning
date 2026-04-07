@@ -2,7 +2,7 @@
 
 ## Status Date
 
-2026-04-06
+2026-04-07
 
 ## Working Rule
 
@@ -2284,15 +2284,48 @@ Verification:
 - GitHub Actions workflow run `24078642013` passes on 2026-04-07 for the hardened hosted staging smoke workflow
 - GitHub Actions workflow run `24078684945` passes on 2026-04-07 for the hardened hosted production smoke workflow
 
+### Slice BR: Live alert-destination initiation
+
+Completed:
+
+- attached a real alert inbox to both live SNS alarm topics through the direct operator path
+- configured the repository secret `LIGHTNING_ALARM_NOTIFICATION_EMAILS` so the GitHub alert-subscription workflow now targets the chosen inbox by default
+- verified the live status with `scripts/print-operations-status.mjs` after subscription creation
+- confirmed a real AWS limitation during cleanup:
+  - SNS does not allow API unsubscribe for email subscriptions that are still `PendingConfirmation`
+  - an earlier unconfirmed test inbox therefore remains visible until it expires or is ignored
+- updated the operational docs so they now reflect the real live state rather than the earlier "no subscriptions attached" assumption
+
+Verification:
+
+- direct live-topic subscription attach succeeded for both:
+  - `lightning-operations-alerts-staging`
+  - `lightning-operations-alerts-prod`
+- the GitHub repository secret `LIGHTNING_ALARM_NOTIFICATION_EMAILS` is now set
+- live operations-status check on 2026-04-07 reports:
+  - staging public health `200`
+  - production public health `200`
+  - all staging alarms `OK`
+  - all production alarms `OK`
+  - complete alarm-action coverage in both environments
+  - pending email subscriptions now exist in both environments
+  - `alarmSubscriptionReadiness.confirmedCount = 0`
+  - `alarmSubscriptionReadiness.pendingCount = 2`
+  - `allClear = false` only because no inbox has confirmed yet
+
+Current limitation:
+
+- the only remaining live operational blocker is inbox confirmation of the chosen alert destination
+- until that confirmation link is accepted, `ops:status` will continue to report `alarmSubscriptionReadiness.ready = false`
+
 ## Immediate Next Steps
 
 ### Next slice: Post-Go-Live Hardening
 
 Needed:
 
-- attach real email, chat, PagerDuty, or Incident Manager subscriptions to the live SNS alarm topics
-  - email can now be attached through `npm run ops:subscribe:emails`
-  - email can now also be attached without a stack deploy through `npm run ops:subscribe:emails:direct`
+- confirm the chosen alert inbox from the SNS subscription emails so staging and production move from `PendingConfirmation` to a confirmed live destination
+- optionally attach additional chat, PagerDuty, or Incident Manager subscriptions on top of the now-initiated email path
 - decide whether staging and production should stay on manual Amplify artifact deploys or move to repository-connected Amplify CI/CD
 - add replication or cross-account protection to the hosted frontend release-archive buckets if disaster-recovery duplication is required beyond the new lifecycle baseline
 - decide later whether to keep manual Amplify deploys or switch staging and production to repository-connected CI/CD
@@ -2313,4 +2346,4 @@ Then:
 ## Open Blockers
 
 - the browser-led smoke intentionally stops short of Add Book acceptance so repeated local runs do not create duplicate catalog entries
-- SNS alarm topics are live but still have no real notification subscriptions attached
+- SNS alarm topics now have pending email subscriptions attached, but no destination has confirmed yet, so alerts still cannot deliver

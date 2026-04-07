@@ -335,6 +335,9 @@ Note:
   - all production alarms `OK`
   - complete alarm-action coverage in both environments
   - alarm-subscription readiness now reflects the lack of confirmed live destinations until at least one subscription is confirmed
+- as of 2026-04-07, a real alert inbox has been attached to both live SNS alarm topics and the repository secret `LIGHTNING_ALARM_NOTIFICATION_EMAILS` is configured for the same destination
+- as of 2026-04-07, `ops:status` still reports `allClear = false` because the SNS email subscriptions are still pending confirmation
+- as of 2026-04-07, an older unconfirmed test inbox may still appear in `ops:status`; AWS SNS does not allow API unsubscribe for email subscriptions that remain `PendingConfirmation`
 - as of 2026-04-02, hosted browser smoke still passes after the observability rollout on:
   - `https://staging.dy2grocxp5fe9.amplifyapp.com`
   - `https://main.d1te9vk2z7t41u.amplifyapp.com`
@@ -378,6 +381,12 @@ LIGHTNING_ALARM_NOTIFICATION_EMAILS=ops@example.com /usr/local/bin/npm run ops:s
 ```
 
 This path attaches email subscriptions directly to the live staging and production SNS topics, skips existing subscriptions, and immediately reruns `ops:status` so the confirmed or pending state is visible without a stack deploy.
+
+Current operator note:
+
+- the live attach step is now complete
+- the remaining human step is confirming the SNS email for the chosen alert inbox
+- once that confirmation is accepted, rerun `npm run ops:status` and expect the long-lived environments to move to confirmed alert-destination readiness
 
 GitHub Actions alert-subscription path:
 
