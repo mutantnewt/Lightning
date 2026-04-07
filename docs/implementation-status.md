@@ -2409,6 +2409,36 @@ Current limitation:
 - this slice provides the diagram blueprint and structure, not the final exported `.drawio` or `.svg` artwork
 - the next operator step for visuals is to build the actual diagram files from this blueprint in draw.io
 
+### Slice BV: First-pass AWS diagram draft
+
+Completed:
+
+- added `docs/diagrams/lightning-aws-architecture-draft.md` as a Mermaid-based first-pass architecture draft
+- added `docs/diagrams/README.md` to establish the diagrams working directory
+- updated `docs/README.md` so the diagrams directory is discoverable from the canonical docs index
+- drafted both of the recommended views:
+  - system overview
+  - operations and delivery
+
+Verification:
+
+- the Mermaid draft covers the current live AWS estate:
+  - Route 53
+  - Amplify / CloudFront
+  - Cognito
+  - API Gateway
+  - public / auth / privileged Lambdas
+  - DynamoDB tables
+  - release archive S3 bucket
+  - CloudWatch dashboards, logs, and alarms
+  - SNS alert topics
+  - confirmed email alert destination
+
+Current limitation:
+
+- this is still a drafting artifact rather than the final AWS-icon artwork
+- the next visual step is to translate the Mermaid structure into `docs/diagrams/lightning-aws-architecture.drawio`
+
 ## Immediate Next Steps
 
 ### Next slice: Post-Go-Live Hardening
