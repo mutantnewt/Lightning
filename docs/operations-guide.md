@@ -112,14 +112,24 @@ Repository validation baseline:
 - the hosted-smoke summary enhancement has now been live-verified on 2026-04-06 through:
   - staging run `24053603738`
   - production run `24053647518`
+- the hosted staging and production smoke workflows now also write those summary artifacts directly to files before printing them, so GitHub does not risk masking a failed summary step behind a successful pipe
+- that hardened file-write path has now been live-verified on 2026-04-07 through:
+  - staging run `24078642013`
+  - production run `24078684945`
 - the repo now also includes a GitHub OIDC operations-status workflow for staging and production
 - the GitHub-hosted operations-status path has now been live-verified for both environments through GitHub Actions
 - the GitHub-hosted operations-status workflow now also writes a human-readable summary into the GitHub job summary and uploads it alongside the raw JSON artifact
 - the summary enhancement has now been live-verified on 2026-04-06 through workflow run `24053402068`
+- the workflow now also writes the summary file directly before printing it, so a failed summary step cannot be hidden by `tee`
+- that hardened file-write path has now been live-verified on 2026-04-07 through workflow run `24078558720`
 - the repo now also includes a GitHub OIDC cutover-evidence workflow plus `npm run github:ops:sync-secrets` for its read-only role secret
 - the GitHub-hosted cutover-evidence workflow now also writes a human-readable summary into the GitHub job summary and uploads it alongside the raw JSON artifact
 - the summary enhancement has now been live-verified on 2026-04-06 through workflow run `24053489438`
+- the workflow now also writes the summary file directly before printing it, so a failed summary step cannot be hidden by `tee`
+- that hardened file-write path has now been live-verified on 2026-04-07 through workflow run `24078582717`
 - the repo now also includes a manual GitHub OIDC alarm-subscriptions workflow plus `npm run github:alerting:sync-secrets` for its dedicated alerting-management role secret
+- the alarm-subscriptions workflow now also writes both its raw JSON payload and rendered summary directly to files before printing them, so a failed subscription or summary step cannot be hidden by `tee`
+- that hardened file-write path has now been live-verified on 2026-04-07 through dry-run workflow run `24078611858`
 - the repo now also includes a manual GitHub OIDC frontend-release workflow plus `npm run github:frontend:release:sync-secrets` for its dedicated frontend-release role secret
 - the repo now also includes `npm run ops:subscribe:emails` as a safe operator wrapper for attaching SNS email subscriptions and then checking live subscription readiness
 

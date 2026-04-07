@@ -2261,6 +2261,29 @@ Verification:
   - summary rendering
   - summary artifact upload
 
+### Slice BQ: GitHub workflow artifact-write hardening
+
+Completed:
+
+- hardened the remaining GitHub JSON and summary-writing workflows so they now write artifacts directly to files and then `cat` them, instead of piping through `tee`
+- applied this correction to:
+  - `.github/workflows/ops-status.yml`
+  - `.github/workflows/cutover-evidence.yml`
+  - `.github/workflows/alarm-subscriptions.yml`
+  - `.github/workflows/hosted-staging-smoke.yml`
+  - `.github/workflows/hosted-production-smoke.yml`
+- aligned these workflows with the already-hardened frontend-release path so command failures are no longer at risk of being masked by shell pipeline exit behavior
+- preserved the same artifact names and job-summary outputs while making the failure semantics stricter and more trustworthy
+
+Verification:
+
+- the updated workflow YAML files all remain valid after the file-write hardening
+- GitHub Actions workflow run `24078558720` passes on 2026-04-07 for the hardened operations-status workflow
+- GitHub Actions workflow run `24078582717` passes on 2026-04-07 for the hardened cutover-evidence workflow
+- GitHub Actions workflow run `24078611858` passes on 2026-04-07 for the hardened alarm-subscriptions workflow in dry-run mode
+- GitHub Actions workflow run `24078642013` passes on 2026-04-07 for the hardened hosted staging smoke workflow
+- GitHub Actions workflow run `24078684945` passes on 2026-04-07 for the hardened hosted production smoke workflow
+
 ## Immediate Next Steps
 
 ### Next slice: Post-Go-Live Hardening

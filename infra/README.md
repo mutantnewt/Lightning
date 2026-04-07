@@ -203,15 +203,23 @@ Hosted frontend baseline:
 - the hosted-smoke summary enhancement has now been live-verified through:
   - staging run `24053603738`
   - production run `24053647518`
+- the hosted staging and production smoke workflows now also write those summary artifacts directly to files before printing them, so a summary failure cannot be masked by a successful pipe
+- that hardened file-write path has now been live-verified through:
+  - staging run `24078642013`
+  - production run `24078684945`
 - the GitHub-hosted staging and production smoke workflows now self-bootstrap their dedicated smoke users at runtime, so the repository no longer needs stored smoke identifier or password secrets for those workflows
 - the repo now also includes a GitHub OIDC operations-status workflow for staging and production
 - the GitHub-hosted operations-status workflow is now live-verified for both staging and production
 - the operations-status workflow now also renders a human-readable summary alongside the raw JSON artifact
 - the operations-status summary enhancement has now been live-verified through workflow run `24053402068`
+- the operations-status workflow now also writes that summary file directly before printing it, so a failed summary step cannot be masked by `tee`
+- that hardened file-write path has now been live-verified through workflow run `24078558720`
 - the repo now also includes a GitHub OIDC cutover-evidence workflow plus `npm run github:ops:sync-secrets` to publish the required repository secret
 - the cutover-evidence workflow is now live-verified in GitHub Actions and uploads a `cutover-evidence` artifact
 - the cutover-evidence workflow now also renders a human-readable summary alongside the raw JSON artifact
 - the cutover-evidence summary enhancement has now been live-verified through workflow run `24053489438`
+- the cutover-evidence workflow now also writes that summary file directly before printing it, so a failed summary step cannot be masked by `tee`
+- that hardened file-write path has now been live-verified through workflow run `24078582717`
 - the hosted frontend stacks now also provision durable S3 archive buckets for retained releases:
   - `lightning-frontend-releases-staging-310505389001-eu-west-2`
   - `lightning-frontend-releases-prod-310505389001-eu-west-2`
@@ -392,6 +400,8 @@ This path now:
 - writes a GitHub job summary plus uploaded artifacts for both the raw subscription JSON and a human-readable readiness summary
 - includes the current per-environment `ops:status` alert-readiness snapshot even in dry-run mode
 - has now been live-verified in GitHub Actions on 2026-04-06 through workflow run `24052959607` in dry-run mode
+- now writes both the raw JSON artifact and rendered summary directly to files before printing them, so failures cannot be hidden by shell pipeline behavior
+- that hardened file-write path has now been live-verified on 2026-04-07 through dry-run workflow run `24078611858`
 
 GitHub Actions frontend-release path:
 
