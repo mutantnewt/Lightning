@@ -106,12 +106,16 @@ jobs:
             args+=(--dry-run)
           fi
 
-          node "${args[@]}" | tee alarm-subscriptions.json
+          node "${args[@]}" > alarm-subscriptions.json
+          cat alarm-subscriptions.json
 
       - name: Summarize alarm subscription readiness
         working-directory: infra
         run: |
-          node ../scripts/write-alarm-subscription-summary.mjs --input alarm-subscriptions.json | tee alarm-subscriptions-summary.md
+          node ../scripts/write-alarm-subscription-summary.mjs \
+            --input alarm-subscriptions.json \
+            > alarm-subscriptions-summary.md
+          cat alarm-subscriptions-summary.md
 
       - name: Upload alarm subscription artifact
         uses: actions/upload-artifact@v4

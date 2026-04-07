@@ -108,7 +108,10 @@ jobs:
 
       - name: Summarize hosted production smoke
         run: |
-          node scripts/write-hosted-smoke-summary.mjs --environment production | tee hosted-production-smoke-summary.md
+          node scripts/write-hosted-smoke-summary.mjs \
+            --environment production \
+            > hosted-production-smoke-summary.md
+          cat hosted-production-smoke-summary.md
 
       - name: Upload hosted production smoke artifact
         uses: actions/upload-artifact@v4

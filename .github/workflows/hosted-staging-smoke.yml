@@ -99,7 +99,10 @@ jobs:
 
       - name: Summarize hosted staging smoke
         run: |
-          node scripts/write-hosted-smoke-summary.mjs --environment staging | tee hosted-staging-smoke-summary.md
+          node scripts/write-hosted-smoke-summary.mjs \
+            --environment staging \
+            > hosted-staging-smoke-summary.md
+          cat hosted-staging-smoke-summary.md
 
       - name: Upload hosted staging smoke artifact
         uses: actions/upload-artifact@v4

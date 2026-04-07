@@ -93,7 +93,10 @@ jobs:
       - name: Summarize operations status
         working-directory: infra
         run: |
-          node ../scripts/write-operations-status-summary.mjs --input ops-status-${{ matrix.environment }}.json | tee ops-status-${{ matrix.environment }}.summary.md
+          node ../scripts/write-operations-status-summary.mjs \
+            --input ops-status-${{ matrix.environment }}.json \
+            > ops-status-${{ matrix.environment }}.summary.md
+          cat ops-status-${{ matrix.environment }}.summary.md
 
       - name: Upload operations status artifact
         uses: actions/upload-artifact@v4

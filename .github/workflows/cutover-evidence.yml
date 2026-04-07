@@ -76,7 +76,10 @@ jobs:
       - name: Summarize cutover evidence
         working-directory: infra
         run: |
-          node ../scripts/write-cutover-evidence-summary.mjs --input cutover-evidence.json | tee cutover-evidence-summary.md
+          node ../scripts/write-cutover-evidence-summary.mjs \
+            --input cutover-evidence.json \
+            > cutover-evidence-summary.md
+          cat cutover-evidence-summary.md
 
       - name: Upload cutover evidence artifact
         uses: actions/upload-artifact@v4
