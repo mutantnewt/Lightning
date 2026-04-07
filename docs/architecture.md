@@ -149,6 +149,7 @@ Current codification status:
 - staging and production Lambda runtimes now run with active AWS X-Ray tracing
 - staging and production now also have dedicated SNS alarm topics with codified CloudWatch alarms wired to them
 - alarm-routing destinations are now deploy-time configuration rather than hard-coded infrastructure state
+- shared catalog growth now also has a low-cost trusted-metadata bulk-import path that can ingest compact JSON or NDJSON records without invoking AI enrichment or browser-led Add Book flows
 
 ### 4.1.1 Hosted frontend delivery model
 
@@ -192,6 +193,22 @@ Implementation status:
 - the current modal auth surface now supports sign-in, sign-up, email verification, forgot-password request, and confirm-reset-password flows
 - Cognito-backed auth uses Amplify with `sessionStorage`
 - the local auth fallback mirrors the same modal flow for local verification consistency
+
+### 4.1.2.1 Catalog ingestion cost baseline
+
+The approved low-cost catalog-growth model is:
+
+- import trusted public-domain metadata in bulk from local JSON or NDJSON files
+- dedupe title/author pairs before writing
+- skip records explicitly marked non-public-domain
+- store only compact catalog metadata in DynamoDB
+- reserve AI enrichment and human moderation for edge cases rather than every catalog addition
+
+Implementation status:
+
+- the backend now includes a trusted-metadata import command that writes through the backend-owned catalog service boundary
+- this path is intended for curator or operator use, not direct browser usage
+- the existing Add Book flow remains the moderated edge-case path for user-suggested titles
 ### 4.1.3 Frontend certificate model
 
 The current hosted frontend certificate baseline is:

@@ -27,6 +27,7 @@ From `backend/`:
 - `npm run serve:local`
 - `npm run dev`
 - `npm run seed:catalog`
+- `npm run import:catalog -- --input ../docs/examples/trusted-catalog-import.sample.json --dry-run`
 - `npm run bootstrap:smoke-user`
 
 ## Local Testable Runtime
@@ -60,6 +61,7 @@ Important:
 Implemented in code:
 
 - DynamoDB-backed repository and service support for shared catalog reads and writes
+- trusted-metadata bulk catalog import path for compact JSON or NDJSON inputs
 - DynamoDB-backed repository and service support for favorites
 - DynamoDB-backed repository and service support for reading lists
 - backend Cognito bearer-token verification for authenticated routes
@@ -92,6 +94,30 @@ Smoke-user bootstrap:
 
 - `npm run bootstrap:smoke-user` now confirms or creates the local smoke user, enforces the supplied password, removes temporary moderator access, and seeds the minimum DynamoDB-backed user-state baseline
 - `scripts/bootstrap-local-aws.mjs --ensure-smoke-user` now runs that helper as part of the integrated local bootstrap path
+
+Trusted catalog import:
+
+- `npm run import:catalog -- --input ../docs/examples/trusted-catalog-import.sample.json --dry-run`
+- `npm run import:catalog -- --input /absolute/path/to/trusted-catalog.json`
+- the importer accepts:
+  - a JSON array of compact book records
+  - a JSON object with a top-level `books` array
+  - NDJSON / JSONL files with one record per line
+- supported record fields are intentionally compact:
+  - `title`
+  - `author` or `authors`
+  - optional metadata such as `year`, `country`, `category`, `workType`, `summary`, `authorBio`, `tags`, `source`, and `publicDomainNotes`
+- the importer keeps catalog growth cost-effective by:
+  - reading a local metadata file instead of calling AI or external APIs
+  - deduping against the existing catalog before writes
+  - deduping repeated title/author pairs within the same import file
+  - skipping records explicitly marked non-public-domain
+  - storing only compact catalog metadata in DynamoDB or the local file-backed catalog store
+- optional flags:
+  - `--dry-run`
+  - `--limit <count>`
+  - `--default-source <value>`
+  - `--default-public-domain-notes <value>`
 
 Local data recovery:
 

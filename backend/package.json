@@ -9,6 +9,7 @@
     "serve:local": "node dist/backend/dev-server.js",
     "dev": "npm run build && npm run serve:local",
     "seed:catalog": "npm run build && node dist/backend/scripts/seedCatalog.js",
+    "import:catalog": "npm run build && node dist/backend/scripts/importTrustedCatalog.js",
     "bootstrap:smoke-user": "node scripts/bootstrapSmokeUser.mjs"
   },
   "dependencies": {

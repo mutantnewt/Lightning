@@ -2347,6 +2347,34 @@ Residual note:
 - an older unconfirmed `sjforbes@gmail.com` test subscription still appears as `PendingConfirmation`
 - AWS SNS does not allow API unsubscribe for pending email subscriptions, so this is harmless noise rather than an active delivery blocker
 
+### Slice BT: Trusted-metadata bulk catalog import
+
+Completed:
+
+- added `backend/scripts/importTrustedCatalog.ts` as a low-cost bulk import path for trusted public-domain metadata
+- added `npm run import:catalog` in `backend/package.json`
+- added a sample import file at `docs/examples/trusted-catalog-import.sample.json`
+- documented the importer in `backend/README.md` and aligned the cost model in `docs/architecture.md`
+- kept the import path deliberately lightweight by:
+  - accepting local JSON arrays, `{ books: [...] }`, and NDJSON / JSONL
+  - normalizing compact metadata fields into the existing backend-owned catalog service boundary
+  - deduping title/author pairs against the existing catalog before writes
+  - deduping repeated title/author pairs inside the same import file
+  - skipping records explicitly marked non-public-domain
+  - avoiding AI enrichment or remote metadata fetches during import
+
+Verification:
+
+- `npm run build` passes in `backend/`
+- dry-run import passes against the sample metadata file
+- real import passes against a temporary file-backed local catalog store
+- the importer summary reports imported, skipped-existing, skipped-input-duplicates, and skipped-invalid counts
+
+Current limitation:
+
+- the importer intentionally favors compact trusted metadata over richer automated enrichment
+- source-specific upstream transforms are still expected to happen outside the runtime when using large third-party metadata dumps
+
 ## Immediate Next Steps
 
 ### Next slice: Post-Go-Live Hardening

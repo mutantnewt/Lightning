@@ -1,0 +1,30 @@
+[
+  {
+    "title": "The Secret Garden",
+    "author": "Frances Hodgson Burnett",
+    "year": 1911,
+    "country": "England",
+    "category": "Children's Literature",
+    "workType": "Novel",
+    "summary": "Mary Lennox discovers a hidden walled garden on her uncle's estate and helps bring it back to life, transforming herself and the people around her in the process.",
+    "authorBio": "Frances Hodgson Burnett (1849-1924) was a British-American novelist and playwright best known for children's classics including The Secret Garden and A Little Princess.",
+    "tags": ["Children's Literature", "Growth", "Nature"],
+    "source": "https://www.gutenberg.org/ebooks/17396",
+    "publicDomain": true,
+    "publicDomainNotes": "Published in 1911 and in the public domain in the United States."
+  },
+  {
+    "title": "War and Peace",
+    "author": "Leo Tolstoy",
+    "year": 1869,
+    "country": "Russia",
+    "category": "Historical Fiction",
+    "workType": "Novel",
+    "summary": "Tolstoy traces aristocratic Russian families through love, war, and social upheaval during the Napoleonic era.",
+    "authorBio": "Leo Tolstoy (1828-1910) was a Russian novelist and thinker whose work transformed world literature.",
+    "tags": ["Russia", "War", "History"],
+    "source": "https://www.gutenberg.org/ebooks/2600",
+    "publicDomain": true,
+    "publicDomainNotes": "Published in 1869 and in the public domain in the United States."
+  }
+]
