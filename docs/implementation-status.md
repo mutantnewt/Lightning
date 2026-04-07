@@ -2318,14 +2318,42 @@ Current limitation:
 - the only remaining live operational blocker is inbox confirmation of the chosen alert destination
 - until that confirmation link is accepted, `ops:status` will continue to report `alarmSubscriptionReadiness.ready = false`
 
+### Slice BS: Confirmed live alert delivery readiness
+
+Completed:
+
+- confirmed the chosen alert inbox for both long-lived SNS alarm topics
+- re-ran the live operations-status check after confirmation propagation
+- verified that staging and production now both satisfy the minimum confirmed-destination baseline
+- updated the operational docs to record that the live alerting gap is closed
+
+Verification:
+
+- live operations-status check on 2026-04-07 reports:
+  - staging public health `200`
+  - production public health `200`
+  - all staging alarms `OK`
+  - all production alarms `OK`
+  - complete alarm-action coverage in both environments
+  - `alarmSubscriptionReadiness.confirmedCount = 1`
+  - `alarmSubscriptionReadiness.ready = true`
+  - `allClear = true`
+- the confirmed live destination is:
+  - `agilehosts@gmail.com` on `lightning-operations-alerts-staging`
+  - `agilehosts@gmail.com` on `lightning-operations-alerts-prod`
+
+Residual note:
+
+- an older unconfirmed `sjforbes@gmail.com` test subscription still appears as `PendingConfirmation`
+- AWS SNS does not allow API unsubscribe for pending email subscriptions, so this is harmless noise rather than an active delivery blocker
+
 ## Immediate Next Steps
 
 ### Next slice: Post-Go-Live Hardening
 
 Needed:
 
-- confirm the chosen alert inbox from the SNS subscription emails so staging and production move from `PendingConfirmation` to a confirmed live destination
-- optionally attach additional chat, PagerDuty, or Incident Manager subscriptions on top of the now-initiated email path
+- optionally attach additional chat, PagerDuty, or Incident Manager subscriptions on top of the confirmed email path
 - decide whether staging and production should stay on manual Amplify artifact deploys or move to repository-connected Amplify CI/CD
 - add replication or cross-account protection to the hosted frontend release-archive buckets if disaster-recovery duplication is required beyond the new lifecycle baseline
 - decide later whether to keep manual Amplify deploys or switch staging and production to repository-connected CI/CD
@@ -2346,4 +2374,4 @@ Then:
 ## Open Blockers
 
 - the browser-led smoke intentionally stops short of Add Book acceptance so repeated local runs do not create duplicate catalog entries
-- SNS alarm topics now have pending email subscriptions attached, but no destination has confirmed yet, so alerts still cannot deliver
+- there is no remaining live operational blocker in staging or production
