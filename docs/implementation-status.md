@@ -2439,6 +2439,38 @@ Current limitation:
 - this is still a drafting artifact rather than the final AWS-icon artwork
 - the next visual step is to translate the Mermaid structure into `docs/diagrams/lightning-aws-architecture.drawio`
 
+### Slice BW: Presentation-quality AWS diagram refinement
+
+Completed:
+
+- refined `docs/diagrams/lightning-aws-architecture-draft.md` into a presentation-oriented Mermaid draft with:
+  - clearer lane names
+  - shorter component labels
+  - purpose-based flow labels
+  - concern-based styling for overview and operations views
+- added `docs/aws-diagram-presentation-playbook.md` as a reusable markdown playbook for creating presentation-quality AWS diagrams for any project
+- updated `docs/diagrams/README.md` so the diagram working directory points to both the Lightning-specific blueprint and the generic presentation playbook
+- updated `docs/README.md` so the new playbook is discoverable from the canonical docs index
+
+Verification:
+
+- the refined Mermaid draft still matches the live Lightning Classics estate:
+  - Route 53
+  - Amplify / CloudFront
+  - Cognito
+  - API Gateway
+  - public / auth / privileged Lambdas
+  - DynamoDB books, user-state, and moderation tables
+  - S3 release archives
+  - CloudWatch dashboards, logs, alarms, and X-Ray
+  - SNS alert topics and confirmed email delivery
+- the new playbook is generic rather than Lightning-specific, so it can be reused for future AWS systems without rewriting the diagram process from scratch
+
+Current limitation:
+
+- the presentation draft is still markdown-native source material rather than the final exported AWS-icon artwork
+- the next visual step is still to build the corresponding `.drawio` and exported `.svg` files
+
 ## Immediate Next Steps
 
 ### Next slice: Post-Go-Live Hardening

@@ -35,6 +35,8 @@ Durable product and UX guidance from one-off briefs or historical prompts must b
   Short response path for production or staging incidents, rollback, and evidence capture
 - `docs/aws-diagram-blueprint.md`
   Draw.io-ready blueprint for Lightning Classics AWS diagrams using standard AWS icons
+- `docs/aws-diagram-presentation-playbook.md`
+  Reusable instructions for turning any AWS project into a presentation-quality architecture diagram
 - `docs/diagrams/`
   Working diagram drafts and future exported architecture visuals
 

@@ -9,6 +9,10 @@ Use it to produce:
 - a high-level system overview diagram
 - a focused operations and delivery diagram
 
+Use it together with:
+
+- `docs/aws-diagram-presentation-playbook.md`
+
 The intent is:
 
 - standard AWS iconography

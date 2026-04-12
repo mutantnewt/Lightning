@@ -5,7 +5,16 @@ This directory is for Lightning Classics architecture diagram source material an
 Current contents:
 
 - `lightning-aws-architecture-draft.md`
-  Mermaid-based first-pass drafting file
+  Mermaid-based presentation draft for:
+  - system overview
+  - operations and delivery
+
+Related diagram planning docs:
+
+- `../aws-diagram-blueprint.md`
+  Lightning-specific draw.io blueprint
+- `../aws-diagram-presentation-playbook.md`
+  reusable guide for turning any AWS project into a presentation-quality diagram
 
 Intended future contents:
 
