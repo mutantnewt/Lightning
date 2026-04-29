@@ -48,7 +48,8 @@ Default local behavior:
 - Cognito bearer tokens accepted for authenticated routes when `COGNITO_USER_POOL_ID` and `COGNITO_APP_CLIENT_ID` are configured
 - file-backed Add Book suggestion audit persistence when no `BOOK_SUGGESTIONS_TABLE_NAME` is configured
 - file-backed Add Book submission persistence when no `BOOK_SUGGESTIONS_TABLE_NAME` is configured
-- optional backend OpenAI usage for Add Book enrichment, with offline fallback when `OPENAI_API_KEY` is absent
+- optional backend OpenAI usage for Add Book enrichment
+- when `OPENAI_API_KEY` is absent, Add Book now tries public-domain metadata lookup before falling back to the deterministic offline sample catalog
 
 Important:
 

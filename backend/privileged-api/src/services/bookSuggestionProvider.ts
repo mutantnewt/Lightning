@@ -26,6 +26,27 @@ interface DetailsProviderOutput {
   book: Partial<Book>;
 }
 
+interface GutendexPerson {
+  name?: string | null;
+  birth_year?: number | null;
+  death_year?: number | null;
+}
+
+interface GutendexBook {
+  id?: number | null;
+  title?: string | null;
+  authors?: GutendexPerson[];
+  summaries?: string[];
+  subjects?: string[];
+  bookshelves?: string[];
+  copyright?: boolean | null;
+  formats?: Record<string, string>;
+}
+
+interface GutendexResponse {
+  results?: GutendexBook[];
+}
+
 const validWorkTypes: WorkType[] = [
   "Novel",
   "Play",
@@ -54,6 +75,43 @@ function describeFallbackError(error: unknown): string {
 
 function logOfflineFallback(context: string, error: unknown): void {
   console.info(`${context}: ${describeFallbackError(error)}`);
+}
+
+function toTitleCaseAuthorName(value: string | null | undefined): string {
+  const raw = (value ?? "").trim();
+
+  if (!raw.includes(",")) {
+    return raw;
+  }
+
+  const [surname, ...rest] = raw.split(",").map((part) => part.trim()).filter(Boolean);
+
+  if (!surname || rest.length === 0) {
+    return raw;
+  }
+
+  return `${rest.join(" ")} ${surname}`.replace(/\s+/g, " ").trim();
+}
+
+function getPrimaryGutendexAuthor(book: GutendexBook): string {
+  return toTitleCaseAuthorName(book.authors?.[0]?.name);
+}
+
+function getGutendexAuthorYears(book: GutendexBook): string | null {
+  const author = book.authors?.[0];
+
+  if (!author) {
+    return null;
+  }
+
+  const birthYear = typeof author.birth_year === "number" ? author.birth_year : null;
+  const deathYear = typeof author.death_year === "number" ? author.death_year : null;
+
+  if (birthYear === null && deathYear === null) {
+    return null;
+  }
+
+  return `${birthYear ?? "?"}-${deathYear ?? "?"}`;
 }
 
 function toExistingBookKey(book: ExistingBookReference): string {
@@ -129,6 +187,237 @@ function fallbackDetails(title: string, author: string): DetailsProviderOutput {
   return {
     source: "offline",
     book: match.details,
+  };
+}
+
+function buildGutendexSearchQuery(input: SearchProviderInput): string {
+  return [input.title, input.author, input.keyword]
+    .map((value) => value?.trim())
+    .filter((value): value is string => Boolean(value))
+    .join(" ");
+}
+
+async function fetchGutendexResults(input: SearchProviderInput): Promise<GutendexBook[]> {
+  const query = buildGutendexSearchQuery(input);
+
+  if (!query) {
+    return [];
+  }
+
+  const baseUrl = getEnv("GUTENDEX_API_BASE_URL") ?? "https://gutendex.com";
+  const url = new URL("/books/", baseUrl);
+  url.searchParams.set("search", query);
+  url.searchParams.set("languages", "en");
+  url.searchParams.set("copyright", "false");
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8_000);
+
+  try {
+    const response = await fetch(url, {
+      headers: {
+        accept: "application/json",
+        "user-agent": "LightningClassicsAddBook/1.0",
+      },
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Gutendex request failed: ${response.status}`);
+    }
+
+    const payload = (await response.json()) as GutendexResponse;
+    return Array.isArray(payload.results) ? payload.results : [];
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function getGutendexSource(book: GutendexBook): string | null {
+  if (typeof book.id === "number") {
+    return `https://www.gutenberg.org/ebooks/${book.id}`;
+  }
+
+  return book.formats?.["text/html"] ?? null;
+}
+
+function cleanGutendexSummary(value: string | null | undefined): string {
+  return (value ?? "")
+    .replace(/\s*\(This is an automatically generated summary\.\)\s*$/u, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function truncateText(value: string, maxLength: number): string {
+  if (value.length <= maxLength) {
+    return value;
+  }
+
+  return `${value.slice(0, maxLength - 1).trimEnd()}...`;
+}
+
+function getGutendexTags(book: GutendexBook): string[] {
+  return [
+    ...(book.subjects ?? []),
+    ...(book.bookshelves ?? []),
+  ]
+    .map((tag) => tag.replace(/^Category:\s*/iu, "").split("--")[0]?.trim() ?? "")
+    .filter(Boolean)
+    .filter((tag, index, tags) => tags.indexOf(tag) === index)
+    .slice(0, 6);
+}
+
+function inferGutendexWorkType(book: GutendexBook): WorkType {
+  const tagsText = [...(book.subjects ?? []), ...(book.bookshelves ?? [])]
+    .join(" ")
+    .toLowerCase();
+
+  if (tagsText.includes("drama") || tagsText.includes("plays")) {
+    return "Play";
+  }
+
+  if (tagsText.includes("poetry") || tagsText.includes("poems")) {
+    return "Poem";
+  }
+
+  if (tagsText.includes("essays")) {
+    return "Essay";
+  }
+
+  if (tagsText.includes("short stories")) {
+    return "Short Story";
+  }
+
+  if (tagsText.includes("fiction") || tagsText.includes("novel")) {
+    return "Novel";
+  }
+
+  return "Other";
+}
+
+function inferGutendexEra(book: GutendexBook): string | null {
+  const birthYear = book.authors?.[0]?.birth_year;
+  const deathYear = book.authors?.[0]?.death_year;
+
+  if (
+    (typeof birthYear === "number" && birthYear < 500) ||
+    (typeof deathYear === "number" && deathYear < 500)
+  ) {
+    return "Classical";
+  }
+
+  return null;
+}
+
+function mapGutendexSearchResult(book: GutendexBook): BookSearchResult | null {
+  const title = (book.title ?? "").trim();
+  const author = getPrimaryGutendexAuthor(book);
+
+  if (!title || !author || book.copyright !== false) {
+    return null;
+  }
+
+  const summary = cleanGutendexSummary(book.summaries?.[0]);
+  const tags = getGutendexTags(book);
+
+  return {
+    title,
+    author,
+    year: null,
+    brief: truncateText(
+      summary || tags.slice(0, 3).join(", ") || "Public domain work listed by Project Gutenberg.",
+      180,
+    ),
+  };
+}
+
+function mapGutendexDetails(book: GutendexBook): Partial<Book> | null {
+  const title = (book.title ?? "").trim();
+  const author = getPrimaryGutendexAuthor(book);
+
+  if (!title || !author || book.copyright !== false) {
+    return null;
+  }
+
+  const authorYears = getGutendexAuthorYears(book);
+  const tags = getGutendexTags(book);
+  const summary = cleanGutendexSummary(book.summaries?.[0]);
+
+  return {
+    title,
+    author,
+    year: null,
+    era: inferGutendexEra(book),
+    country: null,
+    category: tags[0] ?? "Public Domain",
+    workType: inferGutendexWorkType(book),
+    summary: summary || "Project Gutenberg lists this public domain work, but no generated summary is available in the metadata export.",
+    authorBio: authorYears
+      ? `${author} (${authorYears}) is listed as the primary author in Project Gutenberg metadata.`
+      : `${author} is listed as the primary author in Project Gutenberg metadata.`,
+    tags,
+    publicDomain: true,
+    publicDomainNotes:
+      "Project Gutenberg metadata lists this work as public domain. Confirm source details during moderation before publication.",
+    source: getGutendexSource(book),
+  };
+}
+
+async function gutendexSearch(input: SearchProviderInput): Promise<SearchProviderOutput> {
+  const existingBookKeys = new Set((input.existingBooks ?? []).map(toExistingBookKey));
+  const results = (await fetchGutendexResults(input))
+    .map(mapGutendexSearchResult)
+    .filter((result): result is BookSearchResult => result !== null)
+    .filter((result) => !existingBookKeys.has(toExistingBookKey(result)))
+    .slice(0, 10);
+
+  return {
+    source: "offline",
+    results,
+  };
+}
+
+function findBestGutendexDetailsMatch(
+  books: GutendexBook[],
+  title: string,
+  author: string,
+): GutendexBook | null {
+  const normalizedTitle = normalizeText(title);
+  const normalizedAuthor = normalizeText(author);
+  const mappedBooks = books.filter(
+    (book) => mapGutendexSearchResult(book) !== null,
+  );
+
+  return (
+    mappedBooks.find(
+      (book) =>
+        normalizeText(book.title).includes(normalizedTitle) &&
+        normalizeText(getPrimaryGutendexAuthor(book)).includes(normalizedAuthor),
+    ) ??
+    mappedBooks.find((book) => normalizeText(book.title).includes(normalizedTitle)) ??
+    mappedBooks[0] ??
+    null
+  );
+}
+
+async function gutendexDetails(
+  title: string,
+  author: string,
+): Promise<DetailsProviderOutput> {
+  const match = findBestGutendexDetailsMatch(
+    await fetchGutendexResults({ title, author }),
+    title,
+    author,
+  );
+  const book = match ? mapGutendexDetails(match) : null;
+
+  if (!book) {
+    throw new Error("No Project Gutenberg suggestion details found for that book.");
+  }
+
+  return {
+    source: "offline",
+    book,
   };
 }
 
@@ -259,6 +548,12 @@ Only return the JSON array.`;
       results: validateSearchResults(response),
     };
   } catch (error) {
+    logOfflineFallback("Using non-AI Add Book search suggestions", error);
+  }
+
+  try {
+    return await gutendexSearch(input);
+  } catch (error) {
     logOfflineFallback("Using offline Add Book search suggestions", error);
     return fallbackSearch(input);
   }
@@ -302,6 +597,12 @@ Only return the JSON object.`;
       source: "openai",
       book: validateBookDetails(response),
     };
+  } catch (error) {
+    logOfflineFallback("Using non-AI Add Book detail suggestions", error);
+  }
+
+  try {
+    return await gutendexDetails(title, author);
   } catch (error) {
     logOfflineFallback("Using offline Add Book detail suggestions", error);
     return fallbackDetails(title, author);

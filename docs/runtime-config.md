@@ -646,7 +646,7 @@ Use only if:
 Current implementation status:
 
 - the privileged local/backend Add Book flow uses this when configured
-- if absent, local Add Book verification still works by falling back to a deterministic offline suggestion catalog
+- if absent, Add Book now tries a no-key public-domain metadata lookup before falling back to the deterministic offline suggestion catalog
 
 ### `SES_FROM_EMAIL`
 
